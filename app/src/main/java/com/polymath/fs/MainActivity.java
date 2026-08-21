@@ -5,6 +5,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.Settings;
+import android.net.Uri;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.Button;
@@ -67,6 +72,64 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         configManager = ConfigManager.getInstance(this);
+
+        checkAndRequestPermissions();
+    }
+
+    private void checkAndRequestPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent.addCategory("android.intent.category.DEFAULT");
+                    intent.setData(Uri.parse(String.format("package:%s", getApplicationContext().getPackageName())));
+                    startActivityForResult(intent, 2296);
+                } catch (Exception e) {
+                    Intent intent = new Intent();
+                    intent.setAction(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                    startActivityForResult(intent, 2296);
+                }
+            } else {
+                initializeApp();
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE}, 100);
+                } else {
+                    initializeApp();
+                }
+            } else {
+                initializeApp();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == 100 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            initializeApp();
+        } else {
+            Toast.makeText(this, "Permission Denied. Features limited.", Toast.LENGTH_LONG).show();
+            initializeApp(); // Fallback to RootEngine if granted
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 2296) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (Environment.isExternalStorageManager()) {
+                    initializeApp();
+                } else {
+                    Toast.makeText(this, "All Files Access Denied. Fallback to Root.", Toast.LENGTH_LONG).show();
+                    initializeApp();
+                }
+            }
+        }
+    }
+
+    private void initializeApp() {
 
         // Init views
         mainContainer = findViewById(R.id.mainContainer);
@@ -330,6 +393,11 @@ public class MainActivity extends Activity {
             findViewById(R.id.mainContainer).setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
             findViewById(R.id.headerContainer).setBackgroundColor(Color.parseColor(theme.getString("secondaryBg")));
             pathText.setTextColor(Color.parseColor(theme.getString("textColor")));
+            
+            if (adapter != null) {
+                adapter.setConfig(configManager.getConfig());
+                adapter.notifyDataSetChanged();
+            }
         } catch (Exception ignored) {}
     }
 

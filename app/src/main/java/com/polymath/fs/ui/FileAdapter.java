@@ -60,6 +60,19 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
         
         void bind(File file, OnItemClickListener listener, JSONObject config) {
             fileName.setText(file.getName());
+
+            // Apply JS Dynamic Theme if available
+            if (config != null) {
+                try {
+                    JSONObject theme = config.optJSONObject("theme");
+                    if (theme != null) {
+                        if (itemView instanceof androidx.cardview.widget.CardView) {
+                            ((androidx.cardview.widget.CardView) itemView).setCardBackgroundColor(Color.parseColor(theme.optString("secondaryBg", "#1e293b")));
+                        }
+                        fileName.setTextColor(Color.parseColor(theme.optString("textColor", "#f8fafc")));
+                    }
+                } catch (Exception ignored) {}
+            }
             
             // Format Subtitle
             String details = "";
