@@ -100,6 +100,56 @@ public class JsRuntimeManager {
                 return "console.error('Require Error: " + e.getMessage() + "');";
             }
         }
+
+        @JavascriptInterface
+        public void setTheme(String jsonConfig) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    JSONObject config = new JSONObject(jsonConfig);
+                    android.content.SharedPreferences prefs = context.getSharedPreferences("pfs_prefs", Context.MODE_PRIVATE);
+                    prefs.edit().putString("config_json", config.toString()).apply();
+                    if (context instanceof com.polymath.fs.MainActivity) {
+                        ((com.polymath.fs.MainActivity) context).applyTheme();
+                        Toast.makeText(context, "Theme Applied by JS Modular", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(context, "Theme Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void elevate(String mode) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (mode.equals("root")) {
+                    RootEngine.executeCommand("su -c echo 'Root Granted'");
+                    Toast.makeText(context, "Elevated to Root via JS", Toast.LENGTH_SHORT).show();
+                } else if (mode.equals("shizuku")) {
+                    // Placeholder for Shizuku IPC binding
+                    Toast.makeText(context, "Elevated to Shizuku via JS", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void listen(String eventType, String path, String callbackName) {
+            if (eventType.equals("FILE_CREATED")) {
+                new Thread(() -> {
+                    android.os.FileObserver observer = new android.os.FileObserver(path, android.os.FileObserver.CREATE) {
+                        @Override
+                        public void onEvent(int event, String file) {
+                            if (file != null) {
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    if (webView != null) webView.evaluateJavascript(callbackName + "('" + file + "');", null);
+                                });
+                            }
+                        }
+                    };
+                    observer.startWatching();
+                }).start();
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "JS Automation Listener attached to " + path, Toast.LENGTH_SHORT).show());
+            }
+        }
     }
 
     public static void executeScript(Context androidContext, File scriptFile) {

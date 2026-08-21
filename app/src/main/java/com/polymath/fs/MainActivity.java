@@ -114,6 +114,21 @@ public class MainActivity extends Activity {
         renderTabs();
         loadDirectory(tabs.get(activeTabIndex));
         loadScripts();
+        bootCoreModules();
+    }
+
+    private void bootCoreModules() {
+        File coreDir = new File(extensionsDir, "Core");
+        if (coreDir.exists()) {
+            File[] scripts = coreDir.listFiles();
+            if (scripts != null) {
+                for (File script : scripts) {
+                    if (script.getName().endsWith(".js")) {
+                        JsRuntimeManager.executeScript(this, script);
+                    }
+                }
+            }
+        }
     }
 
     private void extractBuiltInExtensions() {
@@ -303,7 +318,7 @@ public class MainActivity extends Activity {
         tabsContainer.addView(newTabBtn);
     }
 
-    private void applyTheme() {
+    public void applyTheme() {
         try {
             JSONObject theme = configManager.getConfig().getJSONObject("theme");
             findViewById(R.id.mainContainer).setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
