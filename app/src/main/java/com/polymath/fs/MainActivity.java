@@ -34,6 +34,11 @@ import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.util.List;
 import java.util.ArrayList;
+import android.widget.EditText;
+import android.view.inputmethod.EditorInfo;
+import android.view.KeyEvent;
+import com.polymath.fs.core.RecentsManager;
+import com.polymath.fs.ui.JsDashboardActivity;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -180,8 +185,11 @@ public class MainActivity extends AppCompatActivity {
                 adapter = new FileAdapter(files, new FileAdapter.OnItemClickListener() {
                     @Override
                     public void onItemClick(FileSystemItem file) {
+                        new RecentsManager(MainActivity.this).logAccess(file.getPath());
                         if (file.isDirectory()) {
                             viewModel.navigateTo(file.getPath());
+                        } else {
+                            // Basic viewer route or action
                         }
                     }
                     @Override
@@ -222,6 +230,26 @@ public class MainActivity extends AppCompatActivity {
         android.widget.LinearLayout headerLayout = new android.widget.LinearLayout(this);
         headerLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
         
+        // Search Bar
+        EditText searchInput = new EditText(this);
+        searchInput.setHint("Search global files...");
+        searchInput.setHintTextColor(Color.parseColor("#64748b"));
+        searchInput.setTextColor(Color.WHITE);
+        searchInput.setPadding(32, 16, 32, 16);
+        searchInput.setSingleLine(true);
+        searchInput.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
+        searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                String query = searchInput.getText().toString();
+                if (!query.isEmpty()) {
+                    viewModel.performSearch(MainActivity.this, query);
+                }
+                return true;
+            }
+            return false;
+        });
+        headerLayout.addView(searchInput);
+        
         // Path text
         TextView pathView = new TextView(this);
         pathView.setText(path);
@@ -245,6 +273,20 @@ public class MainActivity extends AppCompatActivity {
             btnNewTab.setPadding(16, 8, 16, 8);
             btnNewTab.setOnClickListener(v -> viewModel.addNewTab(Environment.getExternalStorageDirectory().getAbsolutePath()));
             tabsRow.addView(btnNewTab);
+
+            TextView btnRecents = new TextView(this);
+            btnRecents.setText("⭐ RECENTS");
+            btnRecents.setTextColor(Color.parseColor("#f59e0b"));
+            btnRecents.setPadding(16, 8, 16, 8);
+            btnRecents.setOnClickListener(v -> viewModel.loadRecents(MainActivity.this));
+            tabsRow.addView(btnRecents);
+
+            TextView btnDashboard = new TextView(this);
+            btnDashboard.setText("🚀 DASHBOARD");
+            btnDashboard.setTextColor(Color.parseColor("#10b981"));
+            btnDashboard.setPadding(16, 8, 16, 8);
+            btnDashboard.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, JsDashboardActivity.class)));
+            tabsRow.addView(btnDashboard);
         } catch (Exception e) {}
         
         tabScroll.addView(tabsRow);

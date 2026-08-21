@@ -11,6 +11,12 @@ import com.polymath.fs.models.FileSystemItem;
 import com.polymath.fs.models.LocalFileItem;
 import com.polymath.fs.models.TabState;
 import java.util.UUID;
+import android.content.Context;
+import android.database.Cursor;
+import com.polymath.fs.core.SearchDatabaseHelper;
+import com.polymath.fs.core.RecentsManager;
+import com.polymath.fs.models.SearchResultItem;
+import com.polymath.fs.models.RecentFileItem;
 
 public class FileSystemViewModel extends ViewModel {
 
@@ -112,5 +118,53 @@ public class FileSystemViewModel extends ViewModel {
                 }
             }
         }
+    }
+
+    public void performSearch(Context context, String query) {
+        isLoading.postValue(true);
+        currentPath.postValue("Search Results: " + query);
+        new Thread(() -> {
+            try {
+                List<FileSystemItem> items = new ArrayList<>();
+                SearchDatabaseHelper dbHelper = new SearchDatabaseHelper(context);
+                Cursor cursor = dbHelper.getReadableDatabase().rawQuery("SELECT path, name FROM files_index WHERE name MATCH ? LIMIT 100", new String[]{query + "*"});
+                if (cursor.moveToFirst()) {
+                    do {
+                        String path = cursor.getString(0);
+                        String name = cursor.getString(1);
+                        items.add(new SearchResultItem(path, name));
+                    } while (cursor.moveToNext());
+                }
+                cursor.close();
+                fileList.postValue(items);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                isLoading.postValue(false);
+            }
+        }).start();
+    }
+
+    public void loadRecents(Context context) {
+        isLoading.postValue(true);
+        currentPath.postValue("Comfort Zone (Recents)");
+        new Thread(() -> {
+            try {
+                List<FileSystemItem> items = new ArrayList<>();
+                RecentsManager recentsManager = new RecentsManager(context);
+                List<String> paths = recentsManager.getRecentPaths(50);
+                for (String path : paths) {
+                    File f = new File(path);
+                    if (f.exists()) {
+                        items.add(new RecentFileItem(f));
+                    }
+                }
+                fileList.postValue(items);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                isLoading.postValue(false);
+            }
+        }).start();
     }
 }
