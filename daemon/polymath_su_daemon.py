@@ -144,6 +144,14 @@ def handle_request(su_cmd, request_data):
         return res
 
     elif action == "delete_file": return execute_root_command(su_cmd, f"rm -rf '{path}'")
+    elif action == "archive":
+        target = f"{path}.tar.gz"
+        parent = os.path.dirname(path)
+        base = os.path.basename(path)
+        return execute_root_command(su_cmd, f"tar -czf '{target}' -C '{parent}' '{base}'")
+    elif action == "execute_command":
+        cmd = request_data.get("command", "")
+        return execute_root_command(su_cmd, cmd)
     elif action == "enable_automation":
         tracked_directories[path] = True
         return {"success": True, "message": f"Started watching {path} for auto-organization"}

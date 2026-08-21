@@ -5,13 +5,17 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
+import android.view.View;
+import android.view.Gravity;
+import android.widget.LinearLayout;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.Toast;
 import android.view.inputmethod.EditorInfo;
 import android.view.KeyEvent;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.graphics.drawable.GradientDrawable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -36,10 +40,17 @@ public class MainActivity extends Activity {
     private TextView pathText;
     private EditText searchInput;
     private RecyclerView fileRecyclerView;
+    private LinearLayout tabsContainer;
+    private View eyeStrainOverlay;
+    
     private FileAdapter adapter;
     private File currentDir;
     private List<File> currentFiles;
     private ConfigManager configManager;
+    
+    private List<File> tabs = new ArrayList<>();
+    private int activeTabIndex = 0;
+    private boolean isEyeStrainEnabled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +62,9 @@ public class MainActivity extends Activity {
         pathText = findViewById(R.id.pathText);
         searchInput = findViewById(R.id.searchInput);
         fileRecyclerView = findViewById(R.id.fileRecyclerView);
+        tabsContainer = findViewById(R.id.tabsContainer);
+        eyeStrainOverlay = findViewById(R.id.eyeStrainOverlay);
+        
         fileRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         applyTheme();
@@ -67,9 +81,80 @@ public class MainActivity extends Activity {
             }
             return false;
         });
+        
+        // Add eye strain toggle to path text long click
+        pathText.setOnLongClickListener(v -> {
+            isEyeStrainEnabled = !isEyeStrainEnabled;
+            eyeStrainOverlay.setVisibility(isEyeStrainEnabled ? View.VISIBLE : View.GONE);
+            Toast.makeText(this, "Eye Strain Mode: " + (isEyeStrainEnabled ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
+            return true;
+        });
 
-        currentDir = Environment.getExternalStorageDirectory();
-        loadDirectory(currentDir);
+        // Initialize first tab
+        tabs.add(Environment.getExternalStorageDirectory());
+        renderTabs();
+        loadDirectory(tabs.get(activeTabIndex));
+    }
+
+    private void renderTabs() {
+        tabsContainer.removeAllViews();
+        
+        for (int i = 0; i < tabs.size(); i++) {
+            final int index = i;
+            Button tabBtn = new Button(this);
+            tabBtn.setText(tabs.get(i).getName().isEmpty() ? "Root" : tabs.get(i).getName());
+            tabBtn.setAllCaps(false);
+            tabBtn.setTextColor(index == activeTabIndex ? Color.WHITE : Color.LTGRAY);
+            
+            GradientDrawable gd = new GradientDrawable();
+            gd.setColor(index == activeTabIndex ? Color.parseColor("#3b82f6") : Color.parseColor("#334155"));
+            gd.setCornerRadius(16f);
+            gd.setStroke(2, index == activeTabIndex ? Color.parseColor("#60a5fa") : Color.TRANSPARENT);
+            tabBtn.setBackground(gd);
+            
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                100
+            );
+            params.setMargins(0, 0, 16, 0);
+            tabBtn.setLayoutParams(params);
+            
+            tabBtn.setOnClickListener(v -> {
+                activeTabIndex = index;
+                renderTabs();
+                loadDirectory(tabs.get(activeTabIndex));
+            });
+            
+            tabBtn.setOnLongClickListener(v -> {
+                if (tabs.size() > 1) {
+                    tabs.remove(index);
+                    if (activeTabIndex >= tabs.size()) activeTabIndex = tabs.size() - 1;
+                    renderTabs();
+                    loadDirectory(tabs.get(activeTabIndex));
+                }
+                return true;
+            });
+            
+            tabsContainer.addView(tabBtn);
+        }
+        
+        // Add New Tab Button
+        Button newTabBtn = new Button(this);
+        newTabBtn.setText("+");
+        newTabBtn.setTextColor(Color.WHITE);
+        GradientDrawable gd = new GradientDrawable();
+        gd.setColor(Color.parseColor("#334155"));
+        gd.setCornerRadius(16f);
+        newTabBtn.setBackground(gd);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
+        newTabBtn.setLayoutParams(params);
+        newTabBtn.setOnClickListener(v -> {
+            tabs.add(Environment.getExternalStorageDirectory());
+            activeTabIndex = tabs.size() - 1;
+            renderTabs();
+            loadDirectory(tabs.get(activeTabIndex));
+        });
+        tabsContainer.addView(newTabBtn);
     }
 
     private void applyTheme() {
@@ -83,6 +168,8 @@ public class MainActivity extends Activity {
 
     private void loadDirectory(File dir) {
         currentDir = dir;
+        tabs.set(activeTabIndex, dir);
+        renderTabs();
         pathText.setText(dir.getAbsolutePath());
 
         if (!dir.canRead()) {
@@ -190,25 +277,29 @@ public class MainActivity extends Activity {
 
     private void showAdvancedFeaturesMenu(File file) {
         String[] options = {
-            "1. Format Cloaking (Toggle File Scramble)",
-            "2. Hardlink Deduplication (Zero-Space)",
-            "3. Chronos (Time-Travel Snapshot)",
-            "4. Ghost Vault (Forensic Shredder)",
-            "5. Mount RAM-Disk (HyperDrive)",
-            "6. Restore Chronos Snapshot"
+            "Delete File (Daemon)",
+            "Archive (Daemon)",
+            "Format Cloaking (Toggle File Scramble)",
+            "Hardlink Deduplication (Zero-Space)",
+            "Chronos (Time-Travel Snapshot)",
+            "Ghost Vault (Forensic Shredder)",
+            "Mount RAM-Disk (HyperDrive)",
+            "Restore Chronos Snapshot"
         };
 
         new AlertDialog.Builder(this)
-            .setTitle("Polymath Advanced Operations")
+            .setTitle("Polymath Core Operations")
             .setItems(options, (dialog, which) -> {
                 String action = "";
                 switch (which) {
-                    case 0: action = "format_cloak"; break;
-                    case 1: action = "hardlink_dedup"; break;
-                    case 2: action = "chronos_snapshot"; break;
-                    case 3: action = "ghost_vault"; break;
-                    case 4: action = "mount_ramdisk"; break;
-                    case 5: action = "chronos_restore"; break;
+                    case 0: action = "delete_file"; break;
+                    case 1: action = "archive"; break;
+                    case 2: action = "format_cloak"; break;
+                    case 3: action = "hardlink_dedup"; break;
+                    case 4: action = "chronos_snapshot"; break;
+                    case 5: action = "ghost_vault"; break;
+                    case 6: action = "mount_ramdisk"; break;
+                    case 7: action = "chronos_restore"; break;
                 }
                 executeAdvancedAction(action, file.getAbsolutePath());
             })
@@ -223,6 +314,10 @@ public class MainActivity extends Activity {
                 req.put("action", action);
                 req.put("path", path);
                 if (action.equals("chronos_restore")) req.put("archive", path + "/.chronos_1.tar.gz");
+                if (action.equals("archive")) {
+                    req.put("action", "execute_command");
+                    req.put("command", "tar -czf '" + path + ".tar.gz' -C '" + new File(path).getParent() + "' '" + new File(path).getName() + "'");
+                }
                 
                 os.write(req.toString().getBytes());
                 os.flush();

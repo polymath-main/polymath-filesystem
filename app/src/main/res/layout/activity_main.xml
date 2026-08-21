@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/mainContainer" android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:background="#0f172a">
-    <LinearLayout android:id="@+id/headerContainer" android:layout_width="match_parent" android:layout_height="60dp"
-        android:orientation="horizontal" android:background="#1e293b" android:padding="16dp" android:gravity="center_vertical">
-        <TextView android:id="@+id/pathText" android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:textColor="#f8fafc" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="start" />
-        <EditText android:id="@+id/searchInput" android:layout_width="120dp" android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" android:textColor="#f8fafc" android:textSize="14sp" android:hint="Search..." android:textColorHint="#64748b" android:background="@null" android:singleLine="true" android:imeOptions="actionSearch" />
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/mainContainer" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:background="#0f172a">
+
+        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:scrollbars="none" android:background="#1e293b">
+            <LinearLayout android:id="@+id/tabsContainer" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp" />
+        </HorizontalScrollView>
+
+        <LinearLayout android:id="@+id/headerContainer" android:layout_width="match_parent" android:layout_height="60dp"
+            android:orientation="horizontal" android:background="#1e293b" android:padding="16dp" android:gravity="center_vertical">
+            <TextView android:id="@+id/pathText" android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:textColor="#f8fafc" android:textSize="14sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="start" />
+            <EditText android:id="@+id/searchInput" android:layout_width="120dp" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:textColor="#f8fafc" android:textSize="14sp" android:hint="Search..." android:textColorHint="#64748b" android:background="@null" android:singleLine="true" android:imeOptions="actionSearch" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/fileRecyclerView" android:layout_width="match_parent"
+            android:layout_height="0dp" android:layout_weight="1" />
     </LinearLayout>
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/fileRecyclerView" android:layout_width="match_parent"
-        android:layout_height="0dp" android:layout_weight="1" />
-</LinearLayout>
+
+    <View android:id="@+id/eyeStrainOverlay" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:background="#26FFA500" android:visibility="gone" android:clickable="false" android:focusable="false" />
+</FrameLayout>
