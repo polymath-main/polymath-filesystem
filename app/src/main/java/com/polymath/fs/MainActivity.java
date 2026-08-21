@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
-import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.Button;
 import android.widget.TextView;
@@ -21,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.polymath.fs.core.ConfigManager;
 import com.polymath.fs.ui.FileAdapter;
+import com.polymath.fs.ui.ScriptAdapter;
 import com.polymath.fs.core.JsRuntimeManager;
 import com.polymath.fs.viewers.EditorActivity;
 import com.polymath.fs.viewers.ImageViewerActivity;
@@ -35,71 +35,197 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MainActivity extends Activity {
 
+    // Views
+    private View mainContainer, dashboardContainer, eyeStrainOverlay;
+    private TextView navFileExplorer, navJsEngine, btnNewScript;
     private TextView pathText;
     private EditText searchInput;
-    private RecyclerView fileRecyclerView;
-    private LinearLayout tabsContainer;
-    private View eyeStrainOverlay;
+    private RecyclerView fileRecyclerView, scriptRecyclerView;
+    private LinearLayout tabsContainer, bookmarksContainer;
     
+    // State
     private FileAdapter adapter;
+    private ScriptAdapter scriptAdapter;
     private File currentDir;
-    private List<File> currentFiles;
+    private List<File> currentFiles = new ArrayList<>();
+    private List<File> extensionScripts = new ArrayList<>();
     private ConfigManager configManager;
+    private Set<String> bookmarkedScripts = new HashSet<>();
     
     private List<File> tabs = new ArrayList<>();
     private int activeTabIndex = 0;
     private boolean isEyeStrainEnabled = false;
+    private final File extensionsDir = new File(Environment.getExternalStorageDirectory(), "PolymathExtensions");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         configManager = ConfigManager.getInstance(this);
 
+        // Init views
+        mainContainer = findViewById(R.id.mainContainer);
+        dashboardContainer = findViewById(R.id.dashboardContainer);
+        eyeStrainOverlay = findViewById(R.id.eyeStrainOverlay);
+        navFileExplorer = findViewById(R.id.navFileExplorer);
+        navJsEngine = findViewById(R.id.navJsEngine);
+        btnNewScript = findViewById(R.id.btnNewScript);
         pathText = findViewById(R.id.pathText);
         searchInput = findViewById(R.id.searchInput);
         fileRecyclerView = findViewById(R.id.fileRecyclerView);
+        scriptRecyclerView = findViewById(R.id.scriptRecyclerView);
         tabsContainer = findViewById(R.id.tabsContainer);
-        eyeStrainOverlay = findViewById(R.id.eyeStrainOverlay);
+        bookmarksContainer = findViewById(R.id.bookmarksContainer);
         
         fileRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        scriptRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        setupNavigation();
         applyTheme();
 
         searchInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
                 String query = searchInput.getText().toString();
-                if (!query.isEmpty()) {
-                    fetchFromDaemonSearch(currentDir.getAbsolutePath(), query);
-                } else {
-                    loadDirectory(currentDir);
-                }
+                if (!query.isEmpty()) fetchFromDaemonSearch(currentDir.getAbsolutePath(), query);
+                else loadDirectory(currentDir);
                 return true;
             }
             return false;
         });
         
-        // Add eye strain toggle to path text long click
         pathText.setOnLongClickListener(v -> {
             isEyeStrainEnabled = !isEyeStrainEnabled;
             eyeStrainOverlay.setVisibility(isEyeStrainEnabled ? View.VISIBLE : View.GONE);
-            Toast.makeText(this, "Eye Strain Mode: " + (isEyeStrainEnabled ? "ON" : "OFF"), Toast.LENGTH_SHORT).show();
             return true;
         });
+        
+        btnNewScript.setOnClickListener(v -> createNewScriptWorkspace());
 
-        // Initialize first tab
+        if (!extensionsDir.exists()) extensionsDir.mkdirs();
+
         tabs.add(Environment.getExternalStorageDirectory());
         renderTabs();
         loadDirectory(tabs.get(activeTabIndex));
+        loadScripts();
     }
+
+    private void setupNavigation() {
+        navFileExplorer.setOnClickListener(v -> {
+            mainContainer.setVisibility(View.VISIBLE);
+            dashboardContainer.setVisibility(View.GONE);
+            navFileExplorer.setTextColor(Color.parseColor("#f8fafc"));
+            navJsEngine.setTextColor(Color.parseColor("#64748b"));
+        });
+        
+        navJsEngine.setOnClickListener(v -> {
+            mainContainer.setVisibility(View.GONE);
+            dashboardContainer.setVisibility(View.VISIBLE);
+            navFileExplorer.setTextColor(Color.parseColor("#64748b"));
+            navJsEngine.setTextColor(Color.parseColor("#f8fafc"));
+            loadScripts();
+        });
+    }
+
+    // --- Script Engine Dashboard ---
+
+    private void loadScripts() {
+        extensionScripts.clear();
+        if (extensionsDir.exists()) {
+            File[] files = extensionsDir.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    if (f.isDirectory()) {
+                        File index = new File(f, "index.js");
+                        if (index.exists()) extensionScripts.add(index);
+                    } else if (f.getName().endsWith(".js")) {
+                        extensionScripts.add(f);
+                    }
+                }
+            }
+        }
+        
+        scriptAdapter = new ScriptAdapter(extensionScripts, new ScriptAdapter.OnScriptClickListener() {
+            @Override public void onRun(File script) {
+                String result = JsRuntimeManager.executeScript(MainActivity.this, script);
+                Toast.makeText(MainActivity.this, "Result: " + result, Toast.LENGTH_LONG).show();
+            }
+            @Override public void onEdit(File script) {
+                openViewer(script);
+            }
+            @Override public void onBookmark(File script) {
+                if (bookmarkedScripts.contains(script.getAbsolutePath())) {
+                    bookmarkedScripts.remove(script.getAbsolutePath());
+                    Toast.makeText(MainActivity.this, "Bookmark Removed", Toast.LENGTH_SHORT).show();
+                } else {
+                    bookmarkedScripts.add(script.getAbsolutePath());
+                    Toast.makeText(MainActivity.this, "Bookmarked!", Toast.LENGTH_SHORT).show();
+                }
+                renderBookmarks();
+            }
+        });
+        scriptRecyclerView.setAdapter(scriptAdapter);
+    }
+
+    private void createNewScriptWorkspace() {
+        final EditText input = new EditText(this);
+        input.setHint("e.g. ImageOptimizer");
+        new AlertDialog.Builder(this)
+            .setTitle("New Extension Workspace")
+            .setView(input)
+            .setPositiveButton("Create", (dialog, which) -> {
+                String name = input.getText().toString().trim();
+                if (!name.isEmpty()) {
+                    File workspace = new File(extensionsDir, name);
+                    workspace.mkdirs();
+                    File index = new File(workspace, "index.js");
+                    try {
+                        index.createNewFile();
+                        loadScripts();
+                        openViewer(index);
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void renderBookmarks() {
+        bookmarksContainer.removeAllViews();
+        for (String path : bookmarkedScripts) {
+            File script = new File(path);
+            TextView btn = new TextView(this);
+            btn.setText("⭐ " + (script.getName().equals("index.js") ? script.getParentFile().getName() : script.getName()));
+            btn.setTextColor(Color.parseColor("#fbbf24"));
+            btn.setPadding(24, 12, 24, 12);
+            GradientDrawable gd = new GradientDrawable();
+            gd.setColor(Color.parseColor("#1e293b"));
+            gd.setCornerRadius(16f);
+            btn.setBackground(gd);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMargins(0, 0, 16, 0);
+            btn.setLayoutParams(params);
+            
+            btn.setOnClickListener(v -> {
+                Toast.makeText(this, "Running " + script.getName() + " on " + currentDir.getName(), Toast.LENGTH_SHORT).show();
+                String res = JsRuntimeManager.executeScript(MainActivity.this, script);
+                Toast.makeText(this, res, Toast.LENGTH_LONG).show();
+            });
+            bookmarksContainer.addView(btn);
+        }
+        bookmarksContainer.setVisibility(bookmarkedScripts.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    // --- File Explorer ---
 
     private void renderTabs() {
         tabsContainer.removeAllViews();
-        
         for (int i = 0; i < tabs.size(); i++) {
             final int index = i;
             Button tabBtn = new Button(this);
@@ -113,10 +239,7 @@ public class MainActivity extends Activity {
             gd.setStroke(2, index == activeTabIndex ? Color.parseColor("#60a5fa") : Color.TRANSPARENT);
             tabBtn.setBackground(gd);
             
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                100
-            );
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 100);
             params.setMargins(0, 0, 16, 0);
             tabBtn.setLayoutParams(params);
             
@@ -135,11 +258,9 @@ public class MainActivity extends Activity {
                 }
                 return true;
             });
-            
             tabsContainer.addView(tabBtn);
         }
         
-        // Add New Tab Button
         Button newTabBtn = new Button(this);
         newTabBtn.setText("+");
         newTabBtn.setTextColor(Color.WHITE);
@@ -147,8 +268,7 @@ public class MainActivity extends Activity {
         gd.setColor(Color.parseColor("#334155"));
         gd.setCornerRadius(16f);
         newTabBtn.setBackground(gd);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(100, 100);
-        newTabBtn.setLayoutParams(params);
+        newTabBtn.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
         newTabBtn.setOnClickListener(v -> {
             tabs.add(Environment.getExternalStorageDirectory());
             activeTabIndex = tabs.size() - 1;
@@ -174,14 +294,12 @@ public class MainActivity extends Activity {
         pathText.setText(dir.getAbsolutePath());
 
         if (!dir.canRead()) {
-            Toast.makeText(this, "Standard API Denied. Requesting Daemon IPC...", Toast.LENGTH_SHORT).show();
             fetchFromDaemon(dir.getAbsolutePath());
             return;
         }
 
         File[] files = dir.listFiles();
         currentFiles = new ArrayList<>();
-
         if (files != null) {
             Arrays.sort(files, (f1, f2) -> {
                 if (f1.isDirectory() && !f2.isDirectory()) return -1;
@@ -190,7 +308,6 @@ public class MainActivity extends Activity {
             });
             currentFiles.addAll(Arrays.asList(files));
         }
-
         updateRecyclerView();
     }
 
@@ -214,14 +331,11 @@ public class MainActivity extends Activity {
                     JSONArray filesArr = res.getJSONArray("files");
                     currentFiles = new ArrayList<>();
                     for (int i = 0; i < filesArr.length(); i++) {
-                        JSONObject fObj = filesArr.getJSONObject(i);
-                        currentFiles.add(new File(fObj.getString("uri")));
+                        currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
                     }
                     runOnUiThread(this::updateRecyclerView);
                 }
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Daemon Unreachable", Toast.LENGTH_SHORT).show());
-            }
+            } catch (Exception e) {}
         }).start();
     }
 
@@ -239,36 +353,26 @@ public class MainActivity extends Activity {
                 InputStream is = socket.getInputStream();
                 byte[] buffer = new byte[16384];
                 int read = is.read(buffer);
-                String response = new String(buffer, 0, read);
-                
-                JSONObject res = new JSONObject(response);
+                JSONObject res = new JSONObject(new String(buffer, 0, read));
                 if (res.getBoolean("success")) {
                     JSONArray filesArr = res.getJSONArray("files");
                     currentFiles = new ArrayList<>();
                     for (int i = 0; i < filesArr.length(); i++) {
-                        JSONObject fObj = filesArr.getJSONObject(i);
-                        currentFiles.add(new File(fObj.getString("uri")));
+                        currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
                     }
                     runOnUiThread(this::updateRecyclerView);
                 }
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Search Daemon Unreachable", Toast.LENGTH_SHORT).show());
-            }
+            } catch (Exception e) {}
         }).start();
     }
 
     private void updateRecyclerView() {
         adapter = new FileAdapter(currentFiles, new FileAdapter.OnItemClickListener() {
-            @Override
-            public void onItemClick(File file) {
-                if (file.isDirectory()) {
-                    loadDirectory(file);
-                } else {
-                    openViewer(file);
-                }
+            @Override public void onItemClick(File file) {
+                if (file.isDirectory()) loadDirectory(file);
+                else openViewer(file);
             }
-            @Override
-            public void onItemLongClick(File file) {
+            @Override public void onItemLongClick(File file) {
                 showAdvancedFeaturesMenu(file);
             }
         });
@@ -278,14 +382,9 @@ public class MainActivity extends Activity {
 
     private void showAdvancedFeaturesMenu(File file) {
         String[] options = {
-            "Delete File (Daemon)",
-            "Archive (Daemon)",
-            "Format Cloaking (Toggle File Scramble)",
-            "Hardlink Deduplication (Zero-Space)",
-            "Chronos (Time-Travel Snapshot)",
-            "Ghost Vault (Forensic Shredder)",
-            "Mount RAM-Disk (HyperDrive)",
-            "Restore Chronos Snapshot",
+            "Delete File (Daemon)", "Archive (Daemon)", "Format Cloaking (Toggle File Scramble)",
+            "Hardlink Deduplication (Zero-Space)", "Chronos (Time-Travel Snapshot)",
+            "Ghost Vault (Forensic Shredder)", "Mount RAM-Disk (HyperDrive)", "Restore Chronos Snapshot",
             "Execute JS Extension (Rhino Runtime)"
         };
 
@@ -324,47 +423,36 @@ public class MainActivity extends Activity {
                     req.put("action", "execute_command");
                     req.put("command", "tar -czf '" + path + ".tar.gz' -C '" + new File(path).getParent() + "' '" + new File(path).getName() + "'");
                 }
-                
                 os.write(req.toString().getBytes());
                 os.flush();
 
                 InputStream is = socket.getInputStream();
                 byte[] buffer = new byte[8192];
                 int read = is.read(buffer);
-                String response = new String(buffer, 0, read);
-                JSONObject res = new JSONObject(response);
-                
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Execution Complete: " + action, Toast.LENGTH_LONG).show();
                     loadDirectory(currentDir);
                 });
-            } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Daemon Unreachable", Toast.LENGTH_SHORT).show());
-            }
+            } catch (Exception e) {}
         }).start();
     }
 
     private void openViewer(File file) {
         String name = file.getName().toLowerCase();
         Intent intent;
-        if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".gif")) {
-            intent = new Intent(this, ImageViewerActivity.class);
-        } else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".mp3") || name.endsWith(".wav")) {
-            intent = new Intent(this, MediaPlayerActivity.class);
-        } else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".xml")) {
-            intent = new Intent(this, EditorActivity.class);
-        } else {
-            Toast.makeText(this, "No built-in viewer for this type.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".gif")) intent = new Intent(this, ImageViewerActivity.class);
+        else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".mp3") || name.endsWith(".wav")) intent = new Intent(this, MediaPlayerActivity.class);
+        else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".xml") || name.endsWith(".json")) intent = new Intent(this, EditorActivity.class);
+        else { Toast.makeText(this, "No built-in viewer for this type.", Toast.LENGTH_SHORT).show(); return; }
         intent.putExtra("filePath", file.getAbsolutePath());
         startActivity(intent);
     }
 
     @Override
     public void onBackPressed() {
-        if (!currentDir.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath()) 
-            && !currentDir.getAbsolutePath().equals("/")) {
+        if (dashboardContainer.getVisibility() == View.VISIBLE) {
+            navFileExplorer.performClick();
+        } else if (!currentDir.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath()) && !currentDir.getAbsolutePath().equals("/")) {
             loadDirectory(currentDir.getParentFile());
         } else {
             super.onBackPressed();

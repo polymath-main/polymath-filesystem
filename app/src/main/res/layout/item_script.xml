@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardBackgroundColor="#1e293b"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Script Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <TextView android:id="@+id/scriptIcon" 
+                android:layout_width="40dp" 
+                android:layout_height="40dp"
+                android:gravity="center" 
+                android:textSize="24sp" 
+                android:text="⚡"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView android:id="@+id/scriptName" 
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content"
+                    android:textColor="#f8fafc" 
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+                <TextView android:id="@+id/scriptPath" 
+                    android:layout_width="match_parent" 
+                    android:layout_height="wrap_content"
+                    android:textColor="#64748b" 
+                    android:textSize="12sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Actions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="end">
+            
+            <TextView android:id="@+id/btnBookmark" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:textColor="#94a3b8" 
+                android:textSize="14sp"
+                android:text="⭐ BOOKMARK"
+                android:padding="8dp"
+                android:layout_marginEnd="12dp"
+                android:background="?android:attr/selectableItemBackground"/>
+                
+            <TextView android:id="@+id/btnEdit" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:textColor="#60a5fa" 
+                android:textSize="14sp"
+                android:text="✏ EDIT"
+                android:padding="8dp"
+                android:layout_marginEnd="12dp"
+                android:background="?android:attr/selectableItemBackground"/>
+
+            <TextView android:id="@+id/btnRun" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:textColor="#34d399" 
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:text="▶ RUN"
+                android:padding="8dp"
+                android:background="?android:attr/selectableItemBackground"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
