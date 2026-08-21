@@ -151,8 +151,7 @@ public class MainActivity extends Activity {
         
         scriptAdapter = new ScriptAdapter(extensionScripts, new ScriptAdapter.OnScriptClickListener() {
             @Override public void onRun(File script) {
-                String result = JsRuntimeManager.executeScript(MainActivity.this, script);
-                Toast.makeText(MainActivity.this, "Result: " + result, Toast.LENGTH_LONG).show();
+                JsRuntimeManager.executeScript(MainActivity.this, script);
             }
             @Override public void onEdit(File script) {
                 openViewer(script);
@@ -214,8 +213,7 @@ public class MainActivity extends Activity {
             
             btn.setOnClickListener(v -> {
                 Toast.makeText(this, "Running " + script.getName() + " on " + currentDir.getName(), Toast.LENGTH_SHORT).show();
-                String res = JsRuntimeManager.executeScript(MainActivity.this, script);
-                Toast.makeText(this, res, Toast.LENGTH_LONG).show();
+                JsRuntimeManager.executeScript(MainActivity.this, script);
             });
             bookmarksContainer.addView(btn);
         }
@@ -402,8 +400,7 @@ public class MainActivity extends Activity {
                     case 6: action = "mount_ramdisk"; break;
                     case 7: action = "chronos_restore"; break;
                     case 8: 
-                        String result = JsRuntimeManager.executeScript(MainActivity.this, file);
-                        Toast.makeText(MainActivity.this, "JS Result: " + result, Toast.LENGTH_LONG).show();
+                        JsRuntimeManager.executeScript(MainActivity.this, file);
                         return;
                 }
                 executeAdvancedAction(action, file.getAbsolutePath());

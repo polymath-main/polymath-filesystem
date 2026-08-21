@@ -1,10 +1,12 @@
 package com.polymath.fs.core;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
 import android.widget.Toast;
 
-import org.mozilla.javascript.Scriptable;
-import org.mozilla.javascript.ScriptableObject;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
@@ -14,27 +16,24 @@ import org.json.JSONObject;
 
 public class JsRuntimeManager {
     
-    // The Bridge exposed to JavaScript
+    // The Bridge exposed to JavaScript via V8 WebKit Engine
     public static class PolymathBridge {
         private final Context context;
-        private final org.mozilla.javascript.Context rhinoContext;
-        private final Scriptable scope;
         private final String baseDir;
 
-        public PolymathBridge(Context context, org.mozilla.javascript.Context rhinoContext, Scriptable scope, String baseDir) {
+        public PolymathBridge(Context context, String baseDir) {
             this.context = context;
-            this.rhinoContext = rhinoContext;
-            this.scope = scope;
             this.baseDir = baseDir;
         }
 
         // Exposed to JS: PolymathOS.toast("Hello")
+        @JavascriptInterface
         public void toast(String message) {
-            android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
-            handler.post(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+            new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
         }
 
         // Exposed to JS: PolymathOS.daemonCommand("archive", "/sdcard/test.txt")
+        @JavascriptInterface
         public String daemonCommand(String action, String path) {
             try (Socket socket = new Socket("127.0.0.1", 50505)) {
                 OutputStream os = socket.getOutputStream();
@@ -54,6 +53,7 @@ public class JsRuntimeManager {
         }
         
         // Exposed to JS: PolymathOS.readFile("/sdcard/test.txt")
+        @JavascriptInterface
         public String readFile(String path) {
             try {
                 java.util.Scanner scanner = new java.util.Scanner(new File(path)).useDelimiter("\\A");
@@ -64,36 +64,48 @@ public class JsRuntimeManager {
         }
         
         // Exposed to JS: var utils = PolymathOS.require("utils.js")
-        public Object require(String relativePath) {
+        @JavascriptInterface
+        public String require(String relativePath) {
             try {
                 File target = new File(baseDir, relativePath);
-                if (!target.exists()) throw new Exception("Module not found: " + target.getAbsolutePath());
-                FileReader reader = new FileReader(target);
-                return rhinoContext.evaluateReader(scope, reader, target.getName(), 1, null);
+                if (!target.exists()) return "console.error('Module not found: " + target.getAbsolutePath() + "');";
+                
+                java.util.Scanner scanner = new java.util.Scanner(target).useDelimiter("\\A");
+                return scanner.hasNext() ? scanner.next() : "";
             } catch (Exception e) {
-                return "Error: " + e.getMessage();
+                return "console.error('Require Error: " + e.getMessage() + "');";
             }
         }
     }
 
-    public static String executeScript(Context androidContext, File scriptFile) {
-        org.mozilla.javascript.Context rhino = org.mozilla.javascript.Context.enter();
-        rhino.setOptimizationLevel(-1); // Required for Android Dalvik/ART
-        try {
-            Scriptable scope = rhino.initStandardObjects();
-            
-            // Inject PolymathBridge into the JS global scope
-            PolymathBridge bridge = new PolymathBridge(androidContext, rhino, scope, scriptFile.getParent());
-            Object wrappedOut = org.mozilla.javascript.Context.javaToJS(bridge, scope);
-            ScriptableObject.putProperty(scope, "PolymathOS", wrappedOut);
-            
-            FileReader reader = new FileReader(scriptFile);
-            Object result = rhino.evaluateReader(scope, reader, scriptFile.getName(), 1, null);
-            return org.mozilla.javascript.Context.toString(result);
-        } catch (Exception e) {
-            return "JS Runtime Error: " + e.getMessage();
-        } finally {
-            org.mozilla.javascript.Context.exit();
-        }
+    public static void executeScript(Context androidContext, File scriptFile) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                java.util.Scanner scanner = new java.util.Scanner(scriptFile).useDelimiter("\\A");
+                String scriptContent = scanner.hasNext() ? scanner.next() : "";
+                
+                // Inject custom require polyfill to execute the returned string immediately
+                String polyfill = "window.require = function(path) { " +
+                                  "  var code = PolymathOS.require(path);" +
+                                  "  var module = { exports: {} };" +
+                                  "  var fn = new Function('module', 'exports', code);" +
+                                  "  fn(module, module.exports);" +
+                                  "  return module.exports;" +
+                                  "};\n";
+
+                WebView webView = new WebView(androidContext);
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.addJavascriptInterface(new PolymathBridge(androidContext, scriptFile.getParent()), "PolymathOS");
+                
+                webView.evaluateJavascript(polyfill + scriptContent, result -> {
+                    if (result != null && !result.equals("null")) {
+                        Toast.makeText(androidContext, "JS Result: " + result, Toast.LENGTH_LONG).show();
+                    }
+                });
+
+            } catch (Exception e) {
+                Toast.makeText(androidContext, "JS Engine Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
     }
 }
