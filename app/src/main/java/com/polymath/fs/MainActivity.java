@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.polymath.fs.core.ConfigManager;
 import com.polymath.fs.ui.FileAdapter;
+import com.polymath.fs.core.JsRuntimeManager;
 import com.polymath.fs.viewers.EditorActivity;
 import com.polymath.fs.viewers.ImageViewerActivity;
 import com.polymath.fs.viewers.MediaPlayerActivity;
@@ -284,7 +285,8 @@ public class MainActivity extends Activity {
             "Chronos (Time-Travel Snapshot)",
             "Ghost Vault (Forensic Shredder)",
             "Mount RAM-Disk (HyperDrive)",
-            "Restore Chronos Snapshot"
+            "Restore Chronos Snapshot",
+            "Execute JS Extension (Rhino Runtime)"
         };
 
         new AlertDialog.Builder(this)
@@ -300,6 +302,10 @@ public class MainActivity extends Activity {
                     case 5: action = "ghost_vault"; break;
                     case 6: action = "mount_ramdisk"; break;
                     case 7: action = "chronos_restore"; break;
+                    case 8: 
+                        String result = JsRuntimeManager.executeScript(MainActivity.this, file);
+                        Toast.makeText(MainActivity.this, "JS Result: " + result, Toast.LENGTH_LONG).show();
+                        return;
                 }
                 executeAdvancedAction(action, file.getAbsolutePath());
             })
