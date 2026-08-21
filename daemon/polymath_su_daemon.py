@@ -20,7 +20,7 @@ def detect_su_binary():
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2)
             if result.returncode == 0: return b.split()
         except Exception: continue
-    return None
+    return ['sh']
 
 def execute_root_command(su_cmd, target_command):
     cmd = su_cmd + ['-c', target_command]
@@ -160,7 +160,7 @@ def handle_request(su_cmd, request_data):
 
 def start_daemon():
     su_cmd = detect_su_binary()
-    if not su_cmd: return
+    print("Daemon Starting with privilege:", su_cmd)
     threading.Thread(target=automation_worker, args=(su_cmd,), daemon=True).start()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
