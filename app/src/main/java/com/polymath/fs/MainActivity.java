@@ -139,46 +139,17 @@ public class MainActivity extends AppCompatActivity {
                 adapter = new FileAdapter(files, new FileAdapter.OnItemClickListener() {
                     @Override
                     public void onItemClick(FileSystemItem file) {
+                        RecentsManager.logAccess(MainActivity.this, file.getPath());
                         if (file.isDirectory()) {
                             viewModel.navigateTo(file.getPath());
                         } else {
-                            // TODO: Add Viewer routing in Phase 2
-                            Toast.makeText(MainActivity.this, "File: " + file.getName(), Toast.LENGTH_SHORT).show();
+                            openFile(file);
                         }
                     }
 
                     @Override
                     public void onItemLongClick(FileSystemItem file) {
-                        String mime = file.getMimeType();
-                        List<String[]> actions = JsRuntimeManager.PolymathBridge.contextActions.get(mime);
-                        if (actions == null) actions = JsRuntimeManager.PolymathBridge.contextActions.get("*/*");
-                        
-                        if (actions != null && !actions.isEmpty()) {
-                            FloatingContextMenu menu = new FloatingContextMenu(MainActivity.this);
-                            List<String> labels = new ArrayList<>();
-                            for (String[] act : actions) labels.add(act[0]);
-                            menu.setActions(labels);
-                            List<String[]> finalActions = actions;
-                            menu.setOnActionClickListener(label -> {
-                                overlayContainer.removeAllViews();
-                                Toast.makeText(MainActivity.this, "Executing: " + label, Toast.LENGTH_SHORT).show();
-                            });
-                            
-                            overlayContainer.removeAllViews();
-                            
-                            // Dim background
-                            View dim = new View(MainActivity.this);
-                            dim.setBackgroundColor(Color.parseColor("#80000000"));
-                            dim.setOnClickListener(v -> overlayContainer.removeAllViews());
-                            overlayContainer.addView(dim);
-                            
-                            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                                    FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
-                            params.gravity = Gravity.CENTER;
-                            overlayContainer.addView(menu, params);
-                        } else {
-                            Toast.makeText(MainActivity.this, "No JS actions registered for " + mime, Toast.LENGTH_SHORT).show();
-                        }
+                        showContextMenu(file);
                     }
                 });
                 fileRecyclerView.setAdapter(adapter);
@@ -191,11 +162,13 @@ public class MainActivity extends AppCompatActivity {
                         if (file.isDirectory()) {
                             viewModel.navigateTo(file.getPath());
                         } else {
-                            // Basic viewer route or action
+                            openFile(file);
                         }
                     }
                     @Override
-                    public void onItemLongClick(FileSystemItem file) {}
+                    public void onItemLongClick(FileSystemItem file) {
+                        showContextMenu(file);
+                    }
                 });
                 fileRecyclerView.setAdapter(adapter);
             }
@@ -206,8 +179,8 @@ public class MainActivity extends AppCompatActivity {
             renderHeader(path);
         });
 
-        // Initial Load using Tab Engine
-        viewModel.addNewTab(Environment.getExternalStorageDirectory().getAbsolutePath());
+        // Initial state: show dashboard
+        showDashboard();
 
         // Boot Extensions
         bootCoreModules();
@@ -371,4 +344,181 @@ public class MainActivity extends AppCompatActivity {
     // Fallback for ComponentActivity/LifecycleOwner if using raw Activity. 
     // In a real app we'd extend AppCompatActivity to use .observe() directly.
     // For now, let's implement a simple Observer pattern in ViewModel if LiveData isn't fully available on pure Activity.
+
+    // ─── CONTEXT MENU ─────────────────────────────────────────────────────────
+    private void showContextMenu(FileSystemItem file) {
+        String mime = file.getMimeType();
+        FloatingContextMenu menu = new FloatingContextMenu(this);
+        List<String> labels = new ArrayList<>();
+        labels.add("📋 Copy");
+        labels.add("✂️ Move");
+        labels.add("🗑️ Delete");
+        labels.add("ℹ️ Info");
+        if (!file.isDirectory()) labels.add("📤 Share");
+        // Append JS-registered actions
+        List<String[]> jsActions = JsRuntimeManager.PolymathBridge.contextActions.get(mime);
+        if (jsActions == null) jsActions = JsRuntimeManager.PolymathBridge.contextActions.get("*/*");
+        if (jsActions != null) for (String[] a : jsActions) labels.add("⚡ " + a[0]);
+        menu.setActions(labels);
+        menu.setOnActionClickListener(label -> {
+            overlayContainer.removeAllViews();
+            handleContextAction(label, file);
+        });
+        overlayContainer.removeAllViews();
+        View dim = new View(this);
+        dim.setBackgroundColor(Color.parseColor("#99000000"));
+        FrameLayout.LayoutParams dimParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+        dim.setLayoutParams(dimParams);
+        dim.setOnClickListener(v -> overlayContainer.removeAllViews());
+        overlayContainer.addView(dim);
+        FrameLayout.LayoutParams mp = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+        mp.gravity = Gravity.CENTER;
+        overlayContainer.addView(menu, mp);
+    }
+
+    private void handleContextAction(String label, FileSystemItem file) {
+        if (label.contains("Delete")) {
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Delete " + file.getName())
+                .setMessage("This action cannot be undone.")
+                .setPositiveButton("Delete", (d, w) -> {
+                    new File(file.getPath()).delete();
+                    Toast.makeText(this, "Deleted: " + file.getName(), Toast.LENGTH_SHORT).show();
+                    viewModel.navigateTo(viewModel.getCurrentPath().getValue());
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+        } else if (label.contains("Info")) {
+            File f = new File(file.getPath());
+            String info = "Name: " + f.getName() + "\nPath: " + f.getAbsolutePath() +
+                "\nSize: " + file.getSize() + " bytes\nModified: " + new java.util.Date(f.lastModified());
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("File Info")
+                .setMessage(info)
+                .setPositiveButton("OK", null).show();
+        } else if (label.contains("Share")) {
+            try {
+                android.net.Uri uri = android.net.Uri.fromFile(new File(file.getPath()));
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType(file.getMimeType());
+                shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(Intent.createChooser(shareIntent, "Share via"));
+            } catch (Exception e) {
+                Toast.makeText(this, "Share error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, label + ": " + file.getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ─── FILE OPENER ──────────────────────────────────────────────────────────
+    private void openFile(FileSystemItem file) {
+        String name = file.getName().toLowerCase();
+        String path = file.getPath();
+        Intent intent = null;
+        if (name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") ||
+            name.endsWith(".gif") || name.endsWith(".webp") || name.endsWith(".bmp")) {
+            intent = new Intent(this, com.polymath.fs.viewers.ImageViewerActivity.class);
+            intent.putExtra("path", path);
+        } else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".avi") ||
+                   name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".ogg") ||
+                   name.endsWith(".flac") || name.endsWith(".m4a") || name.endsWith(".webm")) {
+            intent = new Intent(this, com.polymath.fs.viewers.MediaPlayerActivity.class);
+            intent.putExtra("path", path);
+        } else if (name.endsWith(".pdf")) {
+            intent = new Intent(this, com.polymath.fs.viewers.PdfViewerActivity.class);
+            intent.putExtra("path", path);
+        } else if (name.endsWith(".txt") || name.endsWith(".js") || name.endsWith(".json") ||
+                   name.endsWith(".xml") || name.endsWith(".java") || name.endsWith(".py") ||
+                   name.endsWith(".sh") || name.endsWith(".md") || name.endsWith(".html") ||
+                   name.endsWith(".css") || name.endsWith(".log")) {
+            intent = new Intent(this, com.polymath.fs.viewers.EditorActivity.class);
+            intent.putExtra("path", path);
+        }
+        if (intent != null) {
+            try { startActivity(intent); }
+            catch (Exception e) { Toast.makeText(this, "Cannot open: " + file.getName(), Toast.LENGTH_SHORT).show(); }
+        } else {
+            Toast.makeText(this, "No viewer for: " + file.getName(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ─── HOME DASHBOARD ───────────────────────────────────────────────────────
+    private void showDashboard() {
+        overlayContainer.removeAllViews();
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.setLayoutParams(new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        sv.setBackgroundColor(Color.parseColor("#0f172a"));
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(32, 48, 32, 32);
+        // App Title
+        TextView title = new TextView(this);
+        title.setText("PolymathOS");
+        title.setTextSize(32);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setTextColor(Color.parseColor("#38bdf8"));
+        layout.addView(title);
+        TextView sub = new TextView(this);
+        sub.setText("Your intelligent filesystem");
+        sub.setTextSize(14);
+        sub.setTextColor(Color.parseColor("#64748b"));
+        sub.setPadding(0, 4, 0, 40);
+        layout.addView(sub);
+        // Cards
+        layout.addView(makeDashCard("📁  Browse Files", "Explore your local storage", "#1e40af",
+            v -> showFileBrowser()));
+        layout.addView(makeDashCard("⭐  Recents", "Files you accessed recently", "#92400e",
+            v -> { showFileBrowser(); viewModel.loadRecents(this); }));
+        layout.addView(makeDashCard("🔍  Search", "Full-text search across all files", "#065f46",
+            v -> Toast.makeText(this, "Type in the search bar above", Toast.LENGTH_SHORT).show()));
+        layout.addView(makeDashCard("🚀  Extensions Dashboard", "Manage JS extensions", "#4c1d95",
+            v -> startActivity(new Intent(this, JsDashboardActivity.class))));
+        layout.addView(makeDashCard("🖥️  Root Terminal", "Run commands with root access", "#7f1d1d",
+            v -> Toast.makeText(this, "Root Terminal — Coming Soon", Toast.LENGTH_SHORT).show()));
+        sv.addView(layout);
+        overlayContainer.addView(sv);
+    }
+
+    private com.google.android.material.card.MaterialCardView makeDashCard(
+            String titleText, String subtitleText, String accent,
+            android.view.View.OnClickListener onClick) {
+        com.google.android.material.card.MaterialCardView card =
+            new com.google.android.material.card.MaterialCardView(this);
+        card.setCardBackgroundColor(Color.parseColor("#1e293b"));
+        card.setRadius(24f);
+        card.setStrokeWidth(2);
+        card.setStrokeColor(Color.parseColor(accent));
+        card.setCardElevation(0f);
+        android.widget.LinearLayout.LayoutParams lp = new android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, 20);
+        card.setLayoutParams(lp);
+        android.widget.LinearLayout inner = new android.widget.LinearLayout(this);
+        inner.setOrientation(android.widget.LinearLayout.VERTICAL);
+        inner.setPadding(40, 32, 40, 32);
+        TextView t = new TextView(this); t.setText(titleText);
+        t.setTextSize(18); t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        t.setTextColor(Color.WHITE); inner.addView(t);
+        TextView s = new TextView(this); s.setText(subtitleText);
+        s.setTextSize(13); s.setTextColor(Color.parseColor("#94a3b8"));
+        s.setPadding(0, 6, 0, 0); inner.addView(s);
+        card.addView(inner);
+        card.setOnClickListener(onClick);
+        return card;
+    }
+
+    private void showFileBrowser() {
+        overlayContainer.removeAllViews(); // clear dashboard
+        if (viewModel.getCurrentPath().getValue() == null) {
+            viewModel.addNewTab(Environment.getExternalStorageDirectory().getAbsolutePath());
+        } else {
+            viewModel.navigateTo(viewModel.getCurrentPath().getValue());
+        }
+    }
 }
