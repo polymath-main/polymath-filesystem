@@ -411,7 +411,7 @@ public class MainActivity extends Activity {
             "Delete File (Daemon)", "Archive (Daemon)", "Format Cloaking (Toggle File Scramble)",
             "Hardlink Deduplication (Zero-Space)", "Chronos (Time-Travel Snapshot)",
             "Ghost Vault (Forensic Shredder)", "Mount RAM-Disk (HyperDrive)", "Restore Chronos Snapshot",
-            "Execute JS Extension (Rhino Runtime)"
+            "Execute JS Extension (V8 WebKit Engine)"
         };
 
         new AlertDialog.Builder(this)
