@@ -1,0 +1,12 @@
+{
+  "file": "polymath_su_daemon.py",
+  "extension": ".py",
+  "pointers": {
+    "py_function_detect_su_binary": "cc0527b65fc123598853acceef96bbeac8bc7cf7",
+    "py_function_execute_root_command": "60b89789cfc62bdc0a78f609f3e36dcee797c76b",
+    "py_function_parse_ls_output": "b992a800440cc9bfba85f8d73a824baa1cc967a1",
+    "py_function_automation_worker": "aa767ff40c0e71554d50d6c3a81d04ce74746cea",
+    "py_function_handle_request": "2913f56503f3ac75fed838619b39b37d7d39c0e8",
+    "__skeleton__": "2be8a6666d0ff846f7d61e8c4db8338b22599a3f"
+  }
+}

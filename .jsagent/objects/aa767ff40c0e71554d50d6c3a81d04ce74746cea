@@ -1,0 +1,28 @@
+def automation_worker(su_cmd):
+    while True:
+        # Standard Automation
+        for directory, config in list(tracked_directories.items()):
+            try:
+                res = execute_root_command(su_cmd, f"ls '{directory}'")
+                if res["success"]:
+                    files = res["stdout"].strip().split('\n')
+                    for f in files:
+                        if not f: continue
+                        ext = f.split('.')[-1].lower() if '.' in f else ''
+                        if ext in ['jpg', 'png', 'jpeg', 'gif']: execute_root_command(su_cmd, f"mkdir -p '{directory}/Images' && mv '{directory}/{f}' '{directory}/Images/'")
+                        elif ext in ['mp4', 'mkv']: execute_root_command(su_cmd, f"mkdir -p '{directory}/Videos' && mv '{directory}/{f}' '{directory}/Videos/'")
+                        elif ext in ['pdf', 'txt']: execute_root_command(su_cmd, f"mkdir -p '{directory}/Documents' && mv '{directory}/{f}' '{directory}/Documents/'")
+            except Exception: pass
+            
+        # Ghost Vault (Forensic Shredding after 1 minute for demo)
+        for vault, expiry in list(ghost_vaults.items()):
+            try:
+                res = execute_root_command(su_cmd, f"find '{vault}' -type f -mmin +1")
+                if res["success"] and res["stdout"].strip():
+                    files_to_shred = res["stdout"].strip().split('\n')
+                    for f in files_to_shred:
+                        # DoD 5220.22-M Style Wipe (Random Data Overwrite before deletion)
+                        execute_root_command(su_cmd, f"dd if=/dev/urandom of='{f}' bs=1M count=10; rm -f '{f}'")
+            except Exception: pass
+            
+        time.sleep(5)

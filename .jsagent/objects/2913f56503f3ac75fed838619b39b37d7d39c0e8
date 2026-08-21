@@ -1,0 +1,32 @@
+def handle_request(su_cmd, request_data):
+    action = request_data.get("action")
+    path = request_data.get("path")
+
+    if action == "list_dir":
+        res = execute_root_command(su_cmd, f"ls -lA '{path}'")
+        if res["success"]: return {"success": True, "files": parse_ls_output(res["stdout"], path)}
+        return res
+
+    elif action == "search_files":
+        query = request_data.get("query", "")
+        cmd_str = f"find '{path}' -iname '*{query}*' -print0 | xargs -0 ls -lAd 2>/dev/null | head -n 100"
+        res = execute_root_command(su_cmd, cmd_str)
+        if res["success"]: return {"success": True, "files": parse_ls_output(res["stdout"], path)}
+        return res
+
+    # 1. Format Cloaking (Header Scrambling for File Hiding)
+    elif action == "format_cloak":
+        try:
+            # Scramble the first 32 bytes (Magic Header) via XOR to make the file unreadable to the OS.
+            # Re-running the command unscrambles it.
+            with open(path, 'r+b') as f:
+                header = bytearray(f.read(32))
+                for i in range(len(header)):
+                    header[i] ^= 0x5A  # XOR cipher byte
+                f.seek(0)
+                f.write(header)
+            return {"success": True, "message": "File Header Cloaked/Uncloaked successfully."}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    # 2. Hardlink Deduplication (

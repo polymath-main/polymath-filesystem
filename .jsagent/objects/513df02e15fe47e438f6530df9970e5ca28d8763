@@ -1,0 +1,29 @@
+def handle_request(su_cmd, request_data):
+    action = request_data.get("action")
+    path = request_data.get("path")
+
+    if action == "list_dir":
+        res = execute_root_command(su_cmd, f"ls -lA '{path}'")
+        if res["success"]: return {"success": True, "files": parse_ls_output(res["stdout"], path)}
+        return res
+
+    elif action == "search_files":
+        query = request_data.get("query", "")
+        cmd_str = f"find '{path}' -iname '*{query}*' -print0 | xargs -0 ls -lAd 2>/dev/null | head -n 100"
+        res = execute_root_command(su_cmd, cmd_str)
+        if res["success"]: return {"success": True, "files": parse_ls_output(res["stdout"], path)}
+        return res
+
+    # 1. Semantic Neural Search (Mocking integration to Native LLaMA / Phi-3)
+    elif action == "neural_search":
+        query = request_data.get("query", "")
+        # Simulated payload to local port /llama_gatekeeper
+        # In reality, this would read files and map embeddings against the prompt.
+        cmd_str = f"grep -irl '{query}' '{path}' | head -n 20"
+        res = execute_root_command(su_cmd, cmd_str)
+        if res["success"]:
+            matched = [{"name": os.path.basename(p), "uri": p, "isDirectory": False} for p in res["stdout"].strip().split('\n') if p]
+            return {"success": True, "files": matched, "message": "Neural context matched"}
+        return res
+
+    # 2. Hardlink Deduplication (

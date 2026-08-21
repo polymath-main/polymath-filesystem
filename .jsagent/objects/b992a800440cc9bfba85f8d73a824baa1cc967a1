@@ -1,0 +1,17 @@
+def parse_ls_output(stdout, path):
+    files = []
+    lines = stdout.strip().split('\n')
+    for line in lines:
+        if not line.strip(): continue
+        parts = line.split(maxsplit=8)
+        if len(parts) >= 9:
+            perms = parts[0]
+            size = parts[4]
+            name = parts[8]
+            is_dir = perms.startswith('d')
+            files.append({"name": name, "isDirectory": is_dir, "size": int(size) if size.isdigit() else 0, "permissions": perms, "uri": os.path.join(path, name)})
+    return files
+
+# Advanced Automation & Ephemeral States
+tracked_directories = {}
+ghost_vaults = {}

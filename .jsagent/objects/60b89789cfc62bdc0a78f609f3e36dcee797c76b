@@ -1,0 +1,7 @@
+def execute_root_command(su_cmd, target_command):
+    cmd = su_cmd + ['-c', target_command]
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=15)
+        return {"success": result.returncode == 0, "stdout": result.stdout, "stderr": result.stderr}
+    except Exception as e:
+        return {"success": False, "error": str(e)}

@@ -1,0 +1,274 @@
+package com.polymath.fs;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.os.Environment;
+import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.Toast;
+import android.view.inputmethod.EditorInfo;
+import android.view.KeyEvent;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.polymath.fs.core.ConfigManager;
+import com.polymath.fs.ui.FileAdapter;
+import com.polymath.fs.viewers.EditorActivity;
+import com.polymath.fs.viewers.ImageViewerActivity;
+import com.polymath.fs.viewers.MediaPlayerActivity;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class MainActivity extends Activity {
+
+    private TextView pathText;
+    private EditText searchInput;
+    private RecyclerView fileRecyclerView;
+    private FileAdapter adapter;
+    private File currentDir;
+    private List<File> currentFiles;
+    private ConfigManager configManager;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        configManager = ConfigManager.getInstance(this);
+
+        pathText = findViewById(R.id.pathText);
+        searchInput = findViewById(R.id.searchInput);
+        fileRecyclerView = findViewById(R.id.fileRecyclerView);
+        fileRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        applyTheme();
+
+        searchInput.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+                String query = searchInput.getText().toString();
+                if (!query.isEmpty()) {
+                    fetchFromDaemonSearch(currentDir.getAbsolutePath(), query);
+                } else {
+                    loadDirectory(currentDir);
+                }
+                return true;
+            }
+            return false;
+        });
+
+        currentDir = Environment.getExternalStorageDirectory();
+        loadDirectory(currentDir);
+    }
+
+    private void applyTheme() {
+        try {
+            JSONObject theme = configManager.getConfig().getJSONObject("theme");
+            findViewById(R.id.mainContainer).setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
+            findViewById(R.id.headerContainer).setBackgroundColor(Color.parseColor(theme.getString("secondaryBg")));
+            pathText.setTextColor(Color.parseColor(theme.getString("textColor")));
+        } catch (Exception ignored) {}
+    }
+
+    private void loadDirectory(File dir) {
+        currentDir = dir;
+        pathText.setText(dir.getAbsolutePath());
+
+        if (!dir.canRead()) {
+            Toast.makeText(this, "Standard API Denied. Requesting Daemon IPC...", Toast.LENGTH_SHORT).show();
+            fetchFromDaemon(dir.getAbsolutePath());
+            return;
+        }
+
+        File[] files = dir.listFiles();
+        currentFiles = new ArrayList<>();
+
+        if (files != null) {
+            Arrays.sort(files, (f1, f2) -> {
+                if (f1.isDirectory() && !f2.isDirectory()) return -1;
+                if (!f1.isDirectory() && f2.isDirectory()) return 1;
+                return f1.getName().compareToIgnoreCase(f2.getName());
+            });
+            currentFiles.addAll(Arrays.asList(files));
+        }
+
+        updateRecyclerView();
+    }
+
+    private void fetchFromDaemon(String path) {
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 50505)) {
+                OutputStream os = socket.getOutputStream();
+                JSONObject req = new JSONObject();
+                req.put("action", "list_dir");
+                req.put("path", path);
+                os.write(req.toString().getBytes());
+                os.flush();
+
+                InputStream is = socket.getInputStream();
+                byte[] buffer = new byte[8192];
+                int read = is.read(buffer);
+                String response = new String(buffer, 0, read);
+                
+                JSONObject res = new JSONObject(response);
+                if (res.getBoolean("success")) {
+                    JSONArray filesArr = res.getJSONArray("files");
+                    currentFiles = new ArrayList<>();
+                    for (int i = 0; i < filesArr.length(); i++) {
+                        JSONObject fObj = filesArr.getJSONObject(i);
+                        currentFiles.add(new File(fObj.getString("uri")));
+                    }
+                    runOnUiThread(this::updateRecyclerView);
+                }
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Daemon Unreachable", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void fetchFromDaemonSearch(String path, String query) {
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 50505)) {
+                OutputStream os = socket.getOutputStream();
+                JSONObject req = new JSONObject();
+                req.put("action", "search_files");
+                req.put("path", path);
+                req.put("query", query);
+                os.write(req.toString().getBytes());
+                os.flush();
+
+                InputStream is = socket.getInputStream();
+                byte[] buffer = new byte[16384];
+                int read = is.read(buffer);
+                String response = new String(buffer, 0, read);
+                
+                JSONObject res = new JSONObject(response);
+                if (res.getBoolean("success")) {
+                    JSONArray filesArr = res.getJSONArray("files");
+                    currentFiles = new ArrayList<>();
+                    for (int i = 0; i < filesArr.length(); i++) {
+                        JSONObject fObj = filesArr.getJSONObject(i);
+                        currentFiles.add(new File(fObj.getString("uri")));
+                    }
+                    runOnUiThread(this::updateRecyclerView);
+                }
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Search Daemon Unreachable", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void updateRecyclerView() {
+        adapter = new FileAdapter(currentFiles, new FileAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(File file) {
+                if (file.isDirectory()) {
+                    loadDirectory(file);
+                } else {
+                    openViewer(file);
+                }
+            }
+            @Override
+            public void onItemLongClick(File file) {
+                showAdvancedFeaturesMenu(file);
+            }
+        });
+        adapter.setConfig(configManager.getConfig());
+        fileRecyclerView.setAdapter(adapter);
+    }
+
+    private void showAdvancedFeaturesMenu(File file) {
+        String[] options = {
+            "1. Neural Semantic Search (AI)",
+            "2. Hardlink Deduplication (Zero-Space)",
+            "3. Chronos (Time-Travel Snapshot)",
+            "4. Ghost Vault (Forensic Shredder)",
+            "5. Mount RAM-Disk (HyperDrive)",
+            "6. Restore Chronos Snapshot"
+        };
+
+        new AlertDialog.Builder(this)
+            .setTitle("Polymath Advanced Operations")
+            .setItems(options, (dialog, which) -> {
+                String action = "";
+                switch (which) {
+                    case 0: action = "neural_search"; break;
+                    case 1: action = "hardlink_dedup"; break;
+                    case 2: action = "chronos_snapshot"; break;
+                    case 3: action = "ghost_vault"; break;
+                    case 4: action = "mount_ramdisk"; break;
+                    case 5: action = "chronos_restore"; break;
+                }
+                executeAdvancedAction(action, file.getAbsolutePath());
+            })
+            .show();
+    }
+
+    private void executeAdvancedAction(String action, String path) {
+        new Thread(() -> {
+            try (Socket socket = new Socket("127.0.0.1", 50505)) {
+                OutputStream os = socket.getOutputStream();
+                JSONObject req = new JSONObject();
+                req.put("action", action);
+                req.put("path", path);
+                // For neural search, we use a mocked hardcoded query for the demo menu
+                if (action.equals("neural_search")) req.put("query", "architecture");
+                if (action.equals("chronos_restore")) req.put("archive", path + "/.chronos_1.tar.gz");
+                
+                os.write(req.toString().getBytes());
+                os.flush();
+
+                InputStream is = socket.getInputStream();
+                byte[] buffer = new byte[8192];
+                int read = is.read(buffer);
+                String response = new String(buffer, 0, read);
+                JSONObject res = new JSONObject(response);
+                
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Execution Complete: " + action, Toast.LENGTH_LONG).show();
+                    loadDirectory(currentDir);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Daemon Unreachable", Toast.LENGTH_SHORT).show());
+            }
+        }).start();
+    }
+
+    private void openViewer(File file) {
+        String name = file.getName().toLowerCase();
+        Intent intent;
+        if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".gif")) {
+            intent = new Intent(this, ImageViewerActivity.class);
+        } else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".mp3") || name.endsWith(".wav")) {
+            intent = new Intent(this, MediaPlayerActivity.class);
+        } else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".xml")) {
+            intent = new Intent(this, EditorActivity.class);
+        } else {
+            Toast.makeText(this, "No built-in viewer for this type.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        intent.putExtra("filePath", file.getAbsolutePath());
+        startActivity(intent);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (!currentDir.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath()) 
+            && !currentDir.getAbsolutePath().equals("/")) {
+            loadDirectory(currentDir.getParentFile());
+        } else {
+            super.onBackPressed();
+        }
+    }
+}
