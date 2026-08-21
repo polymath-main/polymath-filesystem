@@ -256,8 +256,8 @@ public class JsRuntimeManager {
             try {
                 java.util.Scanner scanner = new java.util.Scanner(scriptFile).useDelimiter("\\A");
                 String scriptContent = scanner.hasNext() ? scanner.next() : "";
-                
-                // Inject custom require polyfill to execute the returned string immediately
+                if (scriptContent.isEmpty()) return;
+
                 String polyfill = "window.require = function(path) { " +
                                   "  var code = PolymathOS.require(path);" +
                                   "  var module = { exports: {} };" +
@@ -266,18 +266,29 @@ public class JsRuntimeManager {
                                   "  return module.exports;" +
                                   "};\n";
 
+                final String finalScript = polyfill + scriptContent;
+
+                // WebView MUST use Activity context, never Application context
+                // and must load a page before evaluateJavascript can fire
                 WebView webView = new WebView(androidContext);
                 PolymathBridge bridge = new PolymathBridge(androidContext, scriptFile.getParent());
                 bridge.attachWebView(webView);
-                
+
                 webView.getSettings().setJavaScriptEnabled(true);
                 webView.addJavascriptInterface(bridge, "PolymathOS");
-                
-                webView.evaluateJavascript(polyfill + scriptContent, result -> {
-                    if (result != null && !result.equals("null")) {
-                        Toast.makeText(androidContext, "JS Result: " + result, Toast.LENGTH_LONG).show();
+
+                // Load blank page first — evaluateJavascript requires a loaded page
+                webView.setWebViewClient(new android.webkit.WebViewClient() {
+                    @Override
+                    public void onPageFinished(WebView view, String url) {
+                        view.evaluateJavascript(finalScript, result -> {
+                            if (result != null && !result.equals("null") && !result.equals("\"\"")) {
+                                Toast.makeText(androidContext, "JS: " + result, Toast.LENGTH_LONG).show();
+                            }
+                        });
                     }
                 });
+                webView.loadUrl("about:blank");
 
             } catch (Exception e) {
                 Toast.makeText(androidContext, "JS Engine Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
