@@ -359,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> jsActions = JsRuntimeManager.PolymathBridge.contextActions.get(mime);
         if (jsActions == null) jsActions = JsRuntimeManager.PolymathBridge.contextActions.get("*/*");
         if (jsActions != null) for (String[] a : jsActions) labels.add("⚡ " + a[0]);
-        menu.setActions(file.getName(), labels);
+        menu.setActions(labels);
         menu.setOnActionClickListener(label -> {
             overlayContainer.removeAllViews();
             handleContextAction(label, file);

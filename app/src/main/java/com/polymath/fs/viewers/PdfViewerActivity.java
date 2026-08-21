@@ -47,7 +47,8 @@ public class PdfViewerActivity extends Activity {
         
         setContentView(layout);
 
-        String path = getIntent().getStringExtra("filePath");
+        String path = getIntent().getStringExtra("path");
+        if (path == null) path = getIntent().getStringExtra("filePath");
         try {
             File file = new File(path);
             ParcelFileDescriptor pfd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);

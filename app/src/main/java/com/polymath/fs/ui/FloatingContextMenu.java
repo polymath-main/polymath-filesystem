@@ -41,7 +41,7 @@ public class FloatingContextMenu extends LinearLayout {
         // Premium Material 3 styling
         GradientDrawable background = new GradientDrawable();
         background.setColor(Color.parseColor("#1e293b"));
-        background.setCornerRadius(dpToPx(12));
+        background.setCornerRadius(dpToPx(16)); // Updated to 16dp
         
         setBackground(background);
         setPadding(dpToPx(8), dpToPx(8), dpToPx(8), dpToPx(8));
@@ -53,23 +53,71 @@ public class FloatingContextMenu extends LinearLayout {
         ));
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int maxWidth = dpToPx(280);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        
+        if (widthMode == MeasureSpec.UNSPECIFIED || widthSize > maxWidth) {
+            widthMeasureSpec = MeasureSpec.makeMeasureSpec(maxWidth, MeasureSpec.AT_MOST);
+        }
+        
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
     public void setOnActionClickListener(OnActionClickListener listener) {
         this.listener = listener;
     }
 
-    public void setActions(List<String> actions) {
+    public void setActions(String headerTitle, List<String> actions) {
         removeAllViews();
+        
+        if (headerTitle != null && !headerTitle.isEmpty()) {
+            TextView headerView = new TextView(getContext());
+            headerView.setText(headerTitle);
+            headerView.setTextColor(Color.parseColor("#94a3b8"));
+            headerView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+            headerView.setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(8));
+            headerView.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+            addView(headerView, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+            
+            View divider = new View(getContext());
+            divider.setBackgroundColor(Color.parseColor("#334155"));
+            addView(divider, new LayoutParams(LayoutParams.MATCH_PARENT, dpToPx(1)));
+        }
+        
         if (actions == null || actions.isEmpty()) {
             return;
         }
 
-        for (String action : actions) {
+        boolean prevWasNative = false;
+        for (int i = 0; i < actions.size(); i++) {
+            String action = actions.get(i);
+            boolean isJs = action.startsWith("⚡ ");
+            
+            if (i > 0) {
+                if (isJs && prevWasNative) {
+                    // Section divider
+                    View sectionDivider = new View(getContext());
+                    sectionDivider.setBackgroundColor(Color.parseColor("#0f172a"));
+                    addView(sectionDivider, new LayoutParams(LayoutParams.MATCH_PARENT, dpToPx(4)));
+                } else {
+                    // Item divider
+                    View divider = new View(getContext());
+                    divider.setBackgroundColor(Color.parseColor("#334155"));
+                    addView(divider, new LayoutParams(LayoutParams.MATCH_PARENT, dpToPx(1)));
+                }
+            }
+            prevWasNative = !isJs;
+
             TextView actionView = new TextView(getContext());
             actionView.setText(action);
             actionView.setTextColor(Color.WHITE);
             actionView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
             actionView.setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12));
             actionView.setGravity(Gravity.CENTER_VERTICAL);
+            actionView.setMinHeight(dpToPx(52));
             
             // Ripple effect for clickable item
             TypedValue outValue = new TypedValue();
@@ -88,6 +136,10 @@ public class FloatingContextMenu extends LinearLayout {
             );
             addView(actionView, params);
         }
+    }
+
+    public void setActions(List<String> actions) {
+        setActions(null, actions);
     }
 
     private int dpToPx(int dp) {

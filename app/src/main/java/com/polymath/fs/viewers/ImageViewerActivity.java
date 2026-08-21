@@ -50,7 +50,8 @@ public class ImageViewerActivity extends Activity {
         imageView.setScaleType(ImageView.ScaleType.MATRIX);
         setContentView(imageView);
 
-        String path = getIntent().getStringExtra("filePath");
+        String path = getIntent().getStringExtra("path");
+        if (path == null) path = getIntent().getStringExtra("filePath");
         if (path != null) {
             File currentFile = new File(path);
             File parentDir = currentFile.getParentFile();

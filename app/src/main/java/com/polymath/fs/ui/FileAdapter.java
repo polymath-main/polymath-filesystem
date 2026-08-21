@@ -113,6 +113,18 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
                 listener.onItemLongClick(file);
                 return true;
             });
+            
+            // Style and bind three-dot menu button
+            btnMenu.setText("⋮");
+            btnMenu.setTextSize(24);
+            btnMenu.setTextColor(Color.parseColor("#94a3b8"));
+            btnMenu.setVisibility(View.VISIBLE);
+            
+            // Ripple effect
+            android.util.TypedValue outValue = new android.util.TypedValue();
+            itemView.getContext().getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true);
+            btnMenu.setBackgroundResource(outValue.resourceId);
+            
             btnMenu.setOnClickListener(v -> listener.onItemLongClick(file));
         }
 

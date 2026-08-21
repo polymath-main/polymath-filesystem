@@ -27,15 +27,15 @@ public class MediaPlayerActivity extends Activity {
         
         setContentView(layout);
         
-        String path = getIntent().getStringExtra("path");
-        if (path == null) path = getIntent().getStringExtra("filePath"); // fallback
+        String filePath = getIntent().getStringExtra("path");
+        if (filePath == null) filePath = getIntent().getStringExtra("filePath"); // fallback
         
         MediaController mediaController = new MediaController(this);
         mediaController.setAnchorView(videoView);
         videoView.setMediaController(mediaController);
         
-        if (path != null) {
-            videoView.setVideoPath(path);
+        if (filePath != null) {
+            videoView.setVideoPath(filePath);
             videoView.start();
         } else {
             finish(); // nothing to play

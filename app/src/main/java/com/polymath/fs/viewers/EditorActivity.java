@@ -46,7 +46,8 @@ public class EditorActivity extends Activity {
         
         setContentView(layout);
         
-        String path = getIntent().getStringExtra("filePath");
+        String path = getIntent().getStringExtra("path");
+        if (path == null) path = getIntent().getStringExtra("filePath");
         if (path != null) {
             currentFile = new File(path);
             loadFile();
@@ -66,13 +67,12 @@ public class EditorActivity extends Activity {
 
     private void loadFile() {
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(currentFile));
+            java.util.Scanner scanner = new java.util.Scanner(currentFile);
             StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line).append("\n");
+            while (scanner.hasNextLine()) {
+                sb.append(scanner.nextLine()).append("\n");
             }
-            reader.close();
+            scanner.close();
             
             // Simple Syntax Highlighting (Keywords)
             SpannableString spannable = new SpannableString(sb.toString());
