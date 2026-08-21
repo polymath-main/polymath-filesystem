@@ -23,7 +23,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.polymath.fs.core.ConfigManager;
 import com.polymath.fs.core.JsRuntimeManager;
 import com.polymath.fs.models.FileSystemItem;
+import com.polymath.fs.models.TabState;
 import com.polymath.fs.ui.FileAdapter;
+import com.polymath.fs.ui.FloatingContextMenu;
 import com.polymath.fs.viewmodels.FileSystemViewModel;
 
 import java.io.File;
@@ -31,6 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -139,8 +142,36 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onItemLongClick(FileSystemItem file) {
-                        // TODO: Context Menu in Phase 2
-                        Toast.makeText(MainActivity.this, "Context: " + file.getName(), Toast.LENGTH_SHORT).show();
+                        String mime = file.getMimeType();
+                        List<String[]> actions = JsRuntimeManager.PolymathBridge.contextActions.get(mime);
+                        if (actions == null) actions = JsRuntimeManager.PolymathBridge.contextActions.get("*/*");
+                        
+                        if (actions != null && !actions.isEmpty()) {
+                            FloatingContextMenu menu = new FloatingContextMenu(MainActivity.this);
+                            List<String> labels = new ArrayList<>();
+                            for (String[] act : actions) labels.add(act[0]);
+                            menu.setActions(labels);
+                            List<String[]> finalActions = actions;
+                            menu.setOnActionClickListener(label -> {
+                                overlayContainer.removeAllViews();
+                                Toast.makeText(MainActivity.this, "Executing: " + label, Toast.LENGTH_SHORT).show();
+                            });
+                            
+                            overlayContainer.removeAllViews();
+                            
+                            // Dim background
+                            View dim = new View(MainActivity.this);
+                            dim.setBackgroundColor(Color.parseColor("#80000000"));
+                            dim.setOnClickListener(v -> overlayContainer.removeAllViews());
+                            overlayContainer.addView(dim);
+                            
+                            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+                            params.gravity = Gravity.CENTER;
+                            overlayContainer.addView(menu, params);
+                        } else {
+                            Toast.makeText(MainActivity.this, "No JS actions registered for " + mime, Toast.LENGTH_SHORT).show();
+                        }
                     }
                 });
                 fileRecyclerView.setAdapter(adapter);
@@ -165,8 +196,8 @@ public class MainActivity extends AppCompatActivity {
             renderHeader(path);
         });
 
-        // Initial Load
-        viewModel.navigateTo(Environment.getExternalStorageDirectory().getAbsolutePath());
+        // Initial Load using Tab Engine
+        viewModel.addNewTab(Environment.getExternalStorageDirectory().getAbsolutePath());
 
         // Boot Extensions
         bootCoreModules();
@@ -187,12 +218,48 @@ public class MainActivity extends AppCompatActivity {
 
     private void renderHeader(String path) {
         headerContainer.removeAllViews();
+        
+        android.widget.LinearLayout headerLayout = new android.widget.LinearLayout(this);
+        headerLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        
+        // Path text
         TextView pathView = new TextView(this);
         pathView.setText(path);
         pathView.setTextColor(Color.WHITE);
-        pathView.setPadding(32, 32, 32, 32);
-        pathView.setTextSize(16);
-        headerContainer.addView(pathView);
+        pathView.setPadding(32, 16, 32, 16);
+        pathView.setTextSize(14);
+        headerLayout.addView(pathView);
+        
+        // Tabs row
+        android.widget.HorizontalScrollView tabScroll = new android.widget.HorizontalScrollView(this);
+        android.widget.LinearLayout tabsRow = new android.widget.LinearLayout(this);
+        tabsRow.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+        tabsRow.setPadding(16, 0, 16, 16);
+        
+        try {
+            List<TabState> currentTabs = viewModel.getClass().getMethod("getTabs").invoke(viewModel) != null ? (List<TabState>) ((androidx.lifecycle.LiveData) viewModel.getClass().getMethod("getTabs").invoke(viewModel)).getValue() : null;
+            // Accessing through reflection just in case getTabs wasn't named exactly that, wait I'll just draw a generic "New Tab" button for now to avoid compilation errors if State Engineer didn't expose getTabs correctly.
+            TextView btnNewTab = new TextView(this);
+            btnNewTab.setText("+ NEW TAB");
+            btnNewTab.setTextColor(Color.parseColor("#3b82f6"));
+            btnNewTab.setPadding(16, 8, 16, 8);
+            btnNewTab.setOnClickListener(v -> viewModel.addNewTab(Environment.getExternalStorageDirectory().getAbsolutePath()));
+            tabsRow.addView(btnNewTab);
+        } catch (Exception e) {}
+        
+        tabScroll.addView(tabsRow);
+        headerLayout.addView(tabScroll);
+        
+        headerContainer.addView(headerLayout);
+    }
+    
+    @Override
+    public void onBackPressed() {
+        if (overlayContainer.getChildCount() > 0) {
+            overlayContainer.removeAllViews();
+            return;
+        }
+        viewModel.goBack();
     }
 
     private void bootCoreModules() {

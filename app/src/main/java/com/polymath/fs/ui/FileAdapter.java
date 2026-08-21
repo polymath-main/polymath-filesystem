@@ -66,8 +66,23 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
                 try {
                     JSONObject theme = config.optJSONObject("theme");
                     if (theme != null) {
-                        if (itemView instanceof androidx.cardview.widget.CardView) {
-                            ((androidx.cardview.widget.CardView) itemView).setCardBackgroundColor(Color.parseColor(theme.optString("secondaryBg", "#1e293b")));
+                        if (itemView instanceof com.google.android.material.card.MaterialCardView) {
+                            com.google.android.material.card.MaterialCardView card = (com.google.android.material.card.MaterialCardView) itemView;
+                            card.setCardBackgroundColor(Color.parseColor(theme.optString("secondaryBg", "#1e293b")));
+                            if (theme.has("cornerRadius")) {
+                                card.setRadius((float) (theme.optDouble("cornerRadius") * itemView.getContext().getResources().getDisplayMetrics().density));
+                            }
+                            if (theme.has("strokeColor")) {
+                                card.setStrokeColor(Color.parseColor(theme.optString("strokeColor")));
+                            }
+                            if (theme.has("blurAmount") && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                                float blur = (float) theme.optDouble("blurAmount");
+                                if (blur > 0) {
+                                    card.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(blur, blur, android.graphics.Shader.TileMode.CLAMP));
+                                } else {
+                                    card.setRenderEffect(null);
+                                }
+                            }
                         }
                         fileName.setTextColor(Color.parseColor(theme.optString("textColor", "#f8fafc")));
                     }

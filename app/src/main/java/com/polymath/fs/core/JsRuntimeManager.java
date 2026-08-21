@@ -18,6 +18,8 @@ public class JsRuntimeManager {
         private final String baseDir;
         private WebView webView;
 
+        public static final java.util.Map<String, java.util.List<String[]>> contextActions = new java.util.HashMap<>();
+
         public PolymathBridge(Context context, String baseDir) {
             this.context = context;
             this.baseDir = baseDir;
@@ -25,6 +27,14 @@ public class JsRuntimeManager {
 
         public void attachWebView(WebView wv) {
             this.webView = wv;
+        }
+
+        @JavascriptInterface
+        public void registerContextAction(String mimeType, String label, String callbackName) {
+            if (!contextActions.containsKey(mimeType)) {
+                contextActions.put(mimeType, new java.util.ArrayList<>());
+            }
+            contextActions.get(mimeType).add(new String[]{label, callbackName});
         }
 
         // Exposed to JS: PolymathOS.toast("Hello")
@@ -37,11 +47,39 @@ public class JsRuntimeManager {
         @JavascriptInterface
         public void alert(String title, String message) {
             new Handler(Looper.getMainLooper()).post(() -> {
-                new android.app.AlertDialog.Builder(context)
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setPositiveButton("OK", null)
-                    .show();
+                try {
+                    android.app.Dialog dialog = new android.app.Dialog(context);
+                    // Use custom Dialog inflation (e.g. R.layout.dialog_custom_prompt)
+                    int layoutId = context.getResources().getIdentifier("dialog_custom_prompt", "layout", context.getPackageName());
+                    if (layoutId == 0) throw new IllegalArgumentException("Layout not found");
+                    dialog.setContentView(layoutId);
+                    
+                    int titleId = context.getResources().getIdentifier("dialog_title", "id", context.getPackageName());
+                    if (titleId != 0) {
+                        android.widget.TextView tv = dialog.findViewById(titleId);
+                        if (tv != null) tv.setText(title);
+                    }
+                    
+                    int msgId = context.getResources().getIdentifier("dialog_message", "id", context.getPackageName());
+                    if (msgId != 0) {
+                        android.widget.TextView mv = dialog.findViewById(msgId);
+                        if (mv != null) mv.setText(message);
+                    }
+                    
+                    int okId = context.getResources().getIdentifier("btn_positive", "id", context.getPackageName());
+                    if (okId != 0) {
+                        android.view.View btn = dialog.findViewById(okId);
+                        if (btn != null) btn.setOnClickListener(v -> dialog.dismiss());
+                    }
+                    
+                    dialog.show();
+                } catch (Exception e) {
+                    new android.app.AlertDialog.Builder(context)
+                        .setTitle(title)
+                        .setMessage(message)
+                        .setPositiveButton("OK", null)
+                        .show();
+                }
             });
         }
 
@@ -49,16 +87,55 @@ public class JsRuntimeManager {
         @JavascriptInterface
         public void prompt(String title, String callbackName) {
             new Handler(Looper.getMainLooper()).post(() -> {
-                final android.widget.EditText input = new android.widget.EditText(context);
-                new android.app.AlertDialog.Builder(context)
-                    .setTitle(title)
-                    .setView(input)
-                    .setPositiveButton("Submit", (dialog, which) -> {
-                        String txt = input.getText().toString().replace("'", "\\'");
-                        if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
-                    })
-                    .setNegativeButton("Cancel", null)
-                    .show();
+                try {
+                    android.app.Dialog dialog = new android.app.Dialog(context);
+                    // Use custom Dialog inflation (e.g. R.layout.dialog_custom_prompt)
+                    int layoutId = context.getResources().getIdentifier("dialog_custom_prompt", "layout", context.getPackageName());
+                    if (layoutId == 0) throw new IllegalArgumentException("Layout not found");
+                    dialog.setContentView(layoutId);
+                    
+                    int titleId = context.getResources().getIdentifier("dialog_title", "id", context.getPackageName());
+                    if (titleId != 0) {
+                        android.widget.TextView tv = dialog.findViewById(titleId);
+                        if (tv != null) tv.setText(title);
+                    }
+                    
+                    int inputId = context.getResources().getIdentifier("dialog_input", "id", context.getPackageName());
+                    android.widget.EditText input = inputId != 0 ? dialog.findViewById(inputId) : null;
+                    
+                    int okId = context.getResources().getIdentifier("btn_positive", "id", context.getPackageName());
+                    if (okId != 0) {
+                        android.view.View submitBtn = dialog.findViewById(okId);
+                        if (submitBtn != null) {
+                            submitBtn.setOnClickListener(v -> {
+                                if (input != null) {
+                                    String txt = input.getText().toString().replace("'", "\\'");
+                                    if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
+                                }
+                                dialog.dismiss();
+                            });
+                        }
+                    }
+                    
+                    int cancelId = context.getResources().getIdentifier("btn_negative", "id", context.getPackageName());
+                    if (cancelId != 0) {
+                        android.view.View cancelBtn = dialog.findViewById(cancelId);
+                        if (cancelBtn != null) cancelBtn.setOnClickListener(v -> dialog.dismiss());
+                    }
+                    
+                    dialog.show();
+                } catch (Exception e) {
+                    final android.widget.EditText input = new android.widget.EditText(context);
+                    new android.app.AlertDialog.Builder(context)
+                        .setTitle(title)
+                        .setView(input)
+                        .setPositiveButton("Submit", (d, which) -> {
+                            String txt = input.getText().toString().replace("'", "\\'");
+                            if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                }
             });
         }
 
