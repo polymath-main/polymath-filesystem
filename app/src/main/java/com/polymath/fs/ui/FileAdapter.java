@@ -11,6 +11,9 @@ import com.polymath.fs.R;
 import org.json.JSONObject;
 import java.io.File;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
 
@@ -45,31 +48,62 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
     public int getItemCount() { return files.size(); }
 
     static class FileViewHolder extends RecyclerView.ViewHolder {
-        TextView fileName, fileIcon;
-        View container;
+        TextView fileName, fileIcon, fileDetails, btnMenu;
+
         FileViewHolder(View itemView) {
             super(itemView);
             fileName = itemView.findViewById(R.id.fileName);
             fileIcon = itemView.findViewById(R.id.fileIcon);
-            container = itemView;
+            fileDetails = itemView.findViewById(R.id.fileDetails);
+            btnMenu = itemView.findViewById(R.id.btnMenu);
         }
+        
         void bind(File file, OnItemClickListener listener, JSONObject config) {
             fileName.setText(file.getName());
-            fileIcon.setText(file.isDirectory() ? "📁" : "📄");
-            try {
-                if (config != null) {
-                    JSONObject theme = config.getJSONObject("theme");
-                    fileName.setTextColor(Color.parseColor(theme.getString("textColor")));
-                    fileName.setTextSize(config.getJSONObject("ui").getInt("fontSize"));
-                    container.setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
-                }
-            } catch (Exception ignored) {}
             
+            // Format Subtitle
+            String details = "";
+            if (file.isDirectory()) {
+                String[] list = file.list();
+                int count = (list != null) ? list.length : 0;
+                details = count + " items";
+                fileIcon.setText("📁");
+            } else {
+                long length = file.length();
+                details = formatSize(length);
+                fileIcon.setText(getEmojiForFile(file.getName()));
+            }
+            
+            // Add Date
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+            details += " • " + sdf.format(new Date(file.lastModified()));
+            fileDetails.setText(details);
+
+            // Bind Clicks
             itemView.setOnClickListener(v -> listener.onItemClick(file));
             itemView.setOnLongClickListener(v -> {
                 listener.onItemLongClick(file);
                 return true;
             });
+            btnMenu.setOnClickListener(v -> listener.onItemLongClick(file));
+        }
+
+        private String formatSize(long size) {
+            if (size <= 0) return "0 B";
+            final String[] units = new String[] { "B", "KB", "MB", "GB", "TB" };
+            int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+            return new java.text.DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+        }
+
+        private String getEmojiForFile(String name) {
+            name = name.toLowerCase();
+            if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".gif")) return "🖼️";
+            if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".avi")) return "🎬";
+            if (name.endsWith(".mp3") || name.endsWith(".wav")) return "🎵";
+            if (name.endsWith(".zip") || name.endsWith(".tar") || name.endsWith(".gz")) return "📦";
+            if (name.endsWith(".pdf")) return "📕";
+            if (name.endsWith(".js") || name.endsWith(".java") || name.endsWith(".xml") || name.endsWith(".py")) return "💻";
+            return "📄";
         }
     }
 }

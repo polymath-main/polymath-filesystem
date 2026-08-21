@@ -1,9 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="horizontal" android:padding="16dp" android:gravity="center_vertical">
-    <TextView android:id="@+id/fileIcon" android:layout_width="40dp" android:layout_height="40dp"
-        android:gravity="center" android:textSize="24sp" />
-    <TextView android:id="@+id/fileName" android:layout_width="0dp" android:layout_height="wrap_content"
-        android:layout_weight="1" android:layout_marginStart="16dp" android:textColor="#f8fafc" android:textSize="16sp" />
-</LinearLayout>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" 
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="#1e293b"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:background="?android:attr/selectableItemBackground">
+
+        <!-- Icon Container -->
+        <FrameLayout
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/icon_bg"
+            android:layout_marginEnd="16dp">
+            
+            <TextView android:id="@+id/fileIcon" 
+                android:layout_width="match_parent" 
+                android:layout_height="match_parent"
+                android:gravity="center" 
+                android:textSize="24sp" />
+        </FrameLayout>
+
+        <!-- Text Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            
+            <TextView android:id="@+id/fileName" 
+                android:layout_width="match_parent" 
+                android:layout_height="wrap_content"
+                android:textColor="#f8fafc" 
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:singleLine="true"
+                android:ellipsize="middle"/>
+                
+            <TextView android:id="@+id/fileDetails" 
+                android:layout_width="match_parent" 
+                android:layout_height="wrap_content"
+                android:textColor="#94a3b8" 
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"
+                android:singleLine="true"/>
+        </LinearLayout>
+
+        <!-- Menu Button -->
+        <TextView
+            android:id="@+id/btnMenu"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="⋮"
+            android:textColor="#cbd5e1"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="?android:attr/selectableItemBackgroundBorderless"/>
+            
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
