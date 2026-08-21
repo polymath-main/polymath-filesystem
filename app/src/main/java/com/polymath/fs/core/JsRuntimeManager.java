@@ -150,6 +150,28 @@ public class JsRuntimeManager {
                 new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "JS Automation Listener attached to " + path, Toast.LENGTH_SHORT).show());
             }
         }
+
+        @JavascriptInterface
+        public String ftpRequest(String host, int port, String user, String pass, String command, String path) {
+            try {
+                Class<?> ftpClass = Class.forName("com.polymath.fs.network.FtpClient");
+                java.lang.reflect.Method m = ftpClass.getMethod("execute", String.class, int.class, String.class, String.class, String.class, String.class);
+                return (String) m.invoke(null, host, port, user, pass, command, path);
+            } catch (Exception e) {
+                return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
+            }
+        }
+
+        @JavascriptInterface
+        public String smbRequest(String host, String user, String pass, String action, String path) {
+            try {
+                Class<?> smbClass = Class.forName("com.polymath.fs.network.SmbClient");
+                java.lang.reflect.Method m = smbClass.getMethod("execute", String.class, String.class, String.class, String.class, String.class);
+                return (String) m.invoke(null, host, user, pass, action, path);
+            } catch (Exception e) {
+                return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
+            }
+        }
     }
 
     public static void executeScript(Context androidContext, File scriptFile) {

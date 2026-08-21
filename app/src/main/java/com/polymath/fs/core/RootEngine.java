@@ -229,6 +229,22 @@ public class RootEngine {
                 return executeCommand("tar -czf '" + target + "' -C '" + parent + "' '" + base + "'");
             }
 
+            if (action.equals("extract")) {
+                String targetDir = new File(path).getParent() + "/extracted_" + System.currentTimeMillis();
+                executeCommand("mkdir -p '" + targetDir + "'");
+                return executeCommand("tar -xzf '" + path + "' -C '" + targetDir + "'");
+            }
+
+            if (action.equals("rename") || action.equals("move")) {
+                String dest = requestData.optString("dest", "");
+                return executeCommand("mv '" + path + "' '" + dest + "'");
+            }
+
+            if (action.equals("copy")) {
+                String dest = requestData.optString("dest", "");
+                return executeCommand("cp -r '" + path + "' '" + dest + "'");
+            }
+
             if (action.equals("execute_command")) {
                 return executeCommand(requestData.optString("command", ""));
             }

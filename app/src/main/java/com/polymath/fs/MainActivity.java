@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
     private int activeTabIndex = 0;
     private boolean isEyeStrainEnabled = false;
     private final File extensionsDir = new File(Environment.getExternalStorageDirectory(), "PolymathExtensions");
+    private String sortMode = "NAME_ASC"; // Options: NAME_ASC, NAME_DESC, SIZE_ASC, SIZE_DESC, TIME_ASC, TIME_DESC
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,6 +163,11 @@ public class MainActivity extends Activity {
             dashboardContainer.setVisibility(View.GONE);
             navFileExplorer.setTextColor(Color.parseColor("#f8fafc"));
             navJsEngine.setTextColor(Color.parseColor("#64748b"));
+        });
+        
+        navFileExplorer.setOnLongClickListener(v -> {
+            showSortMenu();
+            return true;
         });
         
         navJsEngine.setOnClickListener(v -> {
@@ -344,11 +350,36 @@ public class MainActivity extends Activity {
             Arrays.sort(files, (f1, f2) -> {
                 if (f1.isDirectory() && !f2.isDirectory()) return -1;
                 if (!f1.isDirectory() && f2.isDirectory()) return 1;
-                return f1.getName().compareToIgnoreCase(f2.getName());
+                switch (sortMode) {
+                    case "NAME_DESC": return f2.getName().compareToIgnoreCase(f1.getName());
+                    case "SIZE_ASC": return Long.compare(f1.length(), f2.length());
+                    case "SIZE_DESC": return Long.compare(f2.length(), f1.length());
+                    case "TIME_ASC": return Long.compare(f1.lastModified(), f2.lastModified());
+                    case "TIME_DESC": return Long.compare(f2.lastModified(), f1.lastModified());
+                    case "NAME_ASC":
+                    default: return f1.getName().compareToIgnoreCase(f2.getName());
+                }
             });
             currentFiles.addAll(Arrays.asList(files));
         }
         updateRecyclerView();
+    }
+
+    private void showSortMenu() {
+        String[] options = {"Name (A-Z)", "Name (Z-A)", "Size (Smallest)", "Size (Largest)", "Time (Oldest)", "Time (Newest)"};
+        new AlertDialog.Builder(this)
+            .setTitle("Sort Files By")
+            .setItems(options, (dialog, which) -> {
+                switch(which) {
+                    case 0: sortMode = "NAME_ASC"; break;
+                    case 1: sortMode = "NAME_DESC"; break;
+                    case 2: sortMode = "SIZE_ASC"; break;
+                    case 3: sortMode = "SIZE_DESC"; break;
+                    case 4: sortMode = "TIME_ASC"; break;
+                    case 5: sortMode = "TIME_DESC"; break;
+                }
+                if (currentDir != null) loadDirectory(currentDir);
+            }).show();
     }
 
     private void fetchFromDaemon(String path) {
@@ -412,6 +443,8 @@ public class MainActivity extends Activity {
 
     private void showAdvancedFeaturesMenu(File file) {
         String[] options = {
+            "Open / View", "Rename", "Move", "Copy", "Extract Archive",
+            "File Info", "Share",
             "Delete File (Daemon)", "Archive (Daemon)", "Format Cloaking (Toggle File Scramble)",
             "Hardlink Deduplication (Zero-Space)", "Chronos (Time-Travel Snapshot)",
             "Ghost Vault (Forensic Shredder)", "Mount RAM-Disk (HyperDrive)", "Restore Chronos Snapshot",
@@ -423,29 +456,66 @@ public class MainActivity extends Activity {
             .setItems(options, (dialog, which) -> {
                 String action = "";
                 switch (which) {
-                    case 0: action = "delete_file"; break;
-                    case 1: action = "archive"; break;
-                    case 2: action = "format_cloak"; break;
-                    case 3: action = "hardlink_dedup"; break;
-                    case 4: action = "chronos_snapshot"; break;
-                    case 5: action = "ghost_vault"; break;
-                    case 6: action = "mount_ramdisk"; break;
-                    case 7: action = "chronos_restore"; break;
-                    case 8: 
+                    case 0: openViewer(file); return;
+                    case 1: promptAndExecute("rename", file); return;
+                    case 2: promptAndExecute("move", file); return;
+                    case 3: promptAndExecute("copy", file); return;
+                    case 4: action = "extract"; break;
+                    case 5: showFileInfo(file); return;
+                    case 6: shareFile(file); return;
+                    case 7: action = "delete_file"; break;
+                    case 8: action = "archive"; break;
+                    case 9: action = "format_cloak"; break;
+                    case 10: action = "hardlink_dedup"; break;
+                    case 11: action = "chronos_snapshot"; break;
+                    case 12: action = "ghost_vault"; break;
+                    case 13: action = "mount_ramdisk"; break;
+                    case 14: action = "chronos_restore"; break;
+                    case 15: 
                         JsRuntimeManager.executeScript(MainActivity.this, file);
                         return;
                 }
-                executeAdvancedAction(action, file.getAbsolutePath());
+                executeAdvancedAction(action, file.getAbsolutePath(), null);
             })
             .show();
     }
 
-    private void executeAdvancedAction(String action, String path) {
+    private void promptAndExecute(String action, File file) {
+        final EditText input = new EditText(this);
+        input.setText(file.getAbsolutePath());
+        new AlertDialog.Builder(this)
+            .setTitle(action.toUpperCase() + " Destination")
+            .setView(input)
+            .setPositiveButton("OK", (dialog, which) -> {
+                executeAdvancedAction(action, file.getAbsolutePath(), input.getText().toString());
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    private void showFileInfo(File file) {
+        String info = "Name: " + file.getName() + "\n" +
+                      "Path: " + file.getAbsolutePath() + "\n" +
+                      "Size: " + (file.length() / 1024) + " KB\n" +
+                      "Modified: " + new java.util.Date(file.lastModified()).toString();
+        new AlertDialog.Builder(this).setTitle("File Info").setMessage(info).setPositiveButton("OK", null).show();
+    }
+
+    private void shareFile(File file) {
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("*/*");
+        // Simplified for prototype, requires FileProvider in production
+        shareIntent.putExtra(Intent.EXTRA_STREAM, android.net.Uri.fromFile(file));
+        startActivity(Intent.createChooser(shareIntent, "Share File via Polymath"));
+    }
+
+    private void executeAdvancedAction(String action, String path, String dest) {
         new Thread(() -> {
             try {
                 JSONObject req = new JSONObject();
                 req.put("action", action);
                 req.put("path", path);
+                if (dest != null) req.put("dest", dest);
                 if (action.equals("chronos_restore")) req.put("archive", path + "/.chronos_1.tar.gz");
                 if (action.equals("archive")) {
                     req.put("action", "execute_command");
