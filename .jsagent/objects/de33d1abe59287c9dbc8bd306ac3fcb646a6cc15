@@ -1,0 +1,20 @@
+var ftpConfig = {
+    host: "",
+    port: 21,
+    user: "anonymous",
+    pass: "",
+    path: "/"
+};
+
+/* __JAGE_REF_js_block_startFtpManager__ */
+
+/* __JAGE_REF_js_block_ftpOnHostEntered__ */
+
+/* __JAGE_REF_js_block_ftpOnPortEntered__ */
+
+/* __JAGE_REF_js_block_ftpOnUserEntered__ */
+
+/* __JAGE_REF_js_block_ftpOnPassEntered__ */
+
+// Start the sequence
+startFtpManager();

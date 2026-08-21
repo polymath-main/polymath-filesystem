@@ -1,0 +1,3 @@
+function startFtpManager() {
+    PolymathOS.prompt("Enter FTP Host", "ftpOnHostEntered");
+}

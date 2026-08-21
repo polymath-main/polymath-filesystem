@@ -1,0 +1,4 @@
+// AutoArchive.js
+/* __JAGE_REF_js_block_onNewDownload__ */
+
+PolymathOS.listen("FILE_CREATED", "/sdcard/Download", "onNewDownload");

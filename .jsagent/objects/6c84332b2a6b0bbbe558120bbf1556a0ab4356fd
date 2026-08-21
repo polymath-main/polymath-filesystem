@@ -1,0 +1,8 @@
+function smbOnHostEntered(host) {
+    if (host) {
+        smbConfig.host = host;
+        PolymathOS.prompt("Enter SMB Port (default 445)", "smbOnPortEntered");
+    } else {
+        PolymathOS.toast("Host cannot be empty. Operation cancelled.");
+    }
+}

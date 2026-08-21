@@ -1,0 +1,10 @@
+function ftpOnPassEntered(pass) {
+    ftpConfig.pass = pass || "";
+    PolymathOS.toast("Connecting to " + ftpConfig.host + "...");
+    try {
+        PolymathOS.ftpRequest(ftpConfig.host, ftpConfig.port, ftpConfig.user, ftpConfig.pass, "LIST", ftpConfig.path);
+        PolymathOS.alert("FTP request executed successfully for " + ftpConfig.host);
+    } catch (e) {
+        PolymathOS.alert("Error executing FTP request: " + e.message);
+    }
+}

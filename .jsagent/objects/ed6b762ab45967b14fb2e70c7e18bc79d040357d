@@ -1,0 +1,8 @@
+function ftpOnHostEntered(host) {
+    if (host) {
+        ftpConfig.host = host;
+        PolymathOS.prompt("Enter FTP Port (default 21)", "ftpOnPortEntered");
+    } else {
+        PolymathOS.toast("Host cannot be empty. Operation cancelled.");
+    }
+}

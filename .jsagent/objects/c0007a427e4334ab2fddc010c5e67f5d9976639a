@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 adapter = new FileAdapter(files, new FileAdapter.OnItemClickListener() {
                     @Override
                     public void onItemClick(FileSystemItem file) {
-                        RecentsManager.logAccess(MainActivity.this, file.getPath());
+                        new RecentsManager(MainActivity.this).logAccess(file.getPath());
                         if (file.isDirectory()) {
                             viewModel.navigateTo(file.getPath());
                         } else {

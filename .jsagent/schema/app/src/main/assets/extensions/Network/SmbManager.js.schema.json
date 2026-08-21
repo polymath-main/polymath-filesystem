@@ -1,0 +1,12 @@
+{
+  "file": "SmbManager.js",
+  "extension": ".js",
+  "pointers": {
+    "js_block_startSmbManager": "7a24e1de43299d9a0a0ee4b9b11f1678c7f4600e",
+    "js_block_smbOnHostEntered": "6c84332b2a6b0bbbe558120bbf1556a0ab4356fd",
+    "js_block_smbOnPortEntered": "979a9a0eab74831933f78c53cf549715f254d8ee",
+    "js_block_smbOnUserEntered": "c2ebd87fd634c0ab31f4b65c45321de0f4efa3de",
+    "js_block_smbOnPassEntered": "ca07c38dad129db5a7ff654291faa6a8da64d956",
+    "__skeleton__": "1da1c451dc16bb4007f7b8d017142074ce9ecfab"
+  }
+}

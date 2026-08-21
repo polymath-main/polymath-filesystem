@@ -1,0 +1,9 @@
+{
+  "file": "test_sandbox.js",
+  "extension": ".js",
+  "pointers": {
+    "js_block_PolymathBridge": "6713e4fa4579692b5f12b9cf588952d12aca176c",
+    "js_block_runSandbox": "06befc3a24f4e42f6118d10d2a0a3aa85005ae15",
+    "__skeleton__": "7a3829c81f08b198b265de42b79593311869ce97"
+  }
+}

@@ -1,0 +1,18 @@
+const net = require('net');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const readline = require('readline');
+
+// PolymathOS Native Bridge Mock for Node.js
+/* __JAGE_REF_js_block_PolymathBridge__ */
+
+/* __JAGE_REF_js_block_runSandbox__ */
+
+const target = process.argv[2];
+if (!target) {
+    console.log("Usage: node test_sandbox.js <path_to_index.js>");
+    process.exit(1);
+}
+
+runSandbox(target);

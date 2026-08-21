@@ -1,0 +1,70 @@
+class PolymathBridge {
+    constructor(baseDir) {
+        this.baseDir = baseDir;
+    }
+
+    toast(message) {
+        console.log(`\n[UI TOAST] 🍞 ${message}`);
+    }
+
+    alert(title, message) {
+        console.log(`\n[UI ALERT] ⚠️ ${title}`);
+        console.log(`---------------------------------`);
+        console.log(message);
+        console.log(`---------------------------------\n`);
+    }
+
+    prompt(title, callbackName) {
+        console.log(`\n[UI PROMPT] ❓ ${title}`);
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+        
+        rl.question('> ', (answer) => {
+            rl.close();
+            // Simulate the WebView evaluateJavascript callback execution
+            try {
+                // The global scope is where the callback function is defined
+                if (typeof global[callbackName] === 'function') {
+                    global[callbackName](answer);
+                } else {
+                    console.error(`[ERROR] Callback function '${callbackName}' not found in global scope.`);
+                }
+            } catch (e) {
+                console.error(`[ERROR] Executing callback: ${e.message}`);
+            }
+        });
+    }
+
+    daemonCommand(action, payloadPath) {
+        console.log(`[DAEMON IPC] Sending action '${action}' for path '${payloadPath}'`);
+        try {
+            const execSync = require('child_process').execSync;
+            const req = JSON.stringify({ action: action, path: payloadPath, command: payloadPath });
+            fs.writeFileSync('temp_req.json', req);
+            const res = execSync(`cat temp_req.json | nc 127.0.0.1 50505 -w 2`);
+            return res.toString();
+        } catch (e) {
+            return JSON.stringify({ success: false, error: e.message });
+        }
+    }
+
+    readFile(filePath) {
+        try {
+            return fs.readFileSync(filePath, 'utf8');
+        } catch (e) {
+            return "";
+        }
+    }
+
+    require(relativePath) {
+        try {
+            const target = path.join(this.baseDir, relativePath);
+            return fs.readFileSync(target, 'utf8');
+        } catch (e) {
+            console.error(`Module not found: ${relativePath}`);
+            return "";
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+  "file": "FtpManager.js",
+  "extension": ".js",
+  "pointers": {
+    "js_block_startFtpManager": "a9bd8fe64b180f3590fbc93b1e12cde9d604dd78",
+    "js_block_ftpOnHostEntered": "ed6b762ab45967b14fb2e70c7e18bc79d040357d",
+    "js_block_ftpOnPortEntered": "51fcefd87a98be55332c975d93a09d9b37f8354c",
+    "js_block_ftpOnUserEntered": "1f917612dae3ac4a3ac6a391535639c86a611763",
+    "js_block_ftpOnPassEntered": "9287b2a05df888541bc5623949a66feafe45a905",
+    "__skeleton__": "de33d1abe59287c9dbc8bd306ac3fcb646a6cc15"
+  }
+}

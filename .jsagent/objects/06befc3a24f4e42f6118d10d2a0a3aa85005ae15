@@ -1,0 +1,36 @@
+async function runSandbox(scriptPath) {
+    console.log(`\n=== 🧪 STARTING CUSTOM SANDBOX PLAYGROUND ===`);
+    console.log(`Loading script: ${scriptPath}`);
+    
+    const scriptContent = fs.readFileSync(scriptPath, 'utf8');
+    const baseDir = path.dirname(scriptPath);
+    
+    // Instantiate Bridge
+    const bridge = new PolymathBridge(baseDir);
+    
+    // Inject the bridge into the Node.js global object
+    global.PolymathOS = bridge;
+
+    // The polyfill used in Java JsRuntimeManager
+    const polyfill = `
+        window = global;
+        window.require = function(relativePath) {
+            var code = PolymathOS.require(relativePath);
+            var module = { exports: {} };
+            var fn = new Function('module', 'exports', code);
+            fn(module, module.exports);
+            return module.exports;
+        };
+    `;
+
+    // Execute script
+    try {
+        const script = new vm.Script(polyfill + scriptContent);
+        const result = script.runInThisContext();
+        if (result !== undefined) {
+            console.log(`\n[V8 ENGINE RETURN] => ${result}`);
+        }
+    } catch (e) {
+        console.error(`[ENGINE CRASH] ${e.message}`);
+    }
+}

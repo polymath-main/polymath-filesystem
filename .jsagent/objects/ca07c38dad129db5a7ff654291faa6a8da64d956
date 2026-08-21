@@ -1,0 +1,14 @@
+function smbOnPassEntered(pass) {
+    smbConfig.pass = pass || "";
+    PolymathOS.toast("Connecting to SMB " + smbConfig.host + "...");
+    try {
+        if (typeof PolymathOS.smbRequest === "function") {
+            PolymathOS.smbRequest(smbConfig.host, smbConfig.port, smbConfig.user, smbConfig.pass, "LIST", smbConfig.path);
+            PolymathOS.alert("SMB request executed successfully for " + smbConfig.host);
+        } else {
+            PolymathOS.alert("SMB connection attempted to " + smbConfig.host + " (smbRequest not found in API)");
+        }
+    } catch (e) {
+        PolymathOS.alert("Error executing SMB request: " + e.message);
+    }
+}

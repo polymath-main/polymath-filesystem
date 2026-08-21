@@ -1,0 +1,9 @@
+function applyDayMode() {
+    var customTheme = {
+        primaryBg: "#ffffff",
+        secondaryBg: "#f1f5f9",
+        textColor: "#0f172a",
+        accentColor: "#2563eb"
+    };
+    PolymathOS.setTheme(JSON.stringify(customTheme));
+}

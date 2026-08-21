@@ -1,0 +1,20 @@
+var smbConfig = {
+    host: "",
+    port: 445,
+    user: "guest",
+    pass: "",
+    path: "/"
+};
+
+/* __JAGE_REF_js_block_startSmbManager__ */
+
+/* __JAGE_REF_js_block_smbOnHostEntered__ */
+
+/* __JAGE_REF_js_block_smbOnPortEntered__ */
+
+/* __JAGE_REF_js_block_smbOnUserEntered__ */
+
+/* __JAGE_REF_js_block_smbOnPassEntered__ */
+
+// Start the sequence
+startSmbManager();

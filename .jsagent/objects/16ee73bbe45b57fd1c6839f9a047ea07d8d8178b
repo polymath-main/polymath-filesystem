@@ -1,0 +1,7 @@
+function startDaemon() {
+    var downloadDir = "/sdcard/Download";
+    
+    // Attach the native FileObserver via PolymathOS bridge
+    PolymathOS.listen("FILE_CREATED", downloadDir, "onNewFileDetected");
+    PolymathOS.toast("Automation Daemon Online for: " + downloadDir);
+}

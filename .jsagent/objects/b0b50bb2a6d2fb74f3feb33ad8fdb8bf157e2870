@@ -151,11 +151,12 @@ public class FileSystemViewModel extends ViewModel {
         new Thread(() -> {
             try {
                 List<FileSystemItem> items = new ArrayList<>();
-                List<String> paths = RecentsManager.getRecentPaths(context, 50);
+                RecentsManager recentsManager = new RecentsManager(context);
+                List<String> paths = recentsManager.getRecentPaths(50);
                 for (String path : paths) {
                     File f = new File(path);
                     if (f.exists()) {
-                        items.add(new RecentFileItem(new LocalFileItem(f), System.currentTimeMillis()));
+                        items.add(new RecentFileItem(f));
                     }
                 }
                 fileList.postValue(items);

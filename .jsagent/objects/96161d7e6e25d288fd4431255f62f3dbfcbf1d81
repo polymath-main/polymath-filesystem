@@ -1,0 +1,287 @@
+package com.polymath.fs.core;
+
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebView;
+import android.widget.Toast;
+
+import java.io.File;
+import org.json.JSONObject;
+
+public class JsRuntimeManager {
+    
+    // The Bridge exposed to JavaScript via V8 WebKit Engine
+    public static class PolymathBridge {
+        private final Context context;
+        private final String baseDir;
+        private WebView webView;
+
+        public static final java.util.Map<String, java.util.List<String[]>> contextActions = new java.util.HashMap<>();
+
+        public PolymathBridge(Context context, String baseDir) {
+            this.context = context;
+            this.baseDir = baseDir;
+        }
+
+        public void attachWebView(WebView wv) {
+            this.webView = wv;
+        }
+
+        @JavascriptInterface
+        public void registerContextAction(String mimeType, String label, String callbackName) {
+            if (!contextActions.containsKey(mimeType)) {
+                contextActions.put(mimeType, new java.util.ArrayList<>());
+            }
+            contextActions.get(mimeType).add(new String[]{label, callbackName});
+        }
+
+        // Exposed to JS: PolymathOS.toast("Hello")
+        @JavascriptInterface
+        public void toast(String message) {
+            new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+        }
+
+        // Exposed to JS: PolymathOS.alert("Title", "Message")
+        @JavascriptInterface
+        public void alert(String title, String message) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    android.app.Dialog dialog = new android.app.Dialog(context);
+                    // Use custom Dialog inflation (e.g. R.layout.dialog_custom_prompt)
+                    int layoutId = context.getResources().getIdentifier("dialog_custom_prompt", "layout", context.getPackageName());
+                    if (layoutId == 0) throw new IllegalArgumentException("Layout not found");
+                    dialog.setContentView(layoutId);
+                    
+                    int titleId = context.getResources().getIdentifier("dialog_title", "id", context.getPackageName());
+                    if (titleId != 0) {
+                        android.widget.TextView tv = dialog.findViewById(titleId);
+                        if (tv != null) tv.setText(title);
+                    }
+                    
+                    int msgId = context.getResources().getIdentifier("dialog_message", "id", context.getPackageName());
+                    if (msgId != 0) {
+                        android.widget.TextView mv = dialog.findViewById(msgId);
+                        if (mv != null) mv.setText(message);
+                    }
+                    
+                    int okId = context.getResources().getIdentifier("btn_positive", "id", context.getPackageName());
+                    if (okId != 0) {
+                        android.view.View btn = dialog.findViewById(okId);
+                        if (btn != null) btn.setOnClickListener(v -> dialog.dismiss());
+                    }
+                    
+                    dialog.show();
+                } catch (Exception e) {
+                    new android.app.AlertDialog.Builder(context)
+                        .setTitle(title)
+                        .setMessage(message)
+                        .setPositiveButton("OK", null)
+                        .show();
+                }
+            });
+        }
+
+        // Exposed to JS: PolymathOS.prompt("Enter Password", "callbackFnName")
+        @JavascriptInterface
+        public void prompt(String title, String callbackName) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    android.app.Dialog dialog = new android.app.Dialog(context);
+                    // Use custom Dialog inflation (e.g. R.layout.dialog_custom_prompt)
+                    int layoutId = context.getResources().getIdentifier("dialog_custom_prompt", "layout", context.getPackageName());
+                    if (layoutId == 0) throw new IllegalArgumentException("Layout not found");
+                    dialog.setContentView(layoutId);
+                    
+                    int titleId = context.getResources().getIdentifier("dialog_title", "id", context.getPackageName());
+                    if (titleId != 0) {
+                        android.widget.TextView tv = dialog.findViewById(titleId);
+                        if (tv != null) tv.setText(title);
+                    }
+                    
+                    int inputId = context.getResources().getIdentifier("dialog_input", "id", context.getPackageName());
+                    android.widget.EditText input = inputId != 0 ? dialog.findViewById(inputId) : null;
+                    
+                    int okId = context.getResources().getIdentifier("btn_positive", "id", context.getPackageName());
+                    if (okId != 0) {
+                        android.view.View submitBtn = dialog.findViewById(okId);
+                        if (submitBtn != null) {
+                            submitBtn.setOnClickListener(v -> {
+                                if (input != null) {
+                                    String txt = input.getText().toString().replace("'", "\\'");
+                                    if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
+                                }
+                                dialog.dismiss();
+                            });
+                        }
+                    }
+                    
+                    int cancelId = context.getResources().getIdentifier("btn_negative", "id", context.getPackageName());
+                    if (cancelId != 0) {
+                        android.view.View cancelBtn = dialog.findViewById(cancelId);
+                        if (cancelBtn != null) cancelBtn.setOnClickListener(v -> dialog.dismiss());
+                    }
+                    
+                    dialog.show();
+                } catch (Exception e) {
+                    final android.widget.EditText input = new android.widget.EditText(context);
+                    new android.app.AlertDialog.Builder(context)
+                        .setTitle(title)
+                        .setView(input)
+                        .setPositiveButton("Submit", (d, which) -> {
+                            String txt = input.getText().toString().replace("'", "\\'");
+                            if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
+                        })
+                        .setNegativeButton("Cancel", null)
+                        .show();
+                }
+            });
+        }
+
+        // Exposed to JS: PolymathOS.daemonCommand("archive", "/sdcard/test.txt")
+        @JavascriptInterface
+        public String daemonCommand(String action, String path) {
+            try {
+                JSONObject req = new JSONObject();
+                req.put("action", action);
+                req.put("path", path);
+                JSONObject res = RootEngine.executeAction(req);
+                return res.toString();
+            } catch (Exception e) {
+                return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
+            }
+        }
+        
+        // Exposed to JS: PolymathOS.readFile("/sdcard/test.txt")
+        @JavascriptInterface
+        public String readFile(String path) {
+            try {
+                java.util.Scanner scanner = new java.util.Scanner(new File(path)).useDelimiter("\\A");
+                return scanner.hasNext() ? scanner.next() : "";
+            } catch (Exception e) {
+                return "";
+            }
+        }
+        
+        // Exposed to JS: var utils = PolymathOS.require("utils.js")
+        @JavascriptInterface
+        public String require(String relativePath) {
+            try {
+                File target = new File(baseDir, relativePath);
+                if (!target.exists()) return "console.error('Module not found: " + target.getAbsolutePath() + "');";
+                
+                java.util.Scanner scanner = new java.util.Scanner(target).useDelimiter("\\A");
+                return scanner.hasNext() ? scanner.next() : "";
+            } catch (Exception e) {
+                return "console.error('Require Error: " + e.getMessage() + "');";
+            }
+        }
+
+        @JavascriptInterface
+        public void setTheme(String jsonConfig) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
+                    JSONObject config = new JSONObject(jsonConfig);
+                    android.content.SharedPreferences prefs = context.getSharedPreferences("pfs_prefs", Context.MODE_PRIVATE);
+                    prefs.edit().putString("config_json", config.toString()).apply();
+                    if (context instanceof com.polymath.fs.MainActivity) {
+                        ((com.polymath.fs.MainActivity) context).applyTheme();
+                        Toast.makeText(context, "Theme Applied by JS Modular", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(context, "Theme Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void elevate(String mode) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                if (mode.equals("root")) {
+                    RootEngine.executeCommand("su -c echo 'Root Granted'");
+                    Toast.makeText(context, "Elevated to Root via JS", Toast.LENGTH_SHORT).show();
+                } else if (mode.equals("shizuku")) {
+                    // Placeholder for Shizuku IPC binding
+                    Toast.makeText(context, "Elevated to Shizuku via JS", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void listen(String eventType, String path, String callbackName) {
+            if (eventType.equals("FILE_CREATED")) {
+                new Thread(() -> {
+                    android.os.FileObserver observer = new android.os.FileObserver(path, android.os.FileObserver.CREATE) {
+                        @Override
+                        public void onEvent(int event, String file) {
+                            if (file != null) {
+                                new Handler(Looper.getMainLooper()).post(() -> {
+                                    if (webView != null) webView.evaluateJavascript(callbackName + "('" + file + "');", null);
+                                });
+                            }
+                        }
+                    };
+                    observer.startWatching();
+                }).start();
+                new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, "JS Automation Listener attached to " + path, Toast.LENGTH_SHORT).show());
+            }
+        }
+
+        @JavascriptInterface
+        public String ftpRequest(String host, int port, String user, String pass, String command, String path) {
+            try {
+                Class<?> ftpClass = Class.forName("com.polymath.fs.network.FtpClient");
+                java.lang.reflect.Method m = ftpClass.getMethod("execute", String.class, int.class, String.class, String.class, String.class, String.class);
+                return (String) m.invoke(null, host, port, user, pass, command, path);
+            } catch (Exception e) {
+                return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
+            }
+        }
+
+        @JavascriptInterface
+        public String smbRequest(String host, String user, String pass, String action, String path) {
+            try {
+                Class<?> smbClass = Class.forName("com.polymath.fs.network.SmbClient");
+                java.lang.reflect.Method m = smbClass.getMethod("execute", String.class, String.class, String.class, String.class, String.class);
+                return (String) m.invoke(null, host, user, pass, action, path);
+            } catch (Exception e) {
+                return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
+            }
+        }
+    }
+
+    public static void executeScript(Context androidContext, File scriptFile) {
+        new Handler(Looper.getMainLooper()).post(() -> {
+            try {
+                java.util.Scanner scanner = new java.util.Scanner(scriptFile).useDelimiter("\\A");
+                String scriptContent = scanner.hasNext() ? scanner.next() : "";
+                
+                // Inject custom require polyfill to execute the returned string immediately
+                String polyfill = "window.require = function(path) { " +
+                                  "  var code = PolymathOS.require(path);" +
+                                  "  var module = { exports: {} };" +
+                                  "  var fn = new Function('module', 'exports', code);" +
+                                  "  fn(module, module.exports);" +
+                                  "  return module.exports;" +
+                                  "};\n";
+
+                WebView webView = new WebView(androidContext);
+                PolymathBridge bridge = new PolymathBridge(androidContext, scriptFile.getParent());
+                bridge.attachWebView(webView);
+                
+                webView.getSettings().setJavaScriptEnabled(true);
+                webView.addJavascriptInterface(bridge, "PolymathOS");
+                
+                webView.evaluateJavascript(polyfill + scriptContent, result -> {
+                    if (result != null && !result.equals("null")) {
+                        Toast.makeText(androidContext, "JS Result: " + result, Toast.LENGTH_LONG).show();
+                    }
+                });
+
+            } catch (Exception e) {
+                Toast.makeText(androidContext, "JS Engine Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+}

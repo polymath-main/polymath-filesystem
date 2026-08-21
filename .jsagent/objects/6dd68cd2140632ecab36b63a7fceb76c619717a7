@@ -1,0 +1,10 @@
+// Polymath File System - Core Modular Extension
+// [ThemeEngine.js]
+// You can edit this file to completely transform the Android UI.
+
+/* __JAGE_REF_js_block_applyNightMode__ */
+
+/* __JAGE_REF_js_block_applyDayMode__ */
+
+// Automatically apply Night Mode on script execution
+applyNightMode();
