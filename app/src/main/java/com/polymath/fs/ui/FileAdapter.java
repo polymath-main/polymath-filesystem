@@ -9,24 +9,24 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import com.polymath.fs.R;
 import org.json.JSONObject;
-import java.io.File;
-import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import com.polymath.fs.models.FileSystemItem;
+import com.polymath.fs.models.LocalFileItem;
 
 public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder> {
 
-    private List<File> files;
+    private List<FileSystemItem> files;
     private OnItemClickListener listener;
     private JSONObject config;
 
     public interface OnItemClickListener { 
-        void onItemClick(File file); 
-        void onItemLongClick(File file);
+        void onItemClick(FileSystemItem file); 
+        void onItemLongClick(FileSystemItem file);
     }
 
-    public FileAdapter(List<File> files, OnItemClickListener listener) {
+    public FileAdapter(List<FileSystemItem> files, OnItemClickListener listener) {
         this.files = files;
         this.listener = listener;
     }
@@ -58,7 +58,7 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             btnMenu = itemView.findViewById(R.id.btnMenu);
         }
         
-        void bind(File file, OnItemClickListener listener, JSONObject config) {
+        void bind(FileSystemItem file, OnItemClickListener listener, JSONObject config) {
             fileName.setText(file.getName());
 
             // Apply JS Dynamic Theme if available
@@ -77,19 +77,18 @@ public class FileAdapter extends RecyclerView.Adapter<FileAdapter.FileViewHolder
             // Format Subtitle
             String details = "";
             if (file.isDirectory()) {
-                String[] list = file.list();
-                int count = (list != null) ? list.length : 0;
+                int count = file.getChildrenCount();
                 details = count + " items";
                 fileIcon.setText("📁");
             } else {
-                long length = file.length();
+                long length = file.getSize();
                 details = formatSize(length);
                 fileIcon.setText(getEmojiForFile(file.getName()));
             }
             
             // Add Date
             SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-            details += " • " + sdf.format(new Date(file.lastModified()));
+            details += " • " + sdf.format(new Date(file.getLastModified()));
             fileDetails.setText(details);
 
             // Bind Clicks

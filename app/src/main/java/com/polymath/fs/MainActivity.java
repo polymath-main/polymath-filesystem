@@ -1,8 +1,7 @@
 package com.polymath.fs;
 
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
@@ -10,68 +9,53 @@ import android.net.Uri;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.view.View;
-import android.widget.LinearLayout;
-import android.widget.Button;
-import android.widget.TextView;
-import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.Toast;
-import android.view.inputmethod.EditorInfo;
-import android.view.KeyEvent;
-import android.app.AlertDialog;
-import android.graphics.drawable.GradientDrawable;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.graphics.Color;
+import android.widget.TextView;
+import android.view.Gravity;
+
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.polymath.fs.core.ConfigManager;
-import com.polymath.fs.ui.FileAdapter;
-import com.polymath.fs.ui.ScriptAdapter;
 import com.polymath.fs.core.JsRuntimeManager;
-import com.polymath.fs.viewers.EditorActivity;
-import com.polymath.fs.viewers.ImageViewerActivity;
-import com.polymath.fs.viewers.MediaPlayerActivity;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.polymath.fs.models.FileSystemItem;
+import com.polymath.fs.ui.FileAdapter;
+import com.polymath.fs.viewmodels.FileSystemViewModel;
 
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.io.FileOutputStream;
 import java.util.List;
-import java.util.HashSet;
-import java.util.Set;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
-    // Views
-    private View mainContainer, dashboardContainer, eyeStrainOverlay;
-    private TextView navFileExplorer, navJsEngine, btnNewScript;
-    private TextView pathText;
-    private EditText searchInput;
-    private RecyclerView fileRecyclerView, scriptRecyclerView;
-    private LinearLayout tabsContainer, bookmarksContainer;
-    
-    // State
+    // Canvas Containers
+    private FrameLayout headerContainer;
+    private FrameLayout contentContainer;
+    private FrameLayout overlayContainer;
+
+    // State & Bridge
+    private FileSystemViewModel viewModel;
     private FileAdapter adapter;
-    private ScriptAdapter scriptAdapter;
-    private File currentDir;
-    private List<File> currentFiles = new ArrayList<>();
-    private List<File> extensionScripts = new ArrayList<>();
     private ConfigManager configManager;
-    private Set<String> bookmarkedScripts = new HashSet<>();
-    
-    private List<File> tabs = new ArrayList<>();
-    private int activeTabIndex = 0;
-    private boolean isEyeStrainEnabled = false;
     private final File extensionsDir = new File(Environment.getExternalStorageDirectory(), "PolymathExtensions");
-    private String sortMode = "NAME_ASC"; // Options: NAME_ASC, NAME_DESC, SIZE_ASC, SIZE_DESC, TIME_ASC, TIME_DESC
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
         configManager = ConfigManager.getInstance(this);
+        viewModel = new FileSystemViewModel(); // In a pure ViewModel setup, we'd use ViewModelProvider
+
+        headerContainer = findViewById(R.id.headerContainer);
+        contentContainer = findViewById(R.id.contentContainer);
+        overlayContainer = findViewById(R.id.overlayContainer);
 
         checkAndRequestPermissions();
     }
@@ -111,7 +95,7 @@ public class MainActivity extends Activity {
             initializeApp();
         } else {
             Toast.makeText(this, "Permission Denied. Features limited.", Toast.LENGTH_LONG).show();
-            initializeApp(); // Fallback to RootEngine if granted
+            initializeApp();
         }
     }
 
@@ -130,55 +114,85 @@ public class MainActivity extends Activity {
     }
 
     private void initializeApp() {
-
-        // Init views
-        mainContainer = findViewById(R.id.mainContainer);
-        dashboardContainer = findViewById(R.id.dashboardContainer);
-        eyeStrainOverlay = findViewById(R.id.eyeStrainOverlay);
-        navFileExplorer = findViewById(R.id.navFileExplorer);
-        navJsEngine = findViewById(R.id.navJsEngine);
-        btnNewScript = findViewById(R.id.btnNewScript);
-        pathText = findViewById(R.id.pathText);
-        searchInput = findViewById(R.id.searchInput);
-        fileRecyclerView = findViewById(R.id.fileRecyclerView);
-        scriptRecyclerView = findViewById(R.id.scriptRecyclerView);
-        tabsContainer = findViewById(R.id.tabsContainer);
-        bookmarksContainer = findViewById(R.id.bookmarksContainer);
-        
-        fileRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        scriptRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-
-        setupNavigation();
-        applyTheme();
-
-        searchInput.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-                String query = searchInput.getText().toString();
-                if (!query.isEmpty()) fetchFromDaemonSearch(currentDir.getAbsolutePath(), query);
-                else loadDirectory(currentDir);
-                return true;
-            }
-            return false;
-        });
-        
-        pathText.setOnLongClickListener(v -> {
-            isEyeStrainEnabled = !isEyeStrainEnabled;
-            eyeStrainOverlay.setVisibility(isEyeStrainEnabled ? View.VISIBLE : View.GONE);
-            return true;
-        });
-        
-        btnNewScript.setOnClickListener(v -> createNewScriptWorkspace());
-
         if (!extensionsDir.exists()) {
             extensionsDir.mkdirs();
             extractBuiltInExtensions();
         }
 
-        tabs.add(Environment.getExternalStorageDirectory());
-        renderTabs();
-        loadDirectory(tabs.get(activeTabIndex));
-        loadScripts();
+        // Setup Content RecyclerView
+        RecyclerView fileRecyclerView = findViewById(R.id.fileRecyclerView);
+        fileRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Observe ViewModel
+        viewModel.getFileList().observe(this, files -> {
+            if (adapter == null) {
+                adapter = new FileAdapter(files, new FileAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(FileSystemItem file) {
+                        if (file.isDirectory()) {
+                            viewModel.navigateTo(file.getPath());
+                        } else {
+                            // TODO: Add Viewer routing in Phase 2
+                            Toast.makeText(MainActivity.this, "File: " + file.getName(), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onItemLongClick(FileSystemItem file) {
+                        // TODO: Context Menu in Phase 2
+                        Toast.makeText(MainActivity.this, "Context: " + file.getName(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+                fileRecyclerView.setAdapter(adapter);
+            } else {
+                // Update files in a real app this would use DiffUtil
+                adapter = new FileAdapter(files, new FileAdapter.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(FileSystemItem file) {
+                        if (file.isDirectory()) {
+                            viewModel.navigateTo(file.getPath());
+                        }
+                    }
+                    @Override
+                    public void onItemLongClick(FileSystemItem file) {}
+                });
+                fileRecyclerView.setAdapter(adapter);
+            }
+            adapter.setConfig(configManager.getConfig());
+        });
+
+        viewModel.getCurrentPath().observe(this, path -> {
+            renderHeader(path);
+        });
+
+        // Initial Load
+        viewModel.navigateTo(Environment.getExternalStorageDirectory().getAbsolutePath());
+
+        // Boot Extensions
         bootCoreModules();
+    }
+    
+    public void applyTheme() {
+        try {
+            org.json.JSONObject theme = configManager.getConfig().getJSONObject("theme");
+            findViewById(android.R.id.content).setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
+            headerContainer.setBackgroundColor(Color.parseColor(theme.getString("secondaryBg")));
+            
+            if (adapter != null) {
+                adapter.setConfig(configManager.getConfig());
+                adapter.notifyDataSetChanged();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void renderHeader(String path) {
+        headerContainer.removeAllViews();
+        TextView pathView = new TextView(this);
+        pathView.setText(path);
+        pathView.setTextColor(Color.WHITE);
+        pathView.setPadding(32, 32, 32, 32);
+        pathView.setTextSize(16);
+        headerContainer.addView(pathView);
     }
 
     private void bootCoreModules() {
@@ -197,429 +211,35 @@ public class MainActivity extends Activity {
 
     private void extractBuiltInExtensions() {
         try {
-            String[] assets = getAssets().list("extensions");
-            if (assets == null) return;
-            for (String scriptDir : assets) {
-                File targetDir = new File(extensionsDir, scriptDir);
-                targetDir.mkdirs();
-                
-                String[] files = getAssets().list("extensions/" + scriptDir);
-                if (files == null) continue;
-                for (String file : files) {
-                    InputStream in = getAssets().open("extensions/" + scriptDir + "/" + file);
-                    OutputStream out = new java.io.FileOutputStream(new File(targetDir, file));
-                    byte[] buffer = new byte[1024];
-                    int read;
-                    while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
-                    in.close();
-                    out.close();
+            String[] categories = getAssets().list("extensions");
+            if (categories == null) return;
+            for (String category : categories) {
+                File catDir = new File(extensionsDir, category);
+                catDir.mkdirs();
+                String[] files = getAssets().list("extensions/" + category);
+                if (files != null) {
+                    for (String file : files) {
+                        InputStream is = getAssets().open("extensions/" + category + "/" + file);
+                        File outFile = new File(catDir, file);
+                        OutputStream os = new FileOutputStream(outFile);
+                        byte[] buffer = new byte[1024];
+                        int read;
+                        while ((read = is.read(buffer)) != -1) {
+                            os.write(buffer, 0, read);
+                        }
+                        is.close();
+                        os.flush();
+                        os.close();
+                    }
                 }
             }
+            Toast.makeText(this, "Extensions extracted!", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
-    private void setupNavigation() {
-        navFileExplorer.setOnClickListener(v -> {
-            mainContainer.setVisibility(View.VISIBLE);
-            dashboardContainer.setVisibility(View.GONE);
-            navFileExplorer.setTextColor(Color.parseColor("#f8fafc"));
-            navJsEngine.setTextColor(Color.parseColor("#64748b"));
-        });
-        
-        navFileExplorer.setOnLongClickListener(v -> {
-            showSortMenu();
-            return true;
-        });
-        
-        navJsEngine.setOnClickListener(v -> {
-            mainContainer.setVisibility(View.GONE);
-            dashboardContainer.setVisibility(View.VISIBLE);
-            navFileExplorer.setTextColor(Color.parseColor("#64748b"));
-            navJsEngine.setTextColor(Color.parseColor("#f8fafc"));
-            loadScripts();
-        });
-    }
-
-    // --- Script Engine Dashboard ---
-
-    private void loadScripts() {
-        extensionScripts.clear();
-        if (extensionsDir.exists()) {
-            File[] files = extensionsDir.listFiles();
-            if (files != null) {
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        File index = new File(f, "index.js");
-                        if (index.exists()) extensionScripts.add(index);
-                    } else if (f.getName().endsWith(".js")) {
-                        extensionScripts.add(f);
-                    }
-                }
-            }
-        }
-        
-        scriptAdapter = new ScriptAdapter(extensionScripts, new ScriptAdapter.OnScriptClickListener() {
-            @Override public void onRun(File script) {
-                JsRuntimeManager.executeScript(MainActivity.this, script);
-            }
-            @Override public void onEdit(File script) {
-                openViewer(script);
-            }
-            @Override public void onBookmark(File script) {
-                if (bookmarkedScripts.contains(script.getAbsolutePath())) {
-                    bookmarkedScripts.remove(script.getAbsolutePath());
-                    Toast.makeText(MainActivity.this, "Bookmark Removed", Toast.LENGTH_SHORT).show();
-                } else {
-                    bookmarkedScripts.add(script.getAbsolutePath());
-                    Toast.makeText(MainActivity.this, "Bookmarked!", Toast.LENGTH_SHORT).show();
-                }
-                renderBookmarks();
-            }
-        });
-        scriptRecyclerView.setAdapter(scriptAdapter);
-    }
-
-    private void createNewScriptWorkspace() {
-        final EditText input = new EditText(this);
-        input.setHint("e.g. ImageOptimizer");
-        new AlertDialog.Builder(this)
-            .setTitle("New Extension Workspace")
-            .setView(input)
-            .setPositiveButton("Create", (dialog, which) -> {
-                String name = input.getText().toString().trim();
-                if (!name.isEmpty()) {
-                    File workspace = new File(extensionsDir, name);
-                    workspace.mkdirs();
-                    File index = new File(workspace, "index.js");
-                    try {
-                        index.createNewFile();
-                        loadScripts();
-                        openViewer(index);
-                    } catch (Exception e) {
-                        Toast.makeText(this, "Failed", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            })
-            .setNegativeButton("Cancel", null)
-            .show();
-    }
-
-    private void renderBookmarks() {
-        bookmarksContainer.removeAllViews();
-        for (String path : bookmarkedScripts) {
-            File script = new File(path);
-            TextView btn = new TextView(this);
-            btn.setText("⭐ " + (script.getName().equals("index.js") ? script.getParentFile().getName() : script.getName()));
-            btn.setTextColor(Color.parseColor("#fbbf24"));
-            btn.setPadding(24, 12, 24, 12);
-            GradientDrawable gd = new GradientDrawable();
-            gd.setColor(Color.parseColor("#1e293b"));
-            gd.setCornerRadius(16f);
-            btn.setBackground(gd);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            params.setMargins(0, 0, 16, 0);
-            btn.setLayoutParams(params);
-            
-            btn.setOnClickListener(v -> {
-                Toast.makeText(this, "Running " + script.getName() + " on " + currentDir.getName(), Toast.LENGTH_SHORT).show();
-                JsRuntimeManager.executeScript(MainActivity.this, script);
-            });
-            bookmarksContainer.addView(btn);
-        }
-        bookmarksContainer.setVisibility(bookmarkedScripts.isEmpty() ? View.GONE : View.VISIBLE);
-    }
-
-    // --- File Explorer ---
-
-    private void renderTabs() {
-        tabsContainer.removeAllViews();
-        for (int i = 0; i < tabs.size(); i++) {
-            final int index = i;
-            Button tabBtn = new Button(this);
-            tabBtn.setText(tabs.get(i).getName().isEmpty() ? "Root" : tabs.get(i).getName());
-            tabBtn.setAllCaps(false);
-            tabBtn.setTextColor(index == activeTabIndex ? Color.WHITE : Color.LTGRAY);
-            
-            GradientDrawable gd = new GradientDrawable();
-            gd.setColor(index == activeTabIndex ? Color.parseColor("#3b82f6") : Color.parseColor("#334155"));
-            gd.setCornerRadius(16f);
-            gd.setStroke(2, index == activeTabIndex ? Color.parseColor("#60a5fa") : Color.TRANSPARENT);
-            tabBtn.setBackground(gd);
-            
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 100);
-            params.setMargins(0, 0, 16, 0);
-            tabBtn.setLayoutParams(params);
-            
-            tabBtn.setOnClickListener(v -> {
-                activeTabIndex = index;
-                renderTabs();
-                loadDirectory(tabs.get(activeTabIndex));
-            });
-            
-            tabBtn.setOnLongClickListener(v -> {
-                if (tabs.size() > 1) {
-                    tabs.remove(index);
-                    if (activeTabIndex >= tabs.size()) activeTabIndex = tabs.size() - 1;
-                    renderTabs();
-                    loadDirectory(tabs.get(activeTabIndex));
-                }
-                return true;
-            });
-            tabsContainer.addView(tabBtn);
-        }
-        
-        Button newTabBtn = new Button(this);
-        newTabBtn.setText("+");
-        newTabBtn.setTextColor(Color.WHITE);
-        GradientDrawable gd = new GradientDrawable();
-        gd.setColor(Color.parseColor("#334155"));
-        gd.setCornerRadius(16f);
-        newTabBtn.setBackground(gd);
-        newTabBtn.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
-        newTabBtn.setOnClickListener(v -> {
-            tabs.add(Environment.getExternalStorageDirectory());
-            activeTabIndex = tabs.size() - 1;
-            renderTabs();
-            loadDirectory(tabs.get(activeTabIndex));
-        });
-        tabsContainer.addView(newTabBtn);
-    }
-
-    public void applyTheme() {
-        try {
-            JSONObject theme = configManager.getConfig().getJSONObject("theme");
-            findViewById(R.id.mainContainer).setBackgroundColor(Color.parseColor(theme.getString("primaryBg")));
-            findViewById(R.id.headerContainer).setBackgroundColor(Color.parseColor(theme.getString("secondaryBg")));
-            pathText.setTextColor(Color.parseColor(theme.getString("textColor")));
-            
-            if (adapter != null) {
-                adapter.setConfig(configManager.getConfig());
-                adapter.notifyDataSetChanged();
-            }
-        } catch (Exception ignored) {}
-    }
-
-    private void loadDirectory(File dir) {
-        currentDir = dir;
-        tabs.set(activeTabIndex, dir);
-        renderTabs();
-        pathText.setText(dir.getAbsolutePath());
-
-        if (!dir.canRead()) {
-            fetchFromDaemon(dir.getAbsolutePath());
-            return;
-        }
-
-        File[] files = dir.listFiles();
-        currentFiles = new ArrayList<>();
-        if (files != null) {
-            Arrays.sort(files, (f1, f2) -> {
-                if (f1.isDirectory() && !f2.isDirectory()) return -1;
-                if (!f1.isDirectory() && f2.isDirectory()) return 1;
-                switch (sortMode) {
-                    case "NAME_DESC": return f2.getName().compareToIgnoreCase(f1.getName());
-                    case "SIZE_ASC": return Long.compare(f1.length(), f2.length());
-                    case "SIZE_DESC": return Long.compare(f2.length(), f1.length());
-                    case "TIME_ASC": return Long.compare(f1.lastModified(), f2.lastModified());
-                    case "TIME_DESC": return Long.compare(f2.lastModified(), f1.lastModified());
-                    case "NAME_ASC":
-                    default: return f1.getName().compareToIgnoreCase(f2.getName());
-                }
-            });
-            currentFiles.addAll(Arrays.asList(files));
-        }
-        updateRecyclerView();
-    }
-
-    private void showSortMenu() {
-        String[] options = {"Name (A-Z)", "Name (Z-A)", "Size (Smallest)", "Size (Largest)", "Time (Oldest)", "Time (Newest)"};
-        new AlertDialog.Builder(this)
-            .setTitle("Sort Files By")
-            .setItems(options, (dialog, which) -> {
-                switch(which) {
-                    case 0: sortMode = "NAME_ASC"; break;
-                    case 1: sortMode = "NAME_DESC"; break;
-                    case 2: sortMode = "SIZE_ASC"; break;
-                    case 3: sortMode = "SIZE_DESC"; break;
-                    case 4: sortMode = "TIME_ASC"; break;
-                    case 5: sortMode = "TIME_DESC"; break;
-                }
-                if (currentDir != null) loadDirectory(currentDir);
-            }).show();
-    }
-
-    private void fetchFromDaemon(String path) {
-        new Thread(() -> {
-            try {
-                JSONObject req = new JSONObject();
-                req.put("action", "list_dir");
-                req.put("path", path);
-                
-                JSONObject res = com.polymath.fs.core.RootEngine.executeAction(req);
-                if (res.optBoolean("success")) {
-                    JSONArray filesArr = res.optJSONArray("files");
-                    if (filesArr != null) {
-                        currentFiles = new ArrayList<>();
-                        for (int i = 0; i < filesArr.length(); i++) {
-                            currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
-                        }
-                        runOnUiThread(this::updateRecyclerView);
-                    }
-                }
-            } catch (Exception e) {}
-        }).start();
-    }
-
-    private void fetchFromDaemonSearch(String path, String query) {
-        new Thread(() -> {
-            try {
-                JSONObject req = new JSONObject();
-                req.put("action", "search_files");
-                req.put("path", path);
-                req.put("query", query);
-                
-                JSONObject res = com.polymath.fs.core.RootEngine.executeAction(req);
-                if (res.optBoolean("success")) {
-                    JSONArray filesArr = res.optJSONArray("files");
-                    if (filesArr != null) {
-                        currentFiles = new ArrayList<>();
-                        for (int i = 0; i < filesArr.length(); i++) {
-                            currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
-                        }
-                        runOnUiThread(this::updateRecyclerView);
-                    }
-                }
-            } catch (Exception e) {}
-        }).start();
-    }
-
-    private void updateRecyclerView() {
-        adapter = new FileAdapter(currentFiles, new FileAdapter.OnItemClickListener() {
-            @Override public void onItemClick(File file) {
-                if (file.isDirectory()) loadDirectory(file);
-                else openViewer(file);
-            }
-            @Override public void onItemLongClick(File file) {
-                showAdvancedFeaturesMenu(file);
-            }
-        });
-        adapter.setConfig(configManager.getConfig());
-        fileRecyclerView.setAdapter(adapter);
-    }
-
-    private void showAdvancedFeaturesMenu(File file) {
-        String[] options = {
-            "Open / View", "Rename", "Move", "Copy", "Extract Archive",
-            "File Info", "Share",
-            "Delete File (Daemon)", "Archive (Daemon)", "Format Cloaking (Toggle File Scramble)",
-            "Hardlink Deduplication (Zero-Space)", "Chronos (Time-Travel Snapshot)",
-            "Ghost Vault (Forensic Shredder)", "Mount RAM-Disk (HyperDrive)", "Restore Chronos Snapshot",
-            "Execute JS Extension (V8 WebKit Engine)"
-        };
-
-        new AlertDialog.Builder(this)
-            .setTitle("Polymath Core Operations")
-            .setItems(options, (dialog, which) -> {
-                String action = "";
-                switch (which) {
-                    case 0: openViewer(file); return;
-                    case 1: promptAndExecute("rename", file); return;
-                    case 2: promptAndExecute("move", file); return;
-                    case 3: promptAndExecute("copy", file); return;
-                    case 4: action = "extract"; break;
-                    case 5: showFileInfo(file); return;
-                    case 6: shareFile(file); return;
-                    case 7: action = "delete_file"; break;
-                    case 8: action = "archive"; break;
-                    case 9: action = "format_cloak"; break;
-                    case 10: action = "hardlink_dedup"; break;
-                    case 11: action = "chronos_snapshot"; break;
-                    case 12: action = "ghost_vault"; break;
-                    case 13: action = "mount_ramdisk"; break;
-                    case 14: action = "chronos_restore"; break;
-                    case 15: 
-                        JsRuntimeManager.executeScript(MainActivity.this, file);
-                        return;
-                }
-                executeAdvancedAction(action, file.getAbsolutePath(), null);
-            })
-            .show();
-    }
-
-    private void promptAndExecute(String action, File file) {
-        final EditText input = new EditText(this);
-        input.setText(file.getAbsolutePath());
-        new AlertDialog.Builder(this)
-            .setTitle(action.toUpperCase() + " Destination")
-            .setView(input)
-            .setPositiveButton("OK", (dialog, which) -> {
-                executeAdvancedAction(action, file.getAbsolutePath(), input.getText().toString());
-            })
-            .setNegativeButton("Cancel", null)
-            .show();
-    }
-
-    private void showFileInfo(File file) {
-        String info = "Name: " + file.getName() + "\n" +
-                      "Path: " + file.getAbsolutePath() + "\n" +
-                      "Size: " + (file.length() / 1024) + " KB\n" +
-                      "Modified: " + new java.util.Date(file.lastModified()).toString();
-        new AlertDialog.Builder(this).setTitle("File Info").setMessage(info).setPositiveButton("OK", null).show();
-    }
-
-    private void shareFile(File file) {
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("*/*");
-        // Simplified for prototype, requires FileProvider in production
-        shareIntent.putExtra(Intent.EXTRA_STREAM, android.net.Uri.fromFile(file));
-        startActivity(Intent.createChooser(shareIntent, "Share File via Polymath"));
-    }
-
-    private void executeAdvancedAction(String action, String path, String dest) {
-        new Thread(() -> {
-            try {
-                JSONObject req = new JSONObject();
-                req.put("action", action);
-                req.put("path", path);
-                if (dest != null) req.put("dest", dest);
-                if (action.equals("chronos_restore")) req.put("archive", path + "/.chronos_1.tar.gz");
-                if (action.equals("archive")) {
-                    req.put("action", "execute_command");
-                    req.put("command", "tar -czf '" + path + ".tar.gz' -C '" + new File(path).getParent() + "' '" + new File(path).getName() + "'");
-                }
-                
-                com.polymath.fs.core.RootEngine.executeAction(req);
-                
-                runOnUiThread(() -> {
-                    Toast.makeText(MainActivity.this, "Execution Complete: " + action, Toast.LENGTH_LONG).show();
-                    loadDirectory(currentDir);
-                });
-            } catch (Exception e) {}
-        }).start();
-    }
-
-    private void openViewer(File file) {
-        String name = file.getName().toLowerCase();
-        Intent intent;
-        if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".gif")) intent = new Intent(this, ImageViewerActivity.class);
-        else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".mp3") || name.endsWith(".wav")) intent = new Intent(this, MediaPlayerActivity.class);
-        else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".xml") || name.endsWith(".json")) intent = new Intent(this, EditorActivity.class);
-        else if (name.endsWith(".pdf")) intent = new Intent(this, com.polymath.fs.viewers.PdfViewerActivity.class);
-        else { Toast.makeText(this, "No built-in viewer for this type.", Toast.LENGTH_SHORT).show(); return; }
-        intent.putExtra("filePath", file.getAbsolutePath());
-        startActivity(intent);
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (dashboardContainer.getVisibility() == View.VISIBLE) {
-            navFileExplorer.performClick();
-        } else if (!currentDir.getAbsolutePath().equals(Environment.getExternalStorageDirectory().getAbsolutePath()) && !currentDir.getAbsolutePath().equals("/")) {
-            loadDirectory(currentDir.getParentFile());
-        } else {
-            super.onBackPressed();
-        }
-    }
+    
+    // Fallback for ComponentActivity/LifecycleOwner if using raw Activity. 
+    // In a real app we'd extend AppCompatActivity to use .observe() directly.
+    // For now, let's implement a simple Observer pattern in ViewModel if LiveData isn't fully available on pure Activity.
 }
