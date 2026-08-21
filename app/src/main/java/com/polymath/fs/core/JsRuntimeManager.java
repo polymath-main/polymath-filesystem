@@ -8,10 +8,6 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 import org.json.JSONObject;
 
 public class JsRuntimeManager {
@@ -69,18 +65,12 @@ public class JsRuntimeManager {
         // Exposed to JS: PolymathOS.daemonCommand("archive", "/sdcard/test.txt")
         @JavascriptInterface
         public String daemonCommand(String action, String path) {
-            try (Socket socket = new Socket("127.0.0.1", 50505)) {
-                OutputStream os = socket.getOutputStream();
+            try {
                 JSONObject req = new JSONObject();
                 req.put("action", action);
                 req.put("path", path);
-                os.write(req.toString().getBytes());
-                os.flush();
-
-                InputStream is = socket.getInputStream();
-                byte[] buffer = new byte[8192];
-                int read = is.read(buffer);
-                return new String(buffer, 0, read);
+                JSONObject res = RootEngine.executeAction(req);
+                return res.toString();
             } catch (Exception e) {
                 return "{\"success\":false, \"error\":\"" + e.getMessage() + "\"}";
             }

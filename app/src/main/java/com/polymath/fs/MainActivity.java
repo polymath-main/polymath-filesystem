@@ -29,9 +29,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -339,27 +336,21 @@ public class MainActivity extends Activity {
 
     private void fetchFromDaemon(String path) {
         new Thread(() -> {
-            try (Socket socket = new Socket("127.0.0.1", 50505)) {
-                OutputStream os = socket.getOutputStream();
+            try {
                 JSONObject req = new JSONObject();
                 req.put("action", "list_dir");
                 req.put("path", path);
-                os.write(req.toString().getBytes());
-                os.flush();
-
-                InputStream is = socket.getInputStream();
-                byte[] buffer = new byte[8192];
-                int read = is.read(buffer);
-                String response = new String(buffer, 0, read);
                 
-                JSONObject res = new JSONObject(response);
-                if (res.getBoolean("success")) {
-                    JSONArray filesArr = res.getJSONArray("files");
-                    currentFiles = new ArrayList<>();
-                    for (int i = 0; i < filesArr.length(); i++) {
-                        currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
+                JSONObject res = com.polymath.fs.core.RootEngine.executeAction(req);
+                if (res.optBoolean("success")) {
+                    JSONArray filesArr = res.optJSONArray("files");
+                    if (filesArr != null) {
+                        currentFiles = new ArrayList<>();
+                        for (int i = 0; i < filesArr.length(); i++) {
+                            currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
+                        }
+                        runOnUiThread(this::updateRecyclerView);
                     }
-                    runOnUiThread(this::updateRecyclerView);
                 }
             } catch (Exception e) {}
         }).start();
@@ -367,26 +358,22 @@ public class MainActivity extends Activity {
 
     private void fetchFromDaemonSearch(String path, String query) {
         new Thread(() -> {
-            try (Socket socket = new Socket("127.0.0.1", 50505)) {
-                OutputStream os = socket.getOutputStream();
+            try {
                 JSONObject req = new JSONObject();
                 req.put("action", "search_files");
                 req.put("path", path);
                 req.put("query", query);
-                os.write(req.toString().getBytes());
-                os.flush();
-
-                InputStream is = socket.getInputStream();
-                byte[] buffer = new byte[16384];
-                int read = is.read(buffer);
-                JSONObject res = new JSONObject(new String(buffer, 0, read));
-                if (res.getBoolean("success")) {
-                    JSONArray filesArr = res.getJSONArray("files");
-                    currentFiles = new ArrayList<>();
-                    for (int i = 0; i < filesArr.length(); i++) {
-                        currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
+                
+                JSONObject res = com.polymath.fs.core.RootEngine.executeAction(req);
+                if (res.optBoolean("success")) {
+                    JSONArray filesArr = res.optJSONArray("files");
+                    if (filesArr != null) {
+                        currentFiles = new ArrayList<>();
+                        for (int i = 0; i < filesArr.length(); i++) {
+                            currentFiles.add(new File(filesArr.getJSONObject(i).getString("uri")));
+                        }
+                        runOnUiThread(this::updateRecyclerView);
                     }
-                    runOnUiThread(this::updateRecyclerView);
                 }
             } catch (Exception e) {}
         }).start();
@@ -438,8 +425,7 @@ public class MainActivity extends Activity {
 
     private void executeAdvancedAction(String action, String path) {
         new Thread(() -> {
-            try (Socket socket = new Socket("127.0.0.1", 50505)) {
-                OutputStream os = socket.getOutputStream();
+            try {
                 JSONObject req = new JSONObject();
                 req.put("action", action);
                 req.put("path", path);
@@ -448,12 +434,9 @@ public class MainActivity extends Activity {
                     req.put("action", "execute_command");
                     req.put("command", "tar -czf '" + path + ".tar.gz' -C '" + new File(path).getParent() + "' '" + new File(path).getName() + "'");
                 }
-                os.write(req.toString().getBytes());
-                os.flush();
-
-                InputStream is = socket.getInputStream();
-                byte[] buffer = new byte[8192];
-                int read = is.read(buffer);
+                
+                com.polymath.fs.core.RootEngine.executeAction(req);
+                
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Execution Complete: " + action, Toast.LENGTH_LONG).show();
                     loadDirectory(currentDir);
