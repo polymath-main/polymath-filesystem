@@ -24,6 +24,7 @@
         <activity android:name=".viewers.ImageViewerActivity" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
         <activity android:name=".viewers.MediaPlayerActivity" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" android:configChanges="orientation|screenSize" />
         <activity android:name=".viewers.EditorActivity" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".viewers.PdfViewerActivity" android:theme="@android:style/Theme.DeviceDefault" />
 
     </application>
 </manifest>

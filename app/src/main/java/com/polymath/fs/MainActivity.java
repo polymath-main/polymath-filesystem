@@ -538,6 +538,7 @@ public class MainActivity extends Activity {
         if (name.endsWith(".jpg") || name.endsWith(".png") || name.endsWith(".jpeg") || name.endsWith(".gif")) intent = new Intent(this, ImageViewerActivity.class);
         else if (name.endsWith(".mp4") || name.endsWith(".mkv") || name.endsWith(".mp3") || name.endsWith(".wav")) intent = new Intent(this, MediaPlayerActivity.class);
         else if (name.endsWith(".txt") || name.endsWith(".md") || name.endsWith(".java") || name.endsWith(".js") || name.endsWith(".xml") || name.endsWith(".json")) intent = new Intent(this, EditorActivity.class);
+        else if (name.endsWith(".pdf")) intent = new Intent(this, com.polymath.fs.viewers.PdfViewerActivity.class);
         else { Toast.makeText(this, "No built-in viewer for this type.", Toast.LENGTH_SHORT).show(); return; }
         intent.putExtra("filePath", file.getAbsolutePath());
         startActivity(intent);

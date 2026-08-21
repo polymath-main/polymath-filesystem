@@ -1,17 +1,15 @@
 package com.polymath.fs.viewers;
 
 import android.app.Activity;
-import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
 import android.widget.FrameLayout;
+import android.widget.MediaController;
+import android.widget.VideoView;
+import android.view.Gravity;
 
-public class MediaPlayerActivity extends Activity implements SurfaceHolder.Callback {
+public class MediaPlayerActivity extends Activity {
 
-    private MediaPlayer mediaPlayer;
-    private SurfaceView surfaceView;
-    private String filePath;
+    private VideoView videoView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,38 +18,24 @@ public class MediaPlayerActivity extends Activity implements SurfaceHolder.Callb
         FrameLayout layout = new FrameLayout(this);
         layout.setBackgroundColor(0xFF000000);
         
-        surfaceView = new SurfaceView(this);
-        layout.addView(surfaceView, new FrameLayout.LayoutParams(
+        videoView = new VideoView(this);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, 
-                FrameLayout.LayoutParams.MATCH_PARENT));
+                FrameLayout.LayoutParams.MATCH_PARENT);
+        params.gravity = Gravity.CENTER;
+        layout.addView(videoView, params);
         
         setContentView(layout);
         
-        filePath = getIntent().getStringExtra("filePath");
-        surfaceView.getHolder().addCallback(this);
-    }
-
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        try {
-            mediaPlayer = new MediaPlayer();
-            mediaPlayer.setDisplay(holder);
-            mediaPlayer.setDataSource(filePath);
-            mediaPlayer.prepare();
-            mediaPlayer.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {}
-
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder) {
-        if (mediaPlayer != null) {
-            mediaPlayer.release();
-            mediaPlayer = null;
+        String filePath = getIntent().getStringExtra("filePath");
+        
+        MediaController mediaController = new MediaController(this);
+        mediaController.setAnchorView(videoView);
+        videoView.setMediaController(mediaController);
+        
+        if (filePath != null) {
+            videoView.setVideoPath(filePath);
+            videoView.start();
         }
     }
 }
