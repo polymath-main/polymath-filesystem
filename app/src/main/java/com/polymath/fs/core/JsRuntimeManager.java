@@ -20,16 +20,50 @@ public class JsRuntimeManager {
     public static class PolymathBridge {
         private final Context context;
         private final String baseDir;
+        private WebView webView;
 
         public PolymathBridge(Context context, String baseDir) {
             this.context = context;
             this.baseDir = baseDir;
         }
 
+        public void attachWebView(WebView wv) {
+            this.webView = wv;
+        }
+
         // Exposed to JS: PolymathOS.toast("Hello")
         @JavascriptInterface
         public void toast(String message) {
             new Handler(Looper.getMainLooper()).post(() -> Toast.makeText(context, message, Toast.LENGTH_SHORT).show());
+        }
+
+        // Exposed to JS: PolymathOS.alert("Title", "Message")
+        @JavascriptInterface
+        public void alert(String title, String message) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                new android.app.AlertDialog.Builder(context)
+                    .setTitle(title)
+                    .setMessage(message)
+                    .setPositiveButton("OK", null)
+                    .show();
+            });
+        }
+
+        // Exposed to JS: PolymathOS.prompt("Enter Password", "callbackFnName")
+        @JavascriptInterface
+        public void prompt(String title, String callbackName) {
+            new Handler(Looper.getMainLooper()).post(() -> {
+                final android.widget.EditText input = new android.widget.EditText(context);
+                new android.app.AlertDialog.Builder(context)
+                    .setTitle(title)
+                    .setView(input)
+                    .setPositiveButton("Submit", (dialog, which) -> {
+                        String txt = input.getText().toString().replace("'", "\\'");
+                        if (webView != null) webView.evaluateJavascript(callbackName + "('" + txt + "');", null);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            });
         }
 
         // Exposed to JS: PolymathOS.daemonCommand("archive", "/sdcard/test.txt")
@@ -94,8 +128,11 @@ public class JsRuntimeManager {
                                   "};\n";
 
                 WebView webView = new WebView(androidContext);
+                PolymathBridge bridge = new PolymathBridge(androidContext, scriptFile.getParent());
+                bridge.attachWebView(webView);
+                
                 webView.getSettings().setJavaScriptEnabled(true);
-                webView.addJavascriptInterface(new PolymathBridge(androidContext, scriptFile.getParent()), "PolymathOS");
+                webView.addJavascriptInterface(bridge, "PolymathOS");
                 
                 webView.evaluateJavascript(polyfill + scriptContent, result -> {
                     if (result != null && !result.equals("null")) {

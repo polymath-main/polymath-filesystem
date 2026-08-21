@@ -106,12 +106,40 @@ public class MainActivity extends Activity {
         
         btnNewScript.setOnClickListener(v -> createNewScriptWorkspace());
 
-        if (!extensionsDir.exists()) extensionsDir.mkdirs();
+        if (!extensionsDir.exists()) {
+            extensionsDir.mkdirs();
+            extractBuiltInExtensions();
+        }
 
         tabs.add(Environment.getExternalStorageDirectory());
         renderTabs();
         loadDirectory(tabs.get(activeTabIndex));
         loadScripts();
+    }
+
+    private void extractBuiltInExtensions() {
+        try {
+            String[] assets = getAssets().list("extensions");
+            if (assets == null) return;
+            for (String scriptDir : assets) {
+                File targetDir = new File(extensionsDir, scriptDir);
+                targetDir.mkdirs();
+                
+                String[] files = getAssets().list("extensions/" + scriptDir);
+                if (files == null) continue;
+                for (String file : files) {
+                    InputStream in = getAssets().open("extensions/" + scriptDir + "/" + file);
+                    OutputStream out = new java.io.FileOutputStream(new File(targetDir, file));
+                    byte[] buffer = new byte[1024];
+                    int read;
+                    while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read);
+                    in.close();
+                    out.close();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void setupNavigation() {

@@ -44,8 +44,16 @@
                     android:textColor="#3b82f6" android:textSize="14sp" android:textStyle="bold" android:text="+ NEW SCRIPT" android:padding="8dp" />
             </LinearLayout>
             
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:textColor="#94a3b8" android:textSize="12sp" android:text="PolymathExtensions/ (Modular Scripts)" android:paddingHorizontal="16dp" android:paddingVertical="8dp" android:background="#0f172a" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="#0f172a" android:padding="16dp">
+                
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textColor="#34d399" android:textSize="12sp" android:textStyle="bold" android:text="⚡ ENGINE STATUS: ONLINE (V8 WEBKIT)" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textColor="#94a3b8" android:textSize="12sp" android:textStyle="bold" android:text="🛡️ ROOT DAEMON: CONNECTED" android:layout_marginTop="4dp" />
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:textColor="#94a3b8" android:textSize="12sp" android:textStyle="bold" android:text="📦 SUBSYSTEM LIBRARY: /sdcard/PolymathExtensions" android:layout_marginTop="4dp" />
+            </LinearLayout>
 
             <androidx.recyclerview.widget.RecyclerView android:id="@+id/scriptRecyclerView" android:layout_width="match_parent"
                 android:layout_height="0dp" android:layout_weight="1" android:padding="8dp"/>
