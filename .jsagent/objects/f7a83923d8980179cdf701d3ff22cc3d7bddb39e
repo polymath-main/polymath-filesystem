@@ -29,7 +29,6 @@ public class FileSystemViewModel extends ViewModel {
     public LiveData<String> getCurrentPath() { return currentPath; }
     public LiveData<List<FileSystemItem>> getFileList() { return fileList; }
     public LiveData<Boolean> getIsLoading() { return isLoading; }
-    public LiveData<List<TabState>> getTabs() { return tabs; }
 
     public void navigateTo(String path) {
         if (currentTabId != null) {
@@ -105,8 +104,8 @@ public class FileSystemViewModel extends ViewModel {
         }
     }
 
-    public boolean goBack() {
-        if (currentTabId == null) return false;
+    public void goBack() {
+        if (currentTabId == null) return;
         List<TabState> currentTabs = tabs.getValue();
         if (currentTabs != null) {
             for (TabState tab : currentTabs) {
@@ -114,13 +113,11 @@ public class FileSystemViewModel extends ViewModel {
                     if (tab.getPathHistory().size() > 1) {
                         tab.getPathHistory().pop();
                         navigateToInternal(tab.getPathHistory().peek());
-                        return true;
                     }
-                    return false;
+                    return;
                 }
             }
         }
-        return false;
     }
 
     public void performSearch(Context context, String query) {
