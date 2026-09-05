@@ -62,7 +62,28 @@ class FileBrowserFragment : Fragment() {
                 if (fileNode.isDirectory) {
                     viewModel.navigateTo(fileNode.path)
                 } else {
-                    Toast.makeText(context, "Opened: ${fileNode.name}", Toast.LENGTH_SHORT).show()
+                    val file = java.io.File(fileNode.path)
+                    val ext = file.extension.lowercase()
+                    if (ext == "txt" || ext == "md") {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.TextViewerActivity::class.java)
+                        intent.putExtra("FILE_PATH", fileNode.path)
+                        startActivity(intent)
+                    } else {
+                        try {
+                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                requireContext(),
+                                "${requireContext().packageName}.fileprovider",
+                                file
+                            )
+                            val mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+                            intent.setDataAndType(uri, mimeType)
+                            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Cannot open file: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             },
             onMenuClick = { fileNode, view ->

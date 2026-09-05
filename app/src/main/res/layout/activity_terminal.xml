@@ -22,6 +22,65 @@
             android:text="Polymath Root Terminal\n" />
     </ScrollView>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#333333"
+        android:padding="4dp">
+        
+        <Button
+            android:id="@+id/btnCtrl"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ctrl"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#555555" />
+            
+        <Button
+            android:id="@+id/btnAlt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Alt"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#555555" />
+            
+        <Button
+            android:id="@+id/btnEsc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Esc"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#555555" />
+            
+        <Button
+            android:id="@+id/btnTab"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Tab"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#555555" />
+            
+        <Button
+            android:id="@+id/btnExit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Exit"
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#AA3333" />
+            
+    </LinearLayout>
+
     <EditText
         android:id="@+id/etInput"
         android:layout_width="match_parent"
