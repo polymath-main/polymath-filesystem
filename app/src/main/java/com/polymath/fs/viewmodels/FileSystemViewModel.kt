@@ -9,6 +9,7 @@ import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
 import com.polymath.fs.models.Clipboard
 import com.polymath.fs.models.FileBrowserUiState
+import com.polymath.fs.models.TabState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
