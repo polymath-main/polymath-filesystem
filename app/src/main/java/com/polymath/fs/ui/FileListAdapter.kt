@@ -64,12 +64,12 @@ class FileListAdapter(
                 fileIcon.text = "📄"
                 val sizeStr = Formatter.formatFileSize(itemView.context, file.size)
                 val dateStr = dateFormat.format(Date(file.lastModified))
-                fileDetails.text = "\$sizeStr • \$dateStr"
+                fileDetails.text = "$sizeStr • $dateStr"
             }
             
             when (file) {
                 is FileNode.RootFile -> {
-                    fileDetails.text = "\${fileDetails.text} • \${file.permissions}"
+                    fileDetails.text = "${fileDetails.text} • ${file.permissions}"
                 }
                 else -> {}
             }

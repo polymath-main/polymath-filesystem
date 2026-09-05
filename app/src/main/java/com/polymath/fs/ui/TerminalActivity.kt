@@ -59,14 +59,12 @@ class TerminalActivity : AppCompatActivity() {
                 val errReader = BufferedReader(InputStreamReader(p.errorStream))
                 
                 launch(Dispatchers.IO) {
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        appendOutput(line!!)
+                    reader.forEachLine { line ->
+                        appendOutput(line)
                     }
                 }
                 launch(Dispatchers.IO) {
-                    var line: String?
-                    while (errReader.readLine().also { line = it } != null) {
+                    errReader.forEachLine { line ->
                         appendOutput("ERROR: $line")
                     }
                 }
