@@ -9,6 +9,8 @@
     <application
         android:name=".PolymathApp"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="Polymath FileSystem"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
         android:requestLegacyExternalStorage="true">
