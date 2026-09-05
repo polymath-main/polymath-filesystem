@@ -77,8 +77,8 @@ class TerminalActivity : AppCompatActivity() {
     }
 
     private fun sendCommand(cmd: String) {
-        appendOutput("$ $cmd")
         lifecycleScope.launch(Dispatchers.IO) {
+            appendOutput("$ $cmd")
             writer?.println(cmd)
         }
     }
