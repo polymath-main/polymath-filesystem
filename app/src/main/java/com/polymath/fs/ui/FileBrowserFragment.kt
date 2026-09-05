@@ -69,11 +69,34 @@ class FileBrowserFragment : Fragment() {
                 popup.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
                         com.polymath.fs.R.id.action_info -> {
-                            Toast.makeText(context, "Info: ${fileNode.path}", Toast.LENGTH_SHORT).show()
+                            val bottomSheet = FileInfoBottomSheet()
+                            bottomSheet.setFileNode(fileNode)
+                            bottomSheet.show(parentFragmentManager, "FileInfoBottomSheet")
                             true
                         }
                         com.polymath.fs.R.id.action_delete -> {
-                            Toast.makeText(context, "Delete: ${fileNode.name}", Toast.LENGTH_SHORT).show()
+                            viewModel.deleteFiles(listOf(fileNode.path))
+                            true
+                        }
+                        com.polymath.fs.R.id.action_rename -> {
+                            val input = android.widget.EditText(requireContext())
+                            input.setText(fileNode.name)
+                            android.app.AlertDialog.Builder(requireContext())
+                                .setTitle("Rename")
+                                .setView(input)
+                                .setPositiveButton("OK") { _, _ ->
+                                    viewModel.renameFile(fileNode.path, input.text.toString())
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                            true
+                        }
+                        com.polymath.fs.R.id.action_copy -> {
+                            viewModel.copyFiles(listOf(fileNode.path))
+                            true
+                        }
+                        com.polymath.fs.R.id.action_move -> {
+                            viewModel.cutFiles(listOf(fileNode.path))
                             true
                         }
                         else -> false
@@ -120,6 +143,10 @@ class FileBrowserFragment : Fragment() {
                 }
                 com.polymath.fs.R.id.action_terminal -> {
                     startActivity(android.content.Intent(requireContext(), TerminalActivity::class.java))
+                    true
+                }
+                com.polymath.fs.R.id.action_paste -> {
+                    viewModel.pasteFiles()
                     true
                 }
                 else -> false

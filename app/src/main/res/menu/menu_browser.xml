@@ -9,4 +9,8 @@
         android:id="@+id/action_terminal"
         android:title="Open Terminal"
         app:showAsAction="never" />
+    <item
+        android:id="@+id/action_paste"
+        android:title="Paste"
+        app:showAsAction="ifRoom" />
 </menu>
