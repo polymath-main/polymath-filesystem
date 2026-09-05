@@ -14,6 +14,19 @@
         app:titleTextColor="#ffffff"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#1e293b"
+        app:tabTextColor="#94a3b8"
+        app:tabSelectedTextColor="#ffffff"
+        app:tabIndicatorColor="#38bdf8"
+        app:tabMode="scrollable"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <TextView
         android:id="@+id/pathText"
         android:layout_width="0dp"
@@ -23,7 +36,7 @@
         android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintTop_toBottomOf="@id/tabLayout"
         tools:text="/storage/emulated/0" />
 
     <androidx.recyclerview.widget.RecyclerView

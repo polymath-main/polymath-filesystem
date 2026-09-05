@@ -10,6 +10,14 @@
         android:title="Open Terminal"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_new_tab"
+        android:title="New Tab"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_close_tab"
+        android:title="Close Tab"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_paste"
         android:title="Paste"
         app:showAsAction="ifRoom" />

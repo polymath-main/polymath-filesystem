@@ -40,11 +40,13 @@ class FileBrowserFragment : Fragment() {
         setupRecyclerView()
         setupObservers()
         setupToolbar()
+        setupTabs()
         
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (viewModel.uiState.value.currentPath != "/storage/emulated/0" && 
-                    viewModel.uiState.value.currentPath != "/") {
+                val activeTab = viewModel.uiState.value.activeTab
+                if (activeTab != null && activeTab.currentPath != "/storage/emulated/0" && 
+                    activeTab.currentPath != "/") {
                     viewModel.navigateUp()
                 } else {
                     isEnabled = false
@@ -113,22 +115,60 @@ class FileBrowserFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding.pathText.text = state.currentPath
-                    binding.progressBar.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+                    val activeTab = state.activeTab
+                    binding.pathText.text = activeTab?.currentPath ?: ""
+                    binding.progressBar.visibility = if (activeTab?.isLoading == true) View.VISIBLE else View.GONE
                     
-                    if (!state.isLoading) {
-                        adapter.submitList(state.files)
-                        binding.emptyText.visibility = if (state.files.isEmpty()) View.VISIBLE else View.GONE
+                    if (activeTab != null && !activeTab.isLoading) {
+                        adapter.submitList(activeTab.files)
+                        binding.emptyText.visibility = if (activeTab.files.isEmpty()) View.VISIBLE else View.GONE
                     }
                     
-                    state.error?.let {
+                    activeTab?.error?.let {
                         Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    }
+
+                    if (binding.tabLayout.tabCount != state.tabs.size) {
+                        binding.tabLayout.removeAllTabs()
+                        state.tabs.forEach { tabState ->
+                            val tabName = if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
+                            val display = if (tabName.isEmpty()) "Root" else tabName
+                            val tab = binding.tabLayout.newTab().setText(display).setTag(tabState.id)
+                            binding.tabLayout.addTab(tab, false)
+                        }
+                    } else {
+                        state.tabs.forEachIndexed { index, tabState ->
+                            val tab = binding.tabLayout.getTabAt(index)
+                            val tabName = if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
+                            val display = if (tabName.isEmpty()) "Root" else tabName
+                            if (tab?.text != display) {
+                                tab?.text = display
+                            }
+                        }
+                    }
+                    
+                    val activeIndex = state.tabs.indexOfFirst { it.id == state.activeTabId }
+                    if (activeIndex >= 0 && binding.tabLayout.selectedTabPosition != activeIndex) {
+                        binding.tabLayout.getTabAt(activeIndex)?.select()
                     }
                 }
             }
         }
     }
     
+    private fun setupTabs() {
+        binding.tabLayout.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
+                val tabId = tab?.tag as? String
+                if (tabId != null && tabId != viewModel.uiState.value.activeTabId) {
+                    viewModel.switchTab(tabId)
+                }
+            }
+            override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+            override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
+        })
+    }
+
     private fun setupToolbar() {
         binding.toolbar.title = "Polymath Files"
         binding.toolbar.setNavigationOnClickListener {
@@ -143,6 +183,17 @@ class FileBrowserFragment : Fragment() {
                 }
                 com.polymath.fs.R.id.action_terminal -> {
                     startActivity(android.content.Intent(requireContext(), TerminalActivity::class.java))
+                    true
+                }
+                com.polymath.fs.R.id.action_new_tab -> {
+                    viewModel.newTab()
+                    true
+                }
+                com.polymath.fs.R.id.action_close_tab -> {
+                    val activeTabId = viewModel.uiState.value.activeTabId
+                    if (activeTabId.isNotEmpty()) {
+                        viewModel.closeTab(activeTabId)
+                    }
                     true
                 }
                 com.polymath.fs.R.id.action_paste -> {
