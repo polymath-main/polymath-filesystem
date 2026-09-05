@@ -3,11 +3,31 @@ package com.polymath.fs
 import android.app.Application
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import com.polymath.fs.core.DirectoryWatcher
+import com.polymath.fs.core.RootShellHolder
+import com.polymath.fs.core.VolumeManager
+import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.domain.usecase.CopyFilesUseCase
+import com.polymath.fs.domain.usecase.DeleteFilesUseCase
+import com.polymath.fs.domain.usecase.ListDirUseCase
+import com.polymath.fs.domain.usecase.MkdirUseCase
+import com.polymath.fs.domain.usecase.MoveFilesUseCase
+import com.polymath.fs.domain.usecase.RenameUseCase
 import com.topjohnwu.superuser.Shell
-import dagger.hilt.android.HiltAndroidApp
 
-@HiltAndroidApp
 class PolymathApp : Application() {
+
+    val shellHolder by lazy { RootShellHolder() }
+    val fileSystemRepository by lazy { FileSystemRepository(shellHolder) }
+    val listDirUseCase by lazy { ListDirUseCase(fileSystemRepository) }
+    val deleteFilesUseCase by lazy { DeleteFilesUseCase(fileSystemRepository) }
+    val renameUseCase by lazy { RenameUseCase(fileSystemRepository) }
+    val copyFilesUseCase by lazy { CopyFilesUseCase(fileSystemRepository) }
+    val moveFilesUseCase by lazy { MoveFilesUseCase(fileSystemRepository) }
+    val mkdirUseCase by lazy { MkdirUseCase(fileSystemRepository) }
+    val volumeManager by lazy { VolumeManager(this) }
+    val directoryWatcher by lazy { DirectoryWatcher() }
+
     override fun onCreate() {
         super.onCreate()
         

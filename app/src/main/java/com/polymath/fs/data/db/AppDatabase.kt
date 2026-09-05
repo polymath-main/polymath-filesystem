@@ -19,7 +19,7 @@ import com.polymath.fs.data.db.entities.SearchIndexEntity
         OperationHistoryEntity::class
     ],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun recentFileDao(): RecentFileDao

@@ -3,8 +3,8 @@ package com.polymath.fs.viewmodels
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.qualifiers.ApplicationContext
 import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
@@ -13,7 +13,6 @@ import com.polymath.fs.domain.usecase.MoveFilesUseCase
 import com.polymath.fs.models.Clipboard
 import com.polymath.fs.models.FileBrowserUiState
 import com.polymath.fs.models.TabState
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,9 +20,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-@HiltViewModel
 class FileSystemViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val context: Context,
     private val listDirUseCase: ListDirUseCase,
     private val deleteFilesUseCase: DeleteFilesUseCase,
     private val renameUseCase: RenameUseCase,
@@ -113,20 +111,7 @@ class FileSystemViewModel @Inject constructor(
             val result = listDirUseCase(path)
             
             result.onSuccess { files ->
-                val stateConfig = _uiState.value.sortConfig
-                val dirSort = compareBy<com.polymath.fs.models.FileNode> { !it.isDirectory }
-                val mainSort = when (stateConfig.option) {
-                    com.polymath.fs.models.SortOption.NAME -> compareBy<com.polymath.fs.models.FileNode> { it.name.lowercase() }
-                    com.polymath.fs.models.SortOption.TYPE -> compareBy<com.polymath.fs.models.FileNode> { it.name.substringAfterLast('.', "").lowercase() }
-                    com.polymath.fs.models.SortOption.TIME -> compareBy<com.polymath.fs.models.FileNode> { it.lastModified }
-                    com.polymath.fs.models.SortOption.MOSTLY_USED -> compareBy<com.polymath.fs.models.FileNode> { it.name.lowercase() } // Mock mostly used
-                }
-                val comparator = if (stateConfig.direction == com.polymath.fs.models.SortDirection.DESCENDING) {
-                    dirSort.then(mainSort.reversed())
-                } else {
-                    dirSort.then(mainSort)
-                }
-                val sortedFiles = files.sortedWith(comparator)
+                val sortedFiles = sortFileList(files, _uiState.value.sortConfig)
                 
                 _uiState.update { state ->
                     val updatedTabs = state.tabs.map { 
@@ -235,9 +220,37 @@ class FileSystemViewModel @Inject constructor(
     }
 
     fun setSortConfig(option: com.polymath.fs.models.SortOption, direction: com.polymath.fs.models.SortDirection) {
-        _uiState.update { it.copy(sortConfig = com.polymath.fs.models.SortConfig(option, direction)) }
-        val activeTab = _uiState.value.activeTab ?: return
-        navigateTo(activeTab.currentPath)
+        _uiState.update { state ->
+            val newConfig = com.polymath.fs.models.SortConfig(option, direction)
+            val updatedTabs = state.tabs.map { tab ->
+                tab.copy(files = sortFileList(tab.files, newConfig))
+            }
+            state.copy(sortConfig = newConfig, tabs = updatedTabs)
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    private fun sortFileList(
+        files: List<com.polymath.fs.models.FileNode>,
+        sortConfig: com.polymath.fs.models.SortConfig
+    ): List<com.polymath.fs.models.FileNode> {
+        val dirSort = compareBy<com.polymath.fs.models.FileNode> { !it.isDirectory }
+        val mainSort: Comparator<com.polymath.fs.models.FileNode> = when (sortConfig.option) {
+            com.polymath.fs.models.SortOption.NAME -> compareBy { it.name.lowercase() }
+            com.polymath.fs.models.SortOption.TYPE -> compareBy { it.name.substringAfterLast('.', "").lowercase() }
+            com.polymath.fs.models.SortOption.TIME -> compareBy { it.lastModified }
+            com.polymath.fs.models.SortOption.SIZE -> compareBy { it.size }
+            com.polymath.fs.models.SortOption.MOSTLY_USED -> compareBy { it.name.lowercase() }
+        }
+        val comparator = if (sortConfig.direction == com.polymath.fs.models.SortDirection.DESCENDING) {
+            dirSort.then(mainSort.reversed())
+        } else {
+            dirSort.then(mainSort)
+        }
+        return files.sortedWith(comparator)
     }
 
     fun setViewOptions(options: com.polymath.fs.models.ViewOptions) {
@@ -249,6 +262,25 @@ class FileSystemViewModel @Inject constructor(
         _uiState.update { state ->
             val newRecents = (listOf(file) + state.recentFiles.filter { it.path != file.path }).take(5)
             state.copy(recentFiles = newRecents)
+        }
+    }
+
+    companion object {
+        fun provideFactory(app: com.polymath.fs.PolymathApp): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return FileSystemViewModel(
+                        app,
+                        app.listDirUseCase,
+                        app.deleteFilesUseCase,
+                        app.renameUseCase,
+                        app.copyFilesUseCase,
+                        app.moveFilesUseCase,
+                        app.fileSystemRepository
+                    ) as T
+                }
+            }
         }
     }
 }

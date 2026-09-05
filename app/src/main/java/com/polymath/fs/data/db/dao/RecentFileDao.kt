@@ -16,5 +16,5 @@ interface RecentFileDao {
     suspend fun insertRecentFile(recentFile: RecentFileEntity)
 
     @Query("DELETE FROM recent_files WHERE path = :path")
-    suspend fun deleteRecentFile(path: String)
+    suspend fun deleteRecentFile(path: String): Int
 }

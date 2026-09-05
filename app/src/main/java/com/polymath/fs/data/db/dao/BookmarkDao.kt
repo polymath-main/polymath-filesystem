@@ -16,5 +16,5 @@ interface BookmarkDao {
     suspend fun insertBookmark(bookmark: BookmarkEntity)
 
     @Query("DELETE FROM bookmarks WHERE id = :id")
-    suspend fun deleteBookmark(id: Int)
+    suspend fun deleteBookmark(id: Int): Int
 }

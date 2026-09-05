@@ -12,18 +12,19 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.polymath.fs.R
 import com.polymath.fs.databinding.FragmentFileBrowserBinding
 import com.polymath.fs.viewmodels.FileSystemViewModel
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
-@AndroidEntryPoint
 class FileBrowserFragment : Fragment() {
 
     private var _binding: FragmentFileBrowserBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: FileSystemViewModel by viewModels()
+    private val viewModel: FileSystemViewModel by viewModels {
+        FileSystemViewModel.provideFactory(requireActivity().application as com.polymath.fs.PolymathApp)
+    }
     private lateinit var adapter: FileListAdapter
     private lateinit var recentAdapter: FileListAdapter
     private var cabMode: androidx.appcompat.view.ActionMode? = null
@@ -41,7 +42,12 @@ class FileBrowserFragment : Fragment() {
         override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: android.view.MenuItem): Boolean {
             val paths = adapter.selectedItems.toList()
             when (item.itemId) {
-                com.polymath.fs.R.id.action_delete -> { viewModel.deleteFiles(paths); mode.finish(); return true }
+                com.polymath.fs.R.id.action_delete -> {
+                    confirmDelete(paths) {
+                        mode.finish()
+                    }
+                    return true
+                }
                 com.polymath.fs.R.id.action_copy -> { viewModel.copyFiles(paths); mode.finish(); return true }
                 com.polymath.fs.R.id.action_move -> { viewModel.cutFiles(paths); mode.finish(); return true }
                 com.polymath.fs.R.id.action_permissions -> {
@@ -164,7 +170,7 @@ class FileBrowserFragment : Fragment() {
                         true
                     }
                     com.polymath.fs.R.id.action_delete -> {
-                        viewModel.deleteFiles(listOf(fileNode.path))
+                        confirmDelete(listOf(fileNode.path), fileNode.name)
                         true
                     }
                     com.polymath.fs.R.id.action_permissions -> {
@@ -259,10 +265,22 @@ class FileBrowserFragment : Fragment() {
 
                     
                     if (activeTab != null && !activeTab.isLoading) {
-                        adapter.submitList(activeTab.files)
-                        binding.emptyText.visibility = if (activeTab.files.isEmpty()) View.VISIBLE else View.GONE
+                        val query = state.searchQuery.trim()
+                        val displayedFiles = if (query.isEmpty()) {
+                            activeTab.files
+                        } else {
+                            activeTab.files.filter { it.name.contains(query, ignoreCase = true) }
+                        }
+                        adapter.submitList(displayedFiles)
                         
-                        binding.recentFilesPanel.visibility = if (activeTab.id == "general") View.VISIBLE else View.GONE
+                        if (displayedFiles.isEmpty()) {
+                            binding.emptyText.text = if (query.isEmpty()) "Folder is empty" else "No matching files found"
+                            binding.emptyText.visibility = View.VISIBLE
+                        } else {
+                            binding.emptyText.visibility = View.GONE
+                        }
+                        
+                        binding.recentFilesPanel.visibility = if (activeTab.id == "general" && query.isEmpty()) View.VISIBLE else View.GONE
                     }
                     
                     adapter.setViewOptions(state.viewOptions)
@@ -338,8 +356,35 @@ class FileBrowserFragment : Fragment() {
             viewModel.navigateUp()
         }
         binding.toolbar.inflateMenu(com.polymath.fs.R.menu.menu_browser)
+
+        val searchItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_search)
+        val searchView = searchItem?.actionView as? androidx.appcompat.widget.SearchView
+        searchView?.queryHint = getString(com.polymath.fs.R.string.search_hint)
+        searchView?.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                viewModel.setSearchQuery(query ?: "")
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                viewModel.setSearchQuery(newText ?: "")
+                return true
+            }
+        })
+        searchItem?.setOnActionExpandListener(object : android.view.MenuItem.OnActionExpandListener {
+            override fun onMenuItemActionExpand(item: android.view.MenuItem): Boolean = true
+            override fun onMenuItemActionCollapse(item: android.view.MenuItem): Boolean {
+                viewModel.setSearchQuery("")
+                return true
+            }
+        })
+
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                com.polymath.fs.R.id.action_sort -> {
+                    showSortingDialog()
+                    true
+                }
                 com.polymath.fs.R.id.action_root -> {
                     viewModel.navigateTo("/")
                     true
@@ -370,6 +415,68 @@ class FileBrowserFragment : Fragment() {
                 else -> false
             }
         }
+    }
+
+    private fun showSortingDialog() {
+        val currentConfig = viewModel.uiState.value.sortConfig
+        val options = arrayOf(
+            "Name (A to Z)",
+            "Name (Z to A)",
+            "Date Modified (Newest first)",
+            "Date Modified (Oldest first)",
+            "Size (Largest first)",
+            "Size (Smallest first)"
+        )
+
+        val selectedIndex = when (currentConfig.option) {
+            com.polymath.fs.models.SortOption.NAME -> {
+                if (currentConfig.direction == com.polymath.fs.models.SortDirection.ASCENDING) 0 else 1
+            }
+            com.polymath.fs.models.SortOption.TIME -> {
+                if (currentConfig.direction == com.polymath.fs.models.SortDirection.DESCENDING) 2 else 3
+            }
+            com.polymath.fs.models.SortOption.SIZE -> {
+                if (currentConfig.direction == com.polymath.fs.models.SortDirection.DESCENDING) 4 else 5
+            }
+            else -> 0
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.sort_by)
+            .setSingleChoiceItems(options, selectedIndex) { dialog, which ->
+                when (which) {
+                    0 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.NAME, com.polymath.fs.models.SortDirection.ASCENDING)
+                    1 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.NAME, com.polymath.fs.models.SortDirection.DESCENDING)
+                    2 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.TIME, com.polymath.fs.models.SortDirection.DESCENDING)
+                    3 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.TIME, com.polymath.fs.models.SortDirection.ASCENDING)
+                    4 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.SIZE, com.polymath.fs.models.SortDirection.DESCENDING)
+                    5 -> viewModel.setSortConfig(com.polymath.fs.models.SortOption.SIZE, com.polymath.fs.models.SortDirection.ASCENDING)
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
+    }
+
+    private fun confirmDelete(paths: List<String>, singleFileName: String? = null, onDeleted: (() -> Unit)? = null) {
+        if (paths.isEmpty()) return
+
+        val message = if (paths.size == 1) {
+            val name = singleFileName ?: paths[0].substringAfterLast('/')
+            getString(R.string.confirm_delete_single, name)
+        } else {
+            getString(R.string.confirm_delete_multiple, paths.size)
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.confirm_delete_title)
+            .setMessage(message)
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                viewModel.deleteFiles(paths)
+                onDeleted?.invoke()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     override fun onDestroyView() {

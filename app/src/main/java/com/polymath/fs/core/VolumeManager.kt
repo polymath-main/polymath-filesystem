@@ -5,8 +5,6 @@ import android.os.Build
 import android.os.Environment
 import android.os.storage.StorageManager
 import android.os.storage.StorageVolume
-import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +18,7 @@ data class StorageVolumeInfo(
 
 @Singleton
 class VolumeManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val context: Context
 ) {
 
     fun getVolumes(): List<StorageVolumeInfo> {

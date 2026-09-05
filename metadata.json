@@ -1,0 +1,6 @@
+{
+  "name": "Polymath FileSystem",
+  "description": "A powerful Android file manager with JavaScript extensions, network storage, and terminal utilities.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

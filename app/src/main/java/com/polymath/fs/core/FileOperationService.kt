@@ -8,22 +8,20 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import com.polymath.fs.PolymathApp
 import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class FileOperationService : Service() {
 
-    @Inject lateinit var copyFilesUseCase: CopyFilesUseCase
-    @Inject lateinit var moveFilesUseCase: MoveFilesUseCase
+    private val copyFilesUseCase: CopyFilesUseCase by lazy { (application as PolymathApp).copyFilesUseCase }
+    private val moveFilesUseCase: MoveFilesUseCase by lazy { (application as PolymathApp).moveFilesUseCase }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val CHANNEL_ID = "FileOperationChannel"

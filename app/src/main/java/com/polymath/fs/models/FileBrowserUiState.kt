@@ -1,6 +1,6 @@
 package com.polymath.fs.models
 
-enum class SortOption { NAME, TYPE, TIME, MOSTLY_USED }
+enum class SortOption { NAME, TYPE, TIME, SIZE, MOSTLY_USED }
 enum class SortDirection { ASCENDING, DESCENDING }
 enum class ViewLayout { LIST, GRID }
 enum class BoxSize { SMALL, MEDIUM, LARGE }
@@ -36,7 +36,8 @@ data class FileBrowserUiState(
     val error: String? = null,
     val viewOptions: ViewOptions = ViewOptions(),
     val sortConfig: SortConfig = SortConfig(),
-    val recentFiles: List<FileNode> = emptyList()
+    val recentFiles: List<FileNode> = emptyList(),
+    val searchQuery: String = ""
 ) {
     val activeTab: TabState?
         get() = tabs.find { it.id == activeTabId }

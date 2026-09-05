@@ -16,5 +16,5 @@ interface OperationHistoryDao {
     suspend fun insertHistory(history: OperationHistoryEntity)
 
     @Query("DELETE FROM operation_history")
-    suspend fun clearHistory()
+    suspend fun clearHistory(): Int
 }

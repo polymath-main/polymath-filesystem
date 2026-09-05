@@ -5,7 +5,6 @@ import android.widget.Toast
 import app.cash.quickjs.QuickJs
 import com.polymath.fs.data.repository.FileSystemRepository
 import com.polymath.fs.models.FileNode
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
@@ -58,7 +57,7 @@ class SecurityException(msg: String) : RuntimeException(msg)
 @Singleton
 class PolymathJSBridge @Inject constructor(
     private val repository: FileSystemRepository,
-    @ApplicationContext private val context: Context
+    private val context: Context
 ) {
 
     private fun checkPermission(manifest: ExtensionManifest, permission: String) {

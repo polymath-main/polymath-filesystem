@@ -8,8 +8,11 @@ import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil.load
+import coil.size.Scale
 import com.polymath.fs.R
 import com.polymath.fs.models.FileNode
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -112,32 +115,55 @@ class FileListAdapter(
             }
 
             if (file.isDirectory) {
+                fileIcon.setPadding(8, 8, 8, 8)
                 val finalIconType = if (file.name.startsWith(".")) "hidden" else if (file.name == "sys" || file.name == "system") "system" else "folder"
                 val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$finalIconType", "drawable", itemView.context.packageName)
                 fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_folder)
                 fileDetails.text = dateFormat.format(Date(file.lastModified))
             } else {
                 val ext = file.name.substringAfterLast('.', "").lowercase()
-                var iconType = when (ext) {
-                    "kt", "java", "py", "js", "html", "css", "cpp", "c", "json", "xml" -> "code"
-                    "jpg", "jpeg", "png", "gif", "bmp", "webp" -> "image"
-                    "mp3", "wav", "ogg", "flac", "m4a" -> "audio"
-                    "mp4", "mkv", "avi", "mov", "webm" -> "video"
-                    "zip", "rar", "7z", "tar", "gz" -> "archive"
-                    "apk" -> "apk"
-                    "pdf" -> "pdf"
+                val isImage = ext in listOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "avif")
+                
+                var iconType = when {
+                    ext in listOf("kt", "java", "py", "js", "html", "css", "cpp", "c", "json", "xml") -> "code"
+                    ext in listOf("mp3", "wav", "ogg", "flac", "m4a") -> "audio"
+                    ext in listOf("mp4", "mkv", "avi", "mov", "webm") -> "video"
+                    ext in listOf("zip", "rar", "7z", "tar", "gz") -> "archive"
+                    ext == "apk" -> "apk"
+                    ext == "pdf" -> "pdf"
                     else -> "default"
                 }
                 
                 if (file.name.startsWith(".")) iconType = "hidden"
                 else if (file.name == "sys" || file.name == "system") iconType = "system"
-                
-                // Fallback for image since we didn't generate one, we can just use default or generate it.
-                // Actually I should just add image to the python script or fallback to default. Let's fallback to default for image if not generated.
-                if (iconType == "image") iconType = "default"
 
-                val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$iconType", "drawable", itemView.context.packageName)
-                fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_file_default)
+                val fallbackResId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$iconType", "drawable", itemView.context.packageName).let {
+                    if (it != 0) it else R.drawable.ic_file_default
+                }
+
+                if (isImage) {
+                    val localFile = File(file.path)
+                    if (localFile.exists() && localFile.canRead()) {
+                        fileIcon.setPadding(0, 0, 0, 0)
+                        fileIcon.load(localFile) {
+                            crossfade(true)
+                            scale(Scale.FILL)
+                            placeholder(fallbackResId)
+                            error(fallbackResId)
+                            listener(
+                                onError = { _, _ -> fileIcon.setPadding(8, 8, 8, 8) },
+                                onSuccess = { _, _ -> fileIcon.setPadding(0, 0, 0, 0) }
+                            )
+                        }
+                    } else {
+                        fileIcon.setPadding(8, 8, 8, 8)
+                        fileIcon.setImageResource(fallbackResId)
+                    }
+                } else {
+                    fileIcon.setPadding(8, 8, 8, 8)
+                    fileIcon.setImageResource(fallbackResId)
+                }
+
                 val sizeStr = Formatter.formatFileSize(itemView.context, file.size)
                 val dateStr = dateFormat.format(Date(file.lastModified))
                 fileDetails.text = "$sizeStr • $dateStr"

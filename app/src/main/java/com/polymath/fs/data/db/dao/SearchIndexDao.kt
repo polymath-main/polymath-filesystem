@@ -15,5 +15,5 @@ interface SearchIndexDao {
     suspend fun insertAll(entities: List<SearchIndexEntity>)
 
     @Query("DELETE FROM search_index")
-    suspend fun clearAll()
+    suspend fun clearAll(): Int
 }
