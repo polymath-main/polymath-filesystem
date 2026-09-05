@@ -80,6 +80,33 @@ class FileBrowserFragment : Fragment() {
                             viewModel.deleteFiles(listOf(fileNode.path))
                             true
                         }
+                        com.polymath.fs.R.id.action_permissions -> {
+                            val layout = android.widget.LinearLayout(requireContext()).apply {
+                                orientation = android.widget.LinearLayout.VERTICAL
+                                setPadding(50, 40, 50, 10)
+                            }
+                            val modeInput = android.widget.EditText(requireContext()).apply {
+                                hint = "Mode (e.g. 755)"
+                            }
+                            val ownerInput = android.widget.EditText(requireContext()).apply {
+                                hint = "Owner:Group (e.g. root:root)"
+                            }
+                            layout.addView(modeInput)
+                            layout.addView(ownerInput)
+                            
+                            android.app.AlertDialog.Builder(requireContext())
+                                .setTitle("Edit Permissions")
+                                .setView(layout)
+                                .setPositiveButton("OK") { _, _ ->
+                                    val mode = modeInput.text.toString()
+                                    val owner = ownerInput.text.toString()
+                                    if (mode.isNotBlank()) viewModel.chmod(fileNode.path, mode)
+                                    if (owner.isNotBlank()) viewModel.chown(fileNode.path, owner)
+                                }
+                                .setNegativeButton("Cancel", null)
+                                .show()
+                            true
+                        }
                         com.polymath.fs.R.id.action_rename -> {
                             val input = android.widget.EditText(requireContext())
                             input.setText(fileNode.name)
@@ -198,6 +225,10 @@ class FileBrowserFragment : Fragment() {
                 }
                 com.polymath.fs.R.id.action_paste -> {
                     viewModel.pasteFiles()
+                    true
+                }
+                com.polymath.fs.R.id.action_settings -> {
+                    startActivity(android.content.Intent(requireContext(), SettingsActivity::class.java))
                     true
                 }
                 else -> false

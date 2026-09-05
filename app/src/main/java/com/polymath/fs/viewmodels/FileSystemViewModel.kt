@@ -24,7 +24,8 @@ class FileSystemViewModel @Inject constructor(
     private val deleteFilesUseCase: DeleteFilesUseCase,
     private val renameUseCase: RenameUseCase,
     private val copyFilesUseCase: CopyFilesUseCase,
-    private val moveFilesUseCase: MoveFilesUseCase
+    private val moveFilesUseCase: MoveFilesUseCase,
+    private val fileSystemRepository: com.polymath.fs.data.repository.FileSystemRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
@@ -161,6 +162,30 @@ class FileSystemViewModel @Inject constructor(
                 navigateTo(currentPath)
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun chmod(path: String, mode: String) {
+        viewModelScope.launch {
+            val success = fileSystemRepository.chmod(path, mode)
+            if (success) {
+                val activeTab = _uiState.value.activeTab
+                if (activeTab != null) navigateTo(activeTab.currentPath)
+            } else {
+                _uiState.update { it.copy(error = "chmod failed") }
+            }
+        }
+    }
+
+    fun chown(path: String, owner: String) {
+        viewModelScope.launch {
+            val success = fileSystemRepository.chown(path, owner)
+            if (success) {
+                val activeTab = _uiState.value.activeTab
+                if (activeTab != null) navigateTo(activeTab.currentPath)
+            } else {
+                _uiState.update { it.copy(error = "chown failed") }
             }
         }
     }

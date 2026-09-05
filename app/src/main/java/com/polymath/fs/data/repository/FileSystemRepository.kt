@@ -37,7 +37,10 @@ class FileSystemRepository @Inject constructor(
         val safeDest = dest.replace("'", "'\\''")
         for ((index, s) in src.withIndex()) {
             val safeSrc = s.replace("'", "'\\''")
-            shellHolder.execute("cp -a '$safeSrc' '$safeDest'")
+            val res = shellHolder.execute("cp -a -p '$safeSrc' '$safeDest'")
+            if (!res.isSuccess) {
+                shellHolder.execute("cat '$safeSrc' > '$safeDest/${s.substringAfterLast('/')}'")
+            }
             emit(Progress(index.toLong() + 1, total, isComplete = (index + 1 == src.size)))
         }
     }
@@ -48,7 +51,11 @@ class FileSystemRepository @Inject constructor(
         val safeDest = dest.replace("'", "'\\''")
         for ((index, s) in src.withIndex()) {
             val safeSrc = s.replace("'", "'\\''")
-            shellHolder.execute("mv '$safeSrc' '$safeDest'")
+            val res = shellHolder.execute("mv '$safeSrc' '$safeDest'")
+            if (!res.isSuccess) {
+                shellHolder.execute("cp -a -p '$safeSrc' '$safeDest' || cat '$safeSrc' > '$safeDest/${s.substringAfterLast('/')}'")
+                shellHolder.execute("rm -rf '$safeSrc'")
+            }
             emit(Progress(index.toLong() + 1, total, isComplete = (index + 1 == src.size)))
         }
     }
@@ -72,6 +79,18 @@ class FileSystemRepository @Inject constructor(
         val newPath = "${if(parent.isEmpty()) "" else parent}/$newName"
         val safeNewPath = newPath.replace("'", "'\\''")
         val result = shellHolder.execute("mv '$safeOldPath' '$safeNewPath'")
+        return result.isSuccess
+    }
+
+    suspend fun chmod(path: String, mode: String): Boolean {
+        val safePath = path.replace("'", "'\\''")
+        val result = shellHolder.execute("chmod $mode '$safePath'")
+        return result.isSuccess
+    }
+
+    suspend fun chown(path: String, owner: String): Boolean {
+        val safePath = path.replace("'", "'\\''")
+        val result = shellHolder.execute("chown $owner '$safePath'")
         return result.isSuccess
     }
 }

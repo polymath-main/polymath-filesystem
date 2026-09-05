@@ -26,8 +26,10 @@
         <activity android:name=".viewers.MediaPlayerActivity" android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" android:configChanges="orientation|screenSize" />
         <activity android:name=".viewers.EditorActivity" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".viewers.PdfViewerActivity" android:theme="@android:style/Theme.DeviceDefault" />
+        <activity android:name=".viewers.TextViewerActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity android:name=".ui.JsDashboardActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity android:name=".ui.TerminalActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.SettingsActivity" />
         <service android:name=".core.SearchService" android:exported="false" />
         <provider
             android:name="androidx.core.content.FileProvider"
