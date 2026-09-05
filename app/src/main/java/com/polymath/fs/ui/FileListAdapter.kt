@@ -20,6 +20,30 @@ class FileListAdapter(
     private val onMenuClick: (FileNode, View) -> Unit
 ) : ListAdapter<FileNode, FileListAdapter.FileViewHolder>(FileDiffCallback()) {
 
+    var isSelectionMode = false
+    val selectedItems = mutableSetOf<String>()
+    var onSelectionChange: ((Int) -> Unit)? = null
+
+    fun toggleSelection(path: String) {
+        if (selectedItems.contains(path)) {
+            selectedItems.remove(path)
+            if (selectedItems.isEmpty()) {
+                isSelectionMode = false
+            }
+        } else {
+            selectedItems.add(path)
+        }
+        onSelectionChange?.invoke(selectedItems.size)
+        notifyDataSetChanged()
+    }
+
+    fun clearSelection() {
+        selectedItems.clear()
+        isSelectionMode = false
+        onSelectionChange?.invoke(0)
+        notifyDataSetChanged()
+    }
+
     fun setViewOptions(options: com.polymath.fs.models.ViewOptions) {
         this.viewOptions = options
         notifyDataSetChanged()
@@ -48,8 +72,22 @@ class FileListAdapter(
             itemView.setOnClickListener {
                 val position = adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
-                    onItemClick(getItem(position))
+                    val file = getItem(position)
+                    if (isSelectionMode) {
+                        toggleSelection(file.path)
+                    } else {
+                        onItemClick(file)
+                    }
                 }
+            }
+            
+            itemView.setOnLongClickListener {
+                val position = adapterPosition
+                if (position != RecyclerView.NO_POSITION && !isSelectionMode) {
+                    isSelectionMode = true
+                    toggleSelection(getItem(position).path)
+                }
+                true
             }
             
             btnMenu.setOnClickListener { view ->
@@ -61,6 +99,9 @@ class FileListAdapter(
         }
 
         fun bind(file: FileNode) {
+            val isSelected = selectedItems.contains(file.path)
+            itemView.setBackgroundColor(if (isSelected) android.graphics.Color.parseColor("#3338bdf8") else android.graphics.Color.TRANSPARENT)
+            
             fileName.text = file.name
             
             val iconPackPrefix = when (viewOptions.iconPack) {

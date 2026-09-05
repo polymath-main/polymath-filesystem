@@ -44,6 +44,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val prefs = getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+        val currentTheme = prefs.getString("theme", "cyberpunk")
+        val themeResId = when (currentTheme) {
+            "cyberpunk" -> R.style.Theme_Cyberpunk
+            "ocean_breeze" -> R.style.Theme_OceanBreeze
+            "dracula" -> R.style.Theme_Dracula
+            "solarized_dark" -> R.style.Theme_SolarizedDark
+            "sunset" -> R.style.Theme_Sunset
+            "hacker_green" -> R.style.Theme_HackerGreen
+            "neon" -> R.style.Theme_Neon
+            "material_you" -> R.style.Theme_MaterialYou
+            "ios_like" -> R.style.Theme_IosLike
+            "true_amoled" -> R.style.Theme_TrueAmoled
+            else -> R.style.Theme_Cyberpunk
+        }
+        setTheme(themeResId)
+
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

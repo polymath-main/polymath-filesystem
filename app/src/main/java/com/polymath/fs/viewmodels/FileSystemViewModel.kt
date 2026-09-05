@@ -1,7 +1,10 @@
 package com.polymath.fs.viewmodels
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
@@ -20,6 +23,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FileSystemViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val listDirUseCase: ListDirUseCase,
     private val deleteFilesUseCase: DeleteFilesUseCase,
     private val renameUseCase: RenameUseCase,
@@ -31,8 +35,34 @@ class FileSystemViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(FileBrowserUiState())
     val uiState: StateFlow<FileBrowserUiState> = _uiState.asStateFlow()
 
+    private val prefs: SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+        if (key == "icon_pack" || key == "theme") {
+            syncPrefsToUiState()
+        }
+    }
+
     init {
+        syncPrefsToUiState()
+        prefs.registerOnSharedPreferenceChangeListener(prefListener)
+        val generalTab = TabState(id = "general", currentPath = "/")
+        _uiState.update { state ->
+            state.copy(tabs = listOf(generalTab), activeTabId = "general")
+        }
+        navigateTo("/", "general")
         newTab("/storage/emulated/0")
+    }
+
+    private fun syncPrefsToUiState() {
+        val iconPackStr = prefs.getString("icon_pack", "default")
+        val iconPack = when (iconPackStr) {
+            "outline" -> com.polymath.fs.models.IconPack.OUTLINE
+            "minimal" -> com.polymath.fs.models.IconPack.SOLID
+            else -> com.polymath.fs.models.IconPack.FLUENT
+        }
+        _uiState.update { state ->
+            state.copy(viewOptions = state.viewOptions.copy(iconPack = iconPack))
+        }
     }
 
     fun newTab(path: String = "/storage/emulated/0") {

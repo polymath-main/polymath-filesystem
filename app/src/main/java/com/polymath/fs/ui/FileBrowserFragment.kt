@@ -26,6 +26,60 @@ class FileBrowserFragment : Fragment() {
     private val viewModel: FileSystemViewModel by viewModels()
     private lateinit var adapter: FileListAdapter
     private lateinit var recentAdapter: FileListAdapter
+    private var cabMode: androidx.appcompat.view.ActionMode? = null
+
+    private val cabCallback = object : androidx.appcompat.view.ActionMode.Callback {
+        override fun onCreateActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean {
+            mode.menuInflater.inflate(com.polymath.fs.R.menu.menu_file_context, menu)
+            menu.findItem(com.polymath.fs.R.id.action_info)?.isVisible = false
+            menu.findItem(com.polymath.fs.R.id.action_rename)?.isVisible = false
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean = false
+
+        override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: android.view.MenuItem): Boolean {
+            val paths = adapter.selectedItems.toList()
+            when (item.itemId) {
+                com.polymath.fs.R.id.action_delete -> { viewModel.deleteFiles(paths); mode.finish(); return true }
+                com.polymath.fs.R.id.action_copy -> { viewModel.copyFiles(paths); mode.finish(); return true }
+                com.polymath.fs.R.id.action_move -> { viewModel.cutFiles(paths); mode.finish(); return true }
+                com.polymath.fs.R.id.action_permissions -> {
+                    val layout = android.widget.LinearLayout(requireContext()).apply {
+                        orientation = android.widget.LinearLayout.VERTICAL
+                        setPadding(50, 40, 50, 10)
+                    }
+                    val modeInput = android.widget.EditText(requireContext()).apply { hint = "Mode (e.g. 755)" }
+                    val ownerInput = android.widget.EditText(requireContext()).apply { hint = "Owner:Group" }
+                    layout.addView(modeInput)
+                    layout.addView(ownerInput)
+                    
+                    android.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Edit Permissions")
+                        .setView(layout)
+                        .setPositiveButton("OK") { _, _ ->
+                            val pMode = modeInput.text.toString()
+                            val pOwner = ownerInput.text.toString()
+                            paths.forEach { p ->
+                                if (pMode.isNotBlank()) viewModel.chmod(p, pMode)
+                                if (pOwner.isNotBlank()) viewModel.chown(p, pOwner)
+                            }
+                            mode.finish()
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                    return true
+                }
+            }
+            return false
+        }
+
+        override fun onDestroyActionMode(mode: androidx.appcompat.view.ActionMode) {
+            adapter.clearSelection()
+            cabMode = null
+        }
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -171,6 +225,16 @@ class FileBrowserFragment : Fragment() {
             onItemClick = onItemClick,
             onMenuClick = onMenuClick
         )
+        adapter.onSelectionChange = { count ->
+            if (count > 0) {
+                if (cabMode == null) {
+                    cabMode = (requireActivity() as androidx.appcompat.app.AppCompatActivity).startSupportActionMode(cabCallback)
+                }
+                cabMode?.title = "$count selected"
+            } else {
+                cabMode?.finish()
+            }
+        }
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
         
@@ -190,11 +254,15 @@ class FileBrowserFragment : Fragment() {
                     binding.pathText.text = activeTab?.currentPath ?: ""
                     binding.progressBar.visibility = if (activeTab?.isLoading == true) View.VISIBLE else View.GONE
                     
+                    val pasteItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_paste)
+                    pasteItem?.isVisible = state.clipboard != null
+
+                    
                     if (activeTab != null && !activeTab.isLoading) {
                         adapter.submitList(activeTab.files)
                         binding.emptyText.visibility = if (activeTab.files.isEmpty()) View.VISIBLE else View.GONE
                         
-                        binding.recentFilesPanel.visibility = if (activeTab.currentPath == "/") View.VISIBLE else View.GONE
+                        binding.recentFilesPanel.visibility = if (activeTab.id == "general") View.VISIBLE else View.GONE
                     }
                     
                     adapter.setViewOptions(state.viewOptions)
@@ -208,10 +276,12 @@ class FileBrowserFragment : Fragment() {
                     if (state.viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
                         if (binding.recyclerView.layoutManager !is androidx.recyclerview.widget.GridLayoutManager) {
                             binding.recyclerView.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
+                            binding.recyclerView.adapter = adapter
                         }
                     } else {
                         if (binding.recyclerView.layoutManager !is androidx.recyclerview.widget.LinearLayoutManager || binding.recyclerView.layoutManager is androidx.recyclerview.widget.GridLayoutManager) {
                             binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+                            binding.recyclerView.adapter = adapter
                         }
                     }
                     
@@ -224,7 +294,7 @@ class FileBrowserFragment : Fragment() {
                     if (binding.tabLayout.tabCount != state.tabs.size) {
                         binding.tabLayout.removeAllTabs()
                         state.tabs.forEach { tabState ->
-                            val tabName = if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
+                            val tabName = if (tabState.id == "general") "General" else if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
                             val display = if (tabName.isEmpty()) "Root" else tabName
                             val tab = binding.tabLayout.newTab().setText(display).setTag(tabState.id)
                             binding.tabLayout.addTab(tab, false)
@@ -232,7 +302,7 @@ class FileBrowserFragment : Fragment() {
                     } else {
                         state.tabs.forEachIndexed { index, tabState ->
                             val tab = binding.tabLayout.getTabAt(index)
-                            val tabName = if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
+                            val tabName = if (tabState.id == "general") "General" else if (tabState.currentPath == "/") "/" else tabState.currentPath.substringAfterLast('/')
                             val display = if (tabName.isEmpty()) "Root" else tabName
                             if (tab?.text != display) {
                                 tab?.text = display
