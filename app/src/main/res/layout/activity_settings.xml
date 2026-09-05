@@ -19,28 +19,64 @@
         android:layout_marginTop="8dp">
 
         <RadioButton
-            android:id="@+id/rbLight"
+            android:id="@+id/rbCyberpunk"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Light" />
+            android:text="Cyberpunk" />
 
         <RadioButton
-            android:id="@+id/rbDark"
+            android:id="@+id/rbOceanBreeze"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dark" />
+            android:text="Ocean Breeze" />
 
         <RadioButton
-            android:id="@+id/rbAmoled"
+            android:id="@+id/rbDracula"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Amoled (Pure Black)" />
+            android:text="Dracula" />
 
         <RadioButton
-            android:id="@+id/rbSystem"
+            android:id="@+id/rbSolarizedDark"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="System Default" />
+            android:text="Solarized Dark" />
+
+        <RadioButton
+            android:id="@+id/rbSunset"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sunset" />
+
+        <RadioButton
+            android:id="@+id/rbHackerGreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hacker Green" />
+
+        <RadioButton
+            android:id="@+id/rbNeon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Neon" />
+
+        <RadioButton
+            android:id="@+id/rbMaterialYou"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Material You" />
+
+        <RadioButton
+            android:id="@+id/rbIosLike"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="iOS-like" />
+
+        <RadioButton
+            android:id="@+id/rbTrueAmoled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="True AMOLED" />
     </RadioGroup>
 
     <View

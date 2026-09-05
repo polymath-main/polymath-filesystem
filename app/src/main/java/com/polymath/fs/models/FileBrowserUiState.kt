@@ -4,12 +4,14 @@ enum class SortOption { NAME, TYPE, TIME, MOSTLY_USED }
 enum class SortDirection { ASCENDING, DESCENDING }
 enum class ViewLayout { LIST, GRID }
 enum class BoxSize { SMALL, MEDIUM, LARGE }
+enum class IconPack { FLUENT, OUTLINE, SOLID, MACOS }
 
 data class ViewOptions(
     val layout: ViewLayout = ViewLayout.LIST,
     val isVertical: Boolean = true,
     val boxSize: BoxSize = BoxSize.MEDIUM,
-    val showDetails: Boolean = true
+    val showDetails: Boolean = true,
+    val iconPack: IconPack = IconPack.FLUENT
 )
 
 data class SortConfig(

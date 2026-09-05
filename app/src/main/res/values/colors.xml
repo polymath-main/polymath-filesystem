@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cyberpunk -->
+    <color name="cyberpunk_primary">#FCE205</color>
+    <color name="cyberpunk_primary_dark">#FF003C</color>
+    <color name="cyberpunk_accent">#00F0FF</color>
+    <color name="cyberpunk_background">#0D0D0D</color>
+
+    <!-- Ocean Breeze -->
+    <color name="ocean_primary">#0077B6</color>
+    <color name="ocean_primary_dark">#03045E</color>
+    <color name="ocean_accent">#00B4D8</color>
+    <color name="ocean_background">#E0FBFC</color>
+
+    <!-- Dracula -->
+    <color name="dracula_primary">#BD93F9</color>
+    <color name="dracula_primary_dark">#6272A4</color>
+    <color name="dracula_accent">#FF79C6</color>
+    <color name="dracula_background">#282A36</color>
+
+    <!-- Solarized Dark -->
+    <color name="solarized_primary">#268BD2</color>
+    <color name="solarized_primary_dark">#073642</color>
+    <color name="solarized_accent">#2AA198</color>
+    <color name="solarized_background">#002B36</color>
+
+    <!-- Sunset -->
+    <color name="sunset_primary">#FF7E67</color>
+    <color name="sunset_primary_dark">#D90429</color>
+    <color name="sunset_accent">#FFB703</color>
+    <color name="sunset_background">#2B2D42</color>
+
+    <!-- Hacker Green -->
+    <color name="hacker_primary">#00FF41</color>
+    <color name="hacker_primary_dark">#008F11</color>
+    <color name="hacker_accent">#00FF41</color>
+    <color name="hacker_background">#0D0208</color>
+
+    <!-- Neon -->
+    <color name="neon_primary">#FF00FF</color>
+    <color name="neon_primary_dark">#8A2BE2</color>
+    <color name="neon_accent">#00FFFF</color>
+    <color name="neon_background">#1A1A1D</color>
+
+    <!-- Material You (Dynamic colors simulation) -->
+    <color name="material_you_primary">#A8C7FA</color>
+    <color name="material_you_primary_dark">#0842A0</color>
+    <color name="material_you_accent">#7CFC00</color>
+    <color name="material_you_background">#1C1B1F</color>
+
+    <!-- iOS-like -->
+    <color name="ios_primary">#007AFF</color>
+    <color name="ios_primary_dark">#005BB5</color>
+    <color name="ios_accent">#34C759</color>
+    <color name="ios_background">#F2F2F7</color>
+
+    <!-- True AMOLED -->
+    <color name="amoled_primary">#FFFFFF</color>
+    <color name="amoled_primary_dark">#000000</color>
+    <color name="amoled_accent">#FF3B30</color>
+    <color name="amoled_background">#000000</color>
+</resources>

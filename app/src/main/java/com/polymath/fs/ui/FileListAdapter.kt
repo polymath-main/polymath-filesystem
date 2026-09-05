@@ -63,19 +63,40 @@ class FileListAdapter(
         fun bind(file: FileNode) {
             fileName.text = file.name
             
+            val iconPackPrefix = when (viewOptions.iconPack) {
+                com.polymath.fs.models.IconPack.FLUENT -> "ic_fluent"
+                com.polymath.fs.models.IconPack.OUTLINE -> "ic_outline"
+                com.polymath.fs.models.IconPack.SOLID -> "ic_solid"
+                com.polymath.fs.models.IconPack.MACOS -> "ic_macos"
+            }
+
             if (file.isDirectory) {
-                fileIcon.setImageResource(R.drawable.ic_folder)
+                val finalIconType = if (file.name.startsWith(".")) "hidden" else if (file.name == "sys" || file.name == "system") "system" else "folder"
+                val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$finalIconType", "drawable", itemView.context.packageName)
+                fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_folder)
                 fileDetails.text = dateFormat.format(Date(file.lastModified))
             } else {
                 val ext = file.name.substringAfterLast('.', "").lowercase()
-                val iconRes = when (ext) {
-                    "jpg", "jpeg", "png", "gif", "bmp", "webp" -> R.drawable.ic_file_image
-                    "mp3", "wav", "ogg", "flac", "m4a" -> R.drawable.ic_file_audio
-                    "mp4", "mkv", "avi", "mov", "webm" -> R.drawable.ic_file_video
-                    "zip", "rar", "7z", "tar", "gz" -> R.drawable.ic_file_archive
-                    else -> R.drawable.ic_file_default
+                var iconType = when (ext) {
+                    "kt", "java", "py", "js", "html", "css", "cpp", "c", "json", "xml" -> "code"
+                    "jpg", "jpeg", "png", "gif", "bmp", "webp" -> "image"
+                    "mp3", "wav", "ogg", "flac", "m4a" -> "audio"
+                    "mp4", "mkv", "avi", "mov", "webm" -> "video"
+                    "zip", "rar", "7z", "tar", "gz" -> "archive"
+                    "apk" -> "apk"
+                    "pdf" -> "pdf"
+                    else -> "default"
                 }
-                fileIcon.setImageResource(iconRes)
+                
+                if (file.name.startsWith(".")) iconType = "hidden"
+                else if (file.name == "sys" || file.name == "system") iconType = "system"
+                
+                // Fallback for image since we didn't generate one, we can just use default or generate it.
+                // Actually I should just add image to the python script or fallback to default. Let's fallback to default for image if not generated.
+                if (iconType == "image") iconType = "default"
+
+                val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$iconType", "drawable", itemView.context.packageName)
+                fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_file_default)
                 val sizeStr = Formatter.formatFileSize(itemView.context, file.size)
                 val dateStr = dateFormat.format(Date(file.lastModified))
                 fileDetails.text = "$sizeStr • $dateStr"
