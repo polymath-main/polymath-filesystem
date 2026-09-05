@@ -60,12 +60,26 @@ class FileBrowserFragment : Fragment() {
                 if (fileNode.isDirectory) {
                     viewModel.navigateTo(fileNode.path)
                 } else {
-                    Toast.makeText(context, "Clicked file: \${fileNode.name}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Opened: ${fileNode.name}", Toast.LENGTH_SHORT).show()
                 }
             },
             onMenuClick = { fileNode, view ->
-                // Context menu mock
-                Toast.makeText(context, "Menu for \${fileNode.name}", Toast.LENGTH_SHORT).show()
+                val popup = android.widget.PopupMenu(requireContext(), view)
+                popup.menuInflater.inflate(com.polymath.fs.R.menu.menu_file_context, popup.menu)
+                popup.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        com.polymath.fs.R.id.action_info -> {
+                            Toast.makeText(context, "Info: ${fileNode.path}", Toast.LENGTH_SHORT).show()
+                            true
+                        }
+                        com.polymath.fs.R.id.action_delete -> {
+                            Toast.makeText(context, "Delete: ${fileNode.name}", Toast.LENGTH_SHORT).show()
+                            true
+                        }
+                        else -> false
+                    }
+                }
+                popup.show()
             }
         )
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -96,6 +110,20 @@ class FileBrowserFragment : Fragment() {
         binding.toolbar.title = "Polymath Files"
         binding.toolbar.setNavigationOnClickListener {
             viewModel.navigateUp()
+        }
+        binding.toolbar.inflateMenu(com.polymath.fs.R.menu.menu_browser)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                com.polymath.fs.R.id.action_root -> {
+                    viewModel.navigateTo("/")
+                    true
+                }
+                com.polymath.fs.R.id.action_terminal -> {
+                    startActivity(android.content.Intent(requireContext(), TerminalActivity::class.java))
+                    true
+                }
+                else -> false
+            }
         }
     }
 
