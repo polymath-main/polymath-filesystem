@@ -17,25 +17,16 @@ class FileSystemRepository @Inject constructor(
     private val shellHolder: RootShellHolder
 ) {
 
-    suspend fun listDir(path: String): List<FileNode> {
+    suspend fun listDir(path: String): List<FileNode> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val safePath = path.replace("'", "'\\''")
-        val script = """
-            for f in '$safePath'/.* '$safePath'/*; do
-                if [ "${'$'}f" = "'$safePath'/." ] || [ "${'$'}f" = "'$safePath'/.." ] || [ "${'$'}f" = "'$safePath'/.*" ] || [ "${'$'}f" = "'$safePath'/*" ]; then
-                    continue
-                fi
-                if [ -e "${'$'}f" ] || [ -L "${'$'}f" ]; then
-                    stat -c "%A|%s|%Y|%n" "${'$'}f" 2>/dev/null
-                fi
-            done
-        """.trimIndent()
+        val script = "find '$safePath' -maxdepth 1 -mindepth 1 -print0 2>/dev/null | xargs -0 stat -c \"%A|%s|%Y|%n\" 2>/dev/null"
 
         val result = shellHolder.execute(script)
         if (!result.isSuccess && result.output.isEmpty()) {
-            return emptyList()
+            return@withContext emptyList()
         }
 
-        return result.output.mapNotNull { line ->
+        return@withContext result.output.mapNotNull { line ->
             StatParser.parseStatLine(line)
         }
     }
@@ -62,12 +53,11 @@ class FileSystemRepository @Inject constructor(
         }
     }
 
-    suspend fun delete(paths: List<String>): Boolean {
-        for (p in paths) {
-            val safePath = p.replace("'", "'\\''")
-            shellHolder.execute("rm -rf '$safePath'")
-        }
-        return true
+    suspend fun delete(paths: List<String>): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        if (paths.isEmpty()) return@withContext true
+        val commandArgs = paths.joinToString(" ") { "'${it.replace("'", "'\\''")}'" }
+        shellHolder.execute("rm -rf $commandArgs")
+        return@withContext true
     }
 
     suspend fun mkdir(path: String): Boolean {
