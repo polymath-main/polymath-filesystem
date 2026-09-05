@@ -28,11 +28,20 @@ class FileInfoBottomSheet : BottomSheetDialogFragment() {
         val tvSize = view.findViewById<TextView>(R.id.tvSize)
         val tvType = view.findViewById<TextView>(R.id.tvType)
 
-        fileNode?.let {
-            tvName.text = it.name
-            tvPath.text = it.path
-            tvSize.text = "${it.size} bytes"
-            tvType.text = if (it.isDirectory) "Directory" else "File"
+        val btnCopyPath = view.findViewById<android.widget.Button>(R.id.btnCopyPath)
+
+        fileNode?.let { node ->
+            tvName.text = node.name
+            tvPath.text = node.path
+            tvSize.text = "${node.size} bytes"
+            tvType.text = if (node.isDirectory) "Directory" else "File"
+            
+            btnCopyPath.setOnClickListener {
+                val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Copied Path", node.path)
+                clipboard.setPrimaryClip(clip)
+                android.widget.Toast.makeText(requireContext(), "Path copied to clipboard", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
 
         return view

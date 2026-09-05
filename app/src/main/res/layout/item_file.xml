@@ -12,6 +12,7 @@
     app:strokeColor="#33ffffff">
 
     <LinearLayout
+        android:id="@+id/itemContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -26,11 +27,11 @@
             android:background="@drawable/icon_bg"
             android:layout_marginEnd="16dp">
             
-            <TextView android:id="@+id/fileIcon" 
+            <ImageView android:id="@+id/fileIcon" 
                 android:layout_width="match_parent" 
                 android:layout_height="match_parent"
-                android:gravity="center" 
-                android:textSize="24sp" />
+                android:padding="8dp"
+                android:scaleType="centerInside" />
         </FrameLayout>
 
         <!-- Text Info -->

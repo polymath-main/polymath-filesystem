@@ -83,7 +83,21 @@ class FileSystemViewModel @Inject constructor(
             val result = listDirUseCase(path)
             
             result.onSuccess { files ->
-                val sortedFiles = files.sortedWith(compareBy({ !it.isDirectory }, { it.name.lowercase() }))
+                val stateConfig = _uiState.value.sortConfig
+                val dirSort = compareBy<com.polymath.fs.models.FileNode> { !it.isDirectory }
+                val mainSort = when (stateConfig.option) {
+                    com.polymath.fs.models.SortOption.NAME -> compareBy<com.polymath.fs.models.FileNode> { it.name.lowercase() }
+                    com.polymath.fs.models.SortOption.TYPE -> compareBy<com.polymath.fs.models.FileNode> { it.name.substringAfterLast('.', "").lowercase() }
+                    com.polymath.fs.models.SortOption.TIME -> compareBy<com.polymath.fs.models.FileNode> { it.lastModified }
+                    com.polymath.fs.models.SortOption.MOSTLY_USED -> compareBy<com.polymath.fs.models.FileNode> { it.name.lowercase() } // Mock mostly used
+                }
+                val comparator = if (stateConfig.direction == com.polymath.fs.models.SortDirection.DESCENDING) {
+                    dirSort.then(mainSort.reversed())
+                } else {
+                    dirSort.then(mainSort)
+                }
+                val sortedFiles = files.sortedWith(comparator)
+                
                 _uiState.update { state ->
                     val updatedTabs = state.tabs.map { 
                         if (it.id == targetTabId) it.copy(isLoading = false, files = sortedFiles, currentPath = path) else it 
@@ -187,6 +201,24 @@ class FileSystemViewModel @Inject constructor(
             } else {
                 _uiState.update { it.copy(error = "chown failed") }
             }
+        }
+    }
+
+    fun setSortConfig(option: com.polymath.fs.models.SortOption, direction: com.polymath.fs.models.SortDirection) {
+        _uiState.update { it.copy(sortConfig = com.polymath.fs.models.SortConfig(option, direction)) }
+        val activeTab = _uiState.value.activeTab ?: return
+        navigateTo(activeTab.currentPath)
+    }
+
+    fun setViewOptions(options: com.polymath.fs.models.ViewOptions) {
+        _uiState.update { it.copy(viewOptions = options) }
+    }
+
+    fun addRecentFile(file: com.polymath.fs.models.FileNode) {
+        if (file.isDirectory) return
+        _uiState.update { state ->
+            val newRecents = (listOf(file) + state.recentFiles.filter { it.path != file.path }).take(5)
+            state.copy(recentFiles = newRecents)
         }
     }
 }

@@ -52,15 +52,71 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Icons"
+        android:text="Primary Color"
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <Switch
-        android:id="@+id/switchIconPack"
+    <RadioGroup
+        android:id="@+id/rgPrimaryColor"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Enable Custom Icon Pack" />
+        android:layout_marginTop="8dp">
+
+        <RadioButton
+            android:id="@+id/rbColorBlue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Blue (Default)" />
+
+        <RadioButton
+            android:id="@+id/rbColorGreen"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Green" />
+
+        <RadioButton
+            android:id="@+id/rbColorPurple"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Purple" />
+    </RadioGroup>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="16dp"
+        android:background="#ccc" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Icon Pack"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@+id/rgIconPack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
+
+        <RadioButton
+            android:id="@+id/rbIconDefault"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Default (Filled)" />
+
+        <RadioButton
+            android:id="@+id/rbIconOutline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Outline" />
+            
+        <RadioButton
+            android:id="@+id/rbIconMinimal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Minimal" />
+    </RadioGroup>
 
 </LinearLayout>

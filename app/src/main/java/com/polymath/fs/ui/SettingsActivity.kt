@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.widget.RadioButton
 import android.widget.RadioGroup
-import android.widget.Switch
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.polymath.fs.R
@@ -17,7 +16,8 @@ class SettingsActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("settings", Context.MODE_PRIVATE)
         val rgTheme = findViewById<RadioGroup>(R.id.rgTheme)
-        val switchIconPack = findViewById<Switch>(R.id.switchIconPack)
+        val rgPrimaryColor = findViewById<RadioGroup>(R.id.rgPrimaryColor)
+        val rgIconPack = findViewById<RadioGroup>(R.id.rgIconPack)
 
         val currentTheme = prefs.getString("theme", "system")
         when (currentTheme) {
@@ -27,7 +27,19 @@ class SettingsActivity : AppCompatActivity() {
             else -> rgTheme.check(R.id.rbSystem)
         }
 
-        switchIconPack.isChecked = prefs.getBoolean("custom_icons", false)
+        val primaryColor = prefs.getString("primary_color", "blue")
+        when (primaryColor) {
+            "green" -> rgPrimaryColor.check(R.id.rbColorGreen)
+            "purple" -> rgPrimaryColor.check(R.id.rbColorPurple)
+            else -> rgPrimaryColor.check(R.id.rbColorBlue)
+        }
+
+        val iconPack = prefs.getString("icon_pack", "default")
+        when (iconPack) {
+            "outline" -> rgIconPack.check(R.id.rbIconOutline)
+            "minimal" -> rgIconPack.check(R.id.rbIconMinimal)
+            else -> rgIconPack.check(R.id.rbIconDefault)
+        }
 
         rgTheme.setOnCheckedChangeListener { _, checkedId ->
             val themeStr = when (checkedId) {
@@ -40,8 +52,24 @@ class SettingsActivity : AppCompatActivity() {
             applyTheme(themeStr)
         }
 
-        switchIconPack.setOnCheckedChangeListener { _, isChecked ->
-            prefs.edit().putBoolean("custom_icons", isChecked).apply()
+        rgPrimaryColor.setOnCheckedChangeListener { _, checkedId ->
+            val colorStr = when (checkedId) {
+                R.id.rbColorGreen -> "green"
+                R.id.rbColorPurple -> "purple"
+                else -> "blue"
+            }
+            prefs.edit().putString("primary_color", colorStr).apply()
+            // In a real app, we would recreate() to apply theme changes
+            recreate()
+        }
+
+        rgIconPack.setOnCheckedChangeListener { _, checkedId ->
+            val packStr = when (checkedId) {
+                R.id.rbIconOutline -> "outline"
+                R.id.rbIconMinimal -> "minimal"
+                else -> "default"
+            }
+            prefs.edit().putString("icon_pack", packStr).apply()
         }
     }
 
