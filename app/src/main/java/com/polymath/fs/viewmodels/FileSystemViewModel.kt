@@ -37,7 +37,7 @@ class FileSystemViewModel @Inject constructor(
         val newTab = TabState(currentPath = path)
         _uiState.update { state ->
             state.copy(
-                tabs = state.tabs + newTab,
+                tabs = state.tabs + listOf(newTab),
                 activeTabId = newTab.id
             )
         }

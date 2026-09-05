@@ -13,7 +13,8 @@ data class TabState(
 data class FileBrowserUiState(
     val tabs: List<TabState> = emptyList(),
     val activeTabId: String = "",
-    val clipboard: Clipboard? = null
+    val clipboard: Clipboard? = null,
+    val error: String? = null
 ) {
     val activeTab: TabState?
         get() = tabs.find { it.id == activeTabId }
