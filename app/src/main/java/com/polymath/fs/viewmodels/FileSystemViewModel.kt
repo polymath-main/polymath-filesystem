@@ -27,7 +27,7 @@ class FileSystemViewModel @Inject constructor(
     private val renameUseCase: RenameUseCase,
     private val copyFilesUseCase: CopyFilesUseCase,
     private val moveFilesUseCase: MoveFilesUseCase,
-    private val fileSystemRepository: com.polymath.fs.data.repository.FileSystemRepository
+    val fileSystemRepository: com.polymath.fs.data.repository.FileSystemRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
