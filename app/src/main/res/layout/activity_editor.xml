@@ -4,14 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0f172a">
+    android:background="?attr/colorSurface">
 
     <!-- Top AppBar -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#1e293b"
+        android:background="?attr/colorSurfaceVariant"
         app:title="TextEditor"
         app:titleTextColor="#f8fafc"
         app:navigationIcon="@android:drawable/ic_menu_revert"
@@ -22,7 +22,7 @@
         android:id="@+id/panel_search_replace"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#111827"
+        android:background="?attr/colorSurfaceVariant"
         android:orientation="vertical"
         android:padding="8dp"
         android:visibility="gone">
@@ -139,7 +139,7 @@
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="42dp"
-        android:background="#1e293b"
+        android:background="?attr/colorSurfaceVariant"
         android:scrollbars="none">
 
         <LinearLayout
@@ -353,7 +353,7 @@
             android:id="@+id/scroll_line_numbers"
             android:layout_width="44dp"
             android:layout_height="match_parent"
-            android:background="#0b1120"
+            android:background="?attr/colorSurface"
             android:scrollbars="none">
 
             <TextView
@@ -406,14 +406,14 @@
         android:id="@+id/console_panel"
         android:layout_width="match_parent"
         android:layout_height="180dp"
-        android:background="#090d16"
+        android:background="?attr/colorSurface"
         android:orientation="vertical">
 
         <!-- Console Header -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="36dp"
-            android:background="#161f30"
+            android:background="?attr/colorSurfaceVariant"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="12dp">
@@ -431,7 +431,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="#334155"
+                android:background="?attr/colorControlHighlight"
                 android:paddingHorizontal="6dp"
                 android:paddingVertical="1dp"
                 android:text="0 logs"

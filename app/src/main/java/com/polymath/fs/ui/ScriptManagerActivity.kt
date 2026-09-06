@@ -10,6 +10,8 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import com.polymath.fs.core.BaseDynamicActivity
+
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -23,7 +25,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class ScriptManagerActivity : AppCompatActivity() {
+class ScriptManagerActivity : BaseDynamicActivity() {
 
     private lateinit var binding: ActivityScriptManagerBinding
     private val allScriptFiles = mutableListOf<File>()

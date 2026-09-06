@@ -3,10 +3,12 @@ package com.polymath.fs.viewers
 import android.os.Bundle
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
+import com.polymath.fs.core.BaseDynamicActivity
+
 import com.polymath.fs.R
 import java.io.File
 
-class TextViewerActivity : AppCompatActivity() {
+class TextViewerActivity : BaseDynamicActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

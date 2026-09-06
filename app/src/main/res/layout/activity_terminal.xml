@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#000000">
+    android:background="?attr/colorSurface">
 
     <ScrollView
         android:id="@+id/svTerminal"
@@ -26,7 +26,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#333333"
+        android:background="?attr/colorSurfaceVariant"
         android:padding="4dp">
         
         <Button
@@ -91,7 +91,7 @@
         android:fontFamily="monospace"
         android:inputType="textNoSuggestions"
         android:imeOptions="actionSend"
-        android:background="#222222"
+        android:background="?attr/colorSurfaceVariant"
         android:padding="12dp" />
 
 </LinearLayout>

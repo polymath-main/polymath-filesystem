@@ -4,12 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0b1120">
+    android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#111827">
+        android:background="?attr/colorSurfaceVariant">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -118,7 +118,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
                         android:layout_marginVertical="12dp"
-                        android:background="#334155" />
+                        android:background="?attr/colorControlHighlight" />
 
                     <!-- Partition Stats -->
                     <LinearLayout
@@ -223,7 +223,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:background="#0f172a"
+                            android:background="?attr/colorSurface"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="3dp"
                             android:textColor="#34d399"
@@ -367,7 +367,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -394,7 +394,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -421,7 +421,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -448,7 +448,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -475,7 +475,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -502,7 +502,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -529,7 +529,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -556,7 +556,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -583,7 +583,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_columnWeight="1"
-                    android:background="#1e293b"
+                    android:background="?attr/colorSurfaceVariant"
                     android:gravity="center"
                     android:orientation="vertical"
                     android:padding="12dp">
@@ -647,7 +647,7 @@
                             android:id="@+id/tv_js_engine_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="#334155"
+                            android:background="?attr/colorControlHighlight"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="3dp"
                             android:textColor="#38bdf8"
@@ -734,7 +734,7 @@
                             android:id="@+id/tv_scheduled_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="#451a03"
+                            android:background="?attr/colorErrorContainer"
                             android:paddingHorizontal="8dp"
                             android:paddingVertical="3dp"
                             android:textColor="#f59e0b"

@@ -29,7 +29,7 @@
                 android:layout_height="44dp"
                 android:gravity="center" 
                 android:textSize="22sp" 
-                android:background="#334155"
+                android:background="?attr/colorControlHighlight"
                 android:text="⚡"/>
 
             <LinearLayout
@@ -62,7 +62,7 @@
                         android:textSize="10sp"
                         android:textStyle="bold"
                         android:textColor="#f59e0b"
-                        android:background="#451a03"
+                        android:background="?attr/colorErrorContainer"
                         android:paddingHorizontal="6dp"
                         android:paddingVertical="2dp"
                         android:layout_marginEnd="6dp"
@@ -74,7 +74,7 @@
                         android:layout_height="wrap_content"
                         android:paddingHorizontal="6dp"
                         android:paddingVertical="2dp"
-                        android:background="#334155"
+                        android:background="?attr/colorControlHighlight"
                         android:textColor="#38bdf8"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -105,7 +105,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginTop="12dp"
-            android:background="#334155" />
+            android:background="?attr/colorControlHighlight" />
 
         <!-- Actions Bar -->
         <LinearLayout

@@ -7,6 +7,8 @@ import android.widget.EditText
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.polymath.fs.core.BaseDynamicActivity
+
 import androidx.lifecycle.lifecycleScope
 import com.polymath.fs.R
 import com.topjohnwu.superuser.Shell
@@ -18,7 +20,7 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.io.PrintWriter
 
-class TerminalActivity : AppCompatActivity() {
+class TerminalActivity : BaseDynamicActivity() {
 
     private lateinit var tvOutput: TextView
     private lateinit var etInput: EditText

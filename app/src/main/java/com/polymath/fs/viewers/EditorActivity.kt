@@ -20,6 +20,8 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.polymath.fs.core.BaseDynamicActivity
+
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,7 +35,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class EditorActivity : AppCompatActivity() {
+class EditorActivity : BaseDynamicActivity() {
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var etCode: EditText

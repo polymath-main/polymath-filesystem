@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import com.polymath.fs.core.BaseDynamicActivity
 import com.polymath.fs.databinding.ActivityMainBinding
 import com.polymath.fs.ui.FileBrowserFragment
 import com.polymath.fs.ui.HomeDashboardFragment
@@ -20,7 +21,7 @@ import com.polymath.fs.ui.ScriptManagerActivity
 import com.polymath.fs.viewers.EditorActivity
 import com.polymath.fs.viewmodels.FileSystemViewModel
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseDynamicActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: FileSystemViewModel by viewModels {
@@ -50,22 +51,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val prefs = getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
-        val currentTheme = prefs.getString("theme", "cyberpunk")
-        val themeResId = when (currentTheme) {
-            "cyberpunk" -> R.style.Theme_Cyberpunk
-            "ocean_breeze" -> R.style.Theme_OceanBreeze
-            "dracula" -> R.style.Theme_Dracula
-            "solarized_dark" -> R.style.Theme_SolarizedDark
-            "sunset" -> R.style.Theme_Sunset
-            "hacker_green" -> R.style.Theme_HackerGreen
-            "neon" -> R.style.Theme_Neon
-            "material_you" -> R.style.Theme_MaterialYou
-            "ios_like" -> R.style.Theme_IosLike
-            "true_amoled" -> R.style.Theme_TrueAmoled
-            else -> R.style.Theme_Cyberpunk
-        }
-        setTheme(themeResId)
 
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
