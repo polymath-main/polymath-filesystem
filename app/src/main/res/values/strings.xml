@@ -13,4 +13,9 @@
     <string name="sort_size">Size</string>
     <string name="sort_ascending">Ascending (A-Z / Oldest / Smallest)</string>
     <string name="sort_descending">Descending (Z-A / Newest / Largest)</string>
+    <string name="settings_title">Settings</string>
+    <string name="root_explorer_title">Root Explorer</string>
+    <string name="root_explorer_desc">Request elevated root access via libsu to browse and manage restricted system directories (/system, /data, /etc)</string>
+    <string name="script_manager_title">Script Manager</string>
+    <string name="action_script_manager">Script Manager</string>
 </resources>

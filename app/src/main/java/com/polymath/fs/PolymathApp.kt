@@ -13,12 +13,14 @@ import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.MkdirUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
+import com.polymath.fs.js.PolymathJSBridge
 import com.topjohnwu.superuser.Shell
 
 class PolymathApp : Application() {
 
     val shellHolder by lazy { RootShellHolder() }
     val fileSystemRepository by lazy { FileSystemRepository(shellHolder) }
+    val jsBridge by lazy { PolymathJSBridge(fileSystemRepository, this, shellHolder) }
     val listDirUseCase by lazy { ListDirUseCase(fileSystemRepository) }
     val deleteFilesUseCase by lazy { DeleteFilesUseCase(fileSystemRepository) }
     val renameUseCase by lazy { RenameUseCase(fileSystemRepository) }
@@ -45,5 +47,8 @@ class PolymathApp : Application() {
             "dark", "amoled" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         }
+
+        // Initialize and extract built-in script library
+        com.polymath.fs.core.BuiltInScriptManager.extractAllBuiltInScripts(this, forceOverwrite = false)
     }
 }

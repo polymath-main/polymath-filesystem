@@ -1,5 +1,8 @@
+// Polymath File System - Network Module
+// [SmbManager.js] SMB / CIFS Network Share Connection Manager
+
 var smbConfig = {
-    host: "",
+    host: "127.0.0.1",
     port: 445,
     user: "guest",
     pass: "",
@@ -7,42 +10,23 @@ var smbConfig = {
 };
 
 function startSmbManager() {
-    PolymathOS.prompt("Enter SMB Host", "smbOnHostEntered");
+    var host = PolymathOS.prompt("Enter SMB Host (e.g. 192.168.1.50 or 127.0.0.1)", "smbOnHostEntered");
+    if (host) {
+        smbConfig.host = host;
+    }
+    PolymathOS.toast("Connecting to SMB share at " + smbConfig.host + ":" + smbConfig.port);
+    try {
+        var res = PolymathOS.smbRequest(smbConfig.host, smbConfig.port, smbConfig.user, smbConfig.pass, "LIST", smbConfig.path);
+        var parsed = JSON.parse(res);
+        PolymathOS.alert("SMB Manager", parsed.status || "SMB Status received");
+    } catch (e) {
+        PolymathOS.alert("SMB Error", "Error executing SMB request: " + e.message);
+    }
 }
 
 function smbOnHostEntered(host) {
-    if (host) {
-        smbConfig.host = host;
-        PolymathOS.prompt("Enter SMB Port (default 445)", "smbOnPortEntered");
-    } else {
-        PolymathOS.toast("Host cannot be empty. Operation cancelled.");
-    }
+    if (host) smbConfig.host = host;
 }
 
-function smbOnPortEntered(port) {
-    smbConfig.port = parseInt(port) || 445;
-    PolymathOS.prompt("Enter SMB Username", "smbOnUserEntered");
-}
-
-function smbOnUserEntered(user) {
-    smbConfig.user = user || "guest";
-    PolymathOS.prompt("Enter SMB Password", "smbOnPassEntered");
-}
-
-function smbOnPassEntered(pass) {
-    smbConfig.pass = pass || "";
-    PolymathOS.toast("Connecting to SMB " + smbConfig.host + "...");
-    try {
-        if (typeof PolymathOS.smbRequest === "function") {
-            PolymathOS.smbRequest(smbConfig.host, smbConfig.port, smbConfig.user, smbConfig.pass, "LIST", smbConfig.path);
-            PolymathOS.alert("SMB request executed successfully for " + smbConfig.host);
-        } else {
-            PolymathOS.alert("SMB connection attempted to " + smbConfig.host + " (smbRequest not found in API)");
-        }
-    } catch (e) {
-        PolymathOS.alert("Error executing SMB request: " + e.message);
-    }
-}
-
-// Start the sequence
 startSmbManager();
+"SMB Manager: Queried " + smbConfig.host + ":" + smbConfig.port;

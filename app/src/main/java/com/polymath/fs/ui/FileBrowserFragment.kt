@@ -7,7 +7,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,7 +22,7 @@ class FileBrowserFragment : Fragment() {
     private var _binding: FragmentFileBrowserBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: FileSystemViewModel by viewModels {
+    private val viewModel: FileSystemViewModel by activityViewModels {
         FileSystemViewModel.provideFactory(requireActivity().application as com.polymath.fs.PolymathApp)
     }
     private lateinit var adapter: FileListAdapter
@@ -42,6 +42,13 @@ class FileBrowserFragment : Fragment() {
         override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: android.view.MenuItem): Boolean {
             val paths = adapter.selectedItems.toList()
             when (item.itemId) {
+                com.polymath.fs.R.id.action_bulk_script -> {
+                    val sheet = BulkScriptExecutionBottomSheet()
+                    sheet.setSelectedFiles(paths)
+                    sheet.show(parentFragmentManager, "BulkScriptExecutionBottomSheet")
+                    mode.finish()
+                    return true
+                }
                 com.polymath.fs.R.id.action_delete -> {
                     confirmDelete(paths) {
                         mode.finish()
@@ -291,15 +298,28 @@ class FileBrowserFragment : Fragment() {
                         showDetails = false
                     ))
                     
-                    if (state.viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
-                        if (binding.recyclerView.layoutManager !is androidx.recyclerview.widget.GridLayoutManager) {
-                            binding.recyclerView.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
-                            binding.recyclerView.adapter = adapter
+                    when (state.viewOptions.layout) {
+                        com.polymath.fs.models.ViewLayout.GRID -> {
+                            val cols = state.viewOptions.columns.coerceAtLeast(2)
+                            val lm = binding.recyclerView.layoutManager
+                            if (lm !is androidx.recyclerview.widget.GridLayoutManager || lm.spanCount != cols) {
+                                binding.recyclerView.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), cols)
+                                binding.recyclerView.adapter = adapter
+                            }
                         }
-                    } else {
-                        if (binding.recyclerView.layoutManager !is androidx.recyclerview.widget.LinearLayoutManager || binding.recyclerView.layoutManager is androidx.recyclerview.widget.GridLayoutManager) {
-                            binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
-                            binding.recyclerView.adapter = adapter
+                        com.polymath.fs.models.ViewLayout.HORIZONTAL -> {
+                            val lm = binding.recyclerView.layoutManager
+                            if (lm !is androidx.recyclerview.widget.LinearLayoutManager || lm is androidx.recyclerview.widget.GridLayoutManager || lm.orientation != androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL) {
+                                binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+                                binding.recyclerView.adapter = adapter
+                            }
+                        }
+                        else -> {
+                            val lm = binding.recyclerView.layoutManager
+                            if (lm !is androidx.recyclerview.widget.LinearLayoutManager || lm is androidx.recyclerview.widget.GridLayoutManager || lm.orientation != androidx.recyclerview.widget.LinearLayoutManager.VERTICAL) {
+                                binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+                                binding.recyclerView.adapter = adapter
+                            }
                         }
                     }
                     
@@ -381,6 +401,12 @@ class FileBrowserFragment : Fragment() {
 
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                com.polymath.fs.R.id.action_view_mode -> {
+                    com.polymath.fs.ui.ViewModeDialog.show(requireContext(), viewModel.uiState.value.viewOptions) { newOptions ->
+                        viewModel.setViewOptions(newOptions)
+                    }
+                    true
+                }
                 com.polymath.fs.R.id.action_sort -> {
                     showSortingDialog()
                     true
@@ -391,6 +417,10 @@ class FileBrowserFragment : Fragment() {
                 }
                 com.polymath.fs.R.id.action_terminal -> {
                     startActivity(android.content.Intent(requireContext(), TerminalActivity::class.java))
+                    true
+                }
+                com.polymath.fs.R.id.action_script_manager -> {
+                    startActivity(android.content.Intent(requireContext(), ScriptManagerActivity::class.java))
                     true
                 }
                 com.polymath.fs.R.id.action_new_tab -> {

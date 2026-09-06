@@ -184,6 +184,7 @@ class FileListAdapter(
                 com.polymath.fs.models.BoxSize.SMALL -> 32
                 com.polymath.fs.models.BoxSize.MEDIUM -> 48
                 com.polymath.fs.models.BoxSize.LARGE -> 64
+                com.polymath.fs.models.BoxSize.EXTRA_LARGE -> 80
             }
             val sizePx = (sizeDp * scale + 0.5f).toInt()
             

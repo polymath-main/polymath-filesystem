@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_script"
     android:layout_width="match_parent" 
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginHorizontal="10dp"
+    android:layout_marginVertical="6dp"
     app:cardBackgroundColor="#1e293b"
-    app:cardCornerRadius="12dp"
+    app:cardCornerRadius="14dp"
     app:cardElevation="2dp">
 
     <LinearLayout
@@ -14,70 +16,156 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Script Header -->
+        <!-- Header: Icon, Name, Category, Pinned Badge -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
-            <TextView android:id="@+id/scriptIcon" 
-                android:layout_width="40dp" 
-                android:layout_height="40dp"
+
+            <TextView 
+                android:id="@+id/scriptIcon" 
+                android:layout_width="44dp" 
+                android:layout_height="44dp"
                 android:gravity="center" 
-                android:textSize="24sp" 
+                android:textSize="22sp" 
+                android:background="#334155"
                 android:text="⚡"/>
+
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginStart="12dp"
                 android:orientation="vertical">
-                <TextView android:id="@+id/scriptName" 
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView 
+                        android:id="@+id/scriptName" 
+                        android:layout_width="0dp" 
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="#f8fafc" 
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView 
+                        android:id="@+id/tvPinnedBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="📌 PINNED"
+                        android:textSize="10sp"
+                        android:textStyle="bold"
+                        android:textColor="#f59e0b"
+                        android:background="#451a03"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="2dp"
+                        android:layout_marginEnd="6dp"
+                        android:visibility="gone" />
+
+                    <TextView 
+                        android:id="@+id/scriptCategory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="6dp"
+                        android:paddingVertical="2dp"
+                        android:background="#334155"
+                        android:textColor="#38bdf8"
+                        android:textSize="10sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <TextView 
+                    android:id="@+id/scriptDesc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="#94a3b8"
+                    android:textSize="12sp"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+                <TextView 
+                    android:id="@+id/scriptPath" 
                     android:layout_width="match_parent" 
                     android:layout_height="wrap_content"
-                    android:textColor="#f8fafc" 
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-                <TextView android:id="@+id/scriptPath" 
-                    android:layout_width="match_parent" 
-                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
                     android:textColor="#64748b" 
-                    android:textSize="12sp"/>
+                    android:textSize="11sp"/>
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Actions -->
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="12dp"
+            android:background="#334155" />
+
+        <!-- Actions Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp"
-            android:gravity="end">
-            
-            <TextView android:id="@+id/btnBookmark" 
+            android:gravity="center_vertical">
+
+            <TextView 
+                android:id="@+id/btnPin" 
                 android:layout_width="wrap_content" 
                 android:layout_height="wrap_content"
-                android:textColor="#94a3b8" 
-                android:textSize="14sp"
-                android:text="⭐ BOOKMARK"
+                android:textColor="#f59e0b" 
+                android:textSize="12sp"
+                android:text="📌 PIN"
                 android:padding="8dp"
-                android:layout_marginEnd="12dp"
                 android:background="?android:attr/selectableItemBackground"/>
-                
-            <TextView android:id="@+id/btnEdit" 
+
+            <TextView 
+                android:id="@+id/btnSchedule" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:textColor="#a855f7" 
+                android:textSize="12sp"
+                android:text="⏰ SCHEDULE"
+                android:padding="8dp"
+                android:background="?android:attr/selectableItemBackground"/>
+
+            <TextView 
+                android:id="@+id/btnShare" 
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:textColor="#38bdf8" 
+                android:textSize="12sp"
+                android:text="📤 SHARE"
+                android:padding="8dp"
+                android:background="?android:attr/selectableItemBackground"/>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <TextView 
+                android:id="@+id/btnEdit" 
                 android:layout_width="wrap_content" 
                 android:layout_height="wrap_content"
                 android:textColor="#60a5fa" 
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:text="✏ EDIT"
                 android:padding="8dp"
-                android:layout_marginEnd="12dp"
                 android:background="?android:attr/selectableItemBackground"/>
 
-            <TextView android:id="@+id/btnRun" 
+            <TextView 
+                android:id="@+id/btnRun" 
                 android:layout_width="wrap_content" 
                 android:layout_height="wrap_content"
                 android:textColor="#34d399" 
-                android:textSize="14sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:text="▶ RUN"
                 android:padding="8dp"

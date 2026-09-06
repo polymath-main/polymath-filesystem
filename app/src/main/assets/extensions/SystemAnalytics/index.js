@@ -1,10 +1,28 @@
-// SystemAnalytics Subsystem
+// Polymath File System - SystemAnalytics Subsystem
+// Real-time memory allocation, storage distribution, and kernel statistics.
 
-var mem = PolymathOS.daemonCommand("execute_command", "free -h | grep Mem | awk '{print $3 \" / \" $2}'");
-var disk = PolymathOS.daemonCommand("execute_command", "df -h /sdcard | tail -1 | awk '{print $4 \" Free\"}'");
-
-var json = JSON.parse(mem);
-var jsonDisk = JSON.parse(disk);
-
-PolymathOS.alert("System Analytics", "RAM Usage: " + json.output.trim() + "\nStorage: " + jsonDisk.output.trim());
-"Analytics Generated";
+(function() {
+    PolymathOS.toast("Sampling system telemetry...");
+    
+    // Read memory usage
+    var memCmd = "grep -E 'MemTotal|MemAvailable|MemFree' /proc/meminfo 2>/dev/null || free -h 2>/dev/null || echo 'Mem: OK'";
+    var diskCmd = "df -h /storage/emulated/0 2>/dev/null || df -h /sdcard 2>/dev/null || echo 'Storage: OK'";
+    
+    var memRes = PolymathOS.daemonCommand("execute_command", memCmd);
+    var diskRes = PolymathOS.daemonCommand("execute_command", diskCmd);
+    
+    var memOutput = "Memory Stats Unavailable";
+    var diskOutput = "Storage Stats Unavailable";
+    
+    try {
+        memOutput = JSON.parse(memRes).output || memOutput;
+    } catch(e) {}
+    
+    try {
+        diskOutput = JSON.parse(diskRes).output || diskOutput;
+    } catch(e) {}
+    
+    var summary = "=== Memory Allocations ===\n" + memOutput.trim() + "\n\n=== Storage Partitions ===\n" + diskOutput.trim();
+    PolymathOS.alert("System Analytics", summary);
+    return "Telemetry Report Generated";
+})();

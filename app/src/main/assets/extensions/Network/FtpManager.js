@@ -1,5 +1,8 @@
+// Polymath File System - Network Module
+// [FtpManager.js] FTP Client Connection & Endpoint Validator
+
 var ftpConfig = {
-    host: "",
+    host: "127.0.0.1",
     port: 21,
     user: "anonymous",
     pass: "",
@@ -7,38 +10,23 @@ var ftpConfig = {
 };
 
 function startFtpManager() {
-    PolymathOS.prompt("Enter FTP Host", "ftpOnHostEntered");
+    var host = PolymathOS.prompt("Enter FTP Host (e.g. 192.168.1.100 or 127.0.0.1)", "ftpOnHostEntered");
+    if (host) {
+        ftpConfig.host = host;
+    }
+    PolymathOS.toast("Validating FTP endpoint: " + ftpConfig.host + ":" + ftpConfig.port);
+    try {
+        var res = PolymathOS.ftpRequest(ftpConfig.host, ftpConfig.port, ftpConfig.user, ftpConfig.pass, "LIST", ftpConfig.path);
+        var parsed = JSON.parse(res);
+        PolymathOS.alert("FTP Manager", parsed.status || "FTP Status received");
+    } catch (e) {
+        PolymathOS.alert("FTP Error", "Failed to connect to FTP: " + e.message);
+    }
 }
 
 function ftpOnHostEntered(host) {
-    if (host) {
-        ftpConfig.host = host;
-        PolymathOS.prompt("Enter FTP Port (default 21)", "ftpOnPortEntered");
-    } else {
-        PolymathOS.toast("Host cannot be empty. Operation cancelled.");
-    }
+    if (host) ftpConfig.host = host;
 }
 
-function ftpOnPortEntered(port) {
-    ftpConfig.port = parseInt(port) || 21;
-    PolymathOS.prompt("Enter FTP Username", "ftpOnUserEntered");
-}
-
-function ftpOnUserEntered(user) {
-    ftpConfig.user = user || "anonymous";
-    PolymathOS.prompt("Enter FTP Password", "ftpOnPassEntered");
-}
-
-function ftpOnPassEntered(pass) {
-    ftpConfig.pass = pass || "";
-    PolymathOS.toast("Connecting to " + ftpConfig.host + "...");
-    try {
-        PolymathOS.ftpRequest(ftpConfig.host, ftpConfig.port, ftpConfig.user, ftpConfig.pass, "LIST", ftpConfig.path);
-        PolymathOS.alert("FTP request executed successfully for " + ftpConfig.host);
-    } catch (e) {
-        PolymathOS.alert("Error executing FTP request: " + e.message);
-    }
-}
-
-// Start the sequence
 startFtpManager();
+"FTP Manager: Checked connection to " + ftpConfig.host + ":" + ftpConfig.port;

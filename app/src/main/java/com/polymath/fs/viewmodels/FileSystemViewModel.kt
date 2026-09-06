@@ -37,6 +37,11 @@ class FileSystemViewModel @Inject constructor(
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
         if (key == "icon_pack" || key == "theme") {
             syncPrefsToUiState()
+        } else if (key == "root_explorer") {
+            // Root explorer permission mode changed; reload current active tabs
+            _uiState.value.tabs.forEach { tab ->
+                navigateTo(tab.currentPath, tab.id)
+            }
         }
     }
 
@@ -229,8 +234,40 @@ class FileSystemViewModel @Inject constructor(
         }
     }
 
+    private var searchJob: kotlinx.coroutines.Job? = null
+
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+        searchJob?.cancel()
+        if (query.isBlank()) {
+            val activeTab = _uiState.value.activeTab
+            if (activeTab != null) {
+                navigateTo(activeTab.currentPath)
+            }
+            return
+        }
+
+        val activeTab = _uiState.value.activeTab ?: return
+        searchJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val startDir = if (activeTab.currentPath.isNotBlank() && activeTab.currentPath != "/") activeTab.currentPath else "/storage/emulated/0"
+            com.polymath.fs.core.DeepSearchEngine.search(
+                com.polymath.fs.core.DeepSearchEngine.SearchQuery(
+                    keyword = query,
+                    rootPath = startDir
+                )
+            ).collect { matchedNodes ->
+                _uiState.update { state ->
+                    val updatedTabs = state.tabs.map { tab ->
+                        if (tab.id == state.activeTabId) {
+                            tab.copy(files = matchedNodes)
+                        } else {
+                            tab
+                        }
+                    }
+                    state.copy(tabs = updatedTabs)
+                }
+            }
+        }
     }
 
     private fun sortFileList(
@@ -263,6 +300,11 @@ class FileSystemViewModel @Inject constructor(
             val newRecents = (listOf(file) + state.recentFiles.filter { it.path != file.path }).take(5)
             state.copy(recentFiles = newRecents)
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
     }
 
     companion object {

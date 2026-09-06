@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_run"
+        android:title="Run"
+        android:icon="@android:drawable/ic_media_play"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_save"
+        android:title="Save"
+        android:icon="@android:drawable/ic_menu_save"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_new_file"
+        android:title="New File"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_save_as"
+        android:title="Save As..."
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_toggle_console"
+        android:title="Toggle Console"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_indent_2"
+        android:title="Indent: 2 spaces"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_indent_4"
+        android:title="Indent: 4 spaces"
+        app:showAsAction="never" />
+
+</menu>

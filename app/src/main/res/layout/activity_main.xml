@@ -7,45 +7,62 @@
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:background="#1e293b"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/menu_main_nav"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
     <LinearLayout
         android:id="@+id/permissionGate"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
+        android:background="#0f172a"
         android:gravity="center"
+        android:orientation="vertical"
         android:padding="32dp"
-        android:visibility="gone"
-        android:background="#0f172a">
-        
+        android:visibility="gone">
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:text="Storage Permission Required"
             android:textColor="#ffffff"
             android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
-            
+            android:textStyle="bold" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
             android:text="Polymath requires full storage access to manage your files."
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
             android:textAlignment="center"
-            android:layout_marginBottom="24dp" />
-            
+            android:textColor="#94a3b8"
+            android:textSize="14sp" />
+
         <Button
             android:id="@+id/btnGrantPermission"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Grant Access"
             android:backgroundTint="#38bdf8"
+            android:text="Grant Access"
             android:textColor="#ffffff" />
-            
+
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

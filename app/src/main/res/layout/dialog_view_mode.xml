@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Layout Mode -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Display Layout"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="#38bdf8" />
+
+        <RadioGroup
+            android:id="@+id/rg_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rb_layout_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Vertical List View (Compact)" />
+
+            <RadioButton
+                android:id="@+id/rb_layout_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Grid View (Multi-column)" />
+
+            <RadioButton
+                android:id="@+id/rb_layout_horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Horizontal Strip Carousel" />
+        </RadioGroup>
+
+        <!-- Grid Columns (Active if Grid selected) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Grid Columns"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="#38bdf8" />
+
+        <RadioGroup
+            android:id="@+id/rg_columns"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_col_2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="2 Col" />
+
+            <RadioButton
+                android:id="@+id/rb_col_3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="3 Col" />
+
+            <RadioButton
+                android:id="@+id/rb_col_4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="4 Col" />
+        </RadioGroup>
+
+        <!-- Orientation -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Scroll Orientation"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="#38bdf8" />
+
+        <RadioGroup
+            android:id="@+id/rg_orientation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/rb_orient_vertical"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Vertical" />
+
+            <RadioButton
+                android:id="@+id/rb_orient_horizontal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Horizontal" />
+        </RadioGroup>
+
+        <!-- Box Sizing -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Icon / Box Sizing"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:textColor="#38bdf8" />
+
+        <RadioGroup
+            android:id="@+id/rg_box_size"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="vertical">
+
+            <RadioButton
+                android:id="@+id/rb_box_small"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Small (32dp - High Density)" />
+
+            <RadioButton
+                android:id="@+id/rb_box_medium"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Medium (48dp - Balanced)" />
+
+            <RadioButton
+                android:id="@+id/rb_box_large"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Large (64dp - Spacious)" />
+
+            <RadioButton
+                android:id="@+id/rb_box_xlarge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Extra Large (80dp - Thumbnails)" />
+        </RadioGroup>
+
+        <!-- Details Toggle -->
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/switch_show_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Show File Details (Size, Date, Perms)"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+</ScrollView>

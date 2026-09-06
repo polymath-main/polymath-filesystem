@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_bulk_execution"
+        android:title="Bulk File Execution"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_share_library"
+        android:icon="@android:drawable/ic_menu_share"
+        android:title="Share Extension Library"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/action_reload_builtin"
+        android:icon="@android:drawable/ic_popup_sync"
+        android:title="Restore Built-in Scripts"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_new_script"
+        android:icon="@android:drawable/ic_input_add"
+        android:title="New Script"
+        app:showAsAction="never" />
+
+</menu>

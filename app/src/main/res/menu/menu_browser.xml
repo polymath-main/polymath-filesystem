@@ -2,6 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_view_mode"
+        android:title="View Layout &amp; Sizing"
+        android:icon="@android:drawable/ic_menu_view"
+        app:showAsAction="ifRoom" />
+    <item
         android:id="@+id/action_search"
         android:title="Search"
         android:icon="@android:drawable/ic_menu_search"
@@ -23,6 +28,10 @@
     <item
         android:id="@+id/action_terminal"
         android:title="Open Terminal"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_script_manager"
+        android:title="@string/action_script_manager"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_new_tab"
