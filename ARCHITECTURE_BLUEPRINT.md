@@ -187,4 +187,9 @@ Rather than trapping JavaScript scripts in a restricted, throwaway sandbox with 
    - Replaced direct attempts on restricted sysfs/procfs nodes (`/sys/fs/selinux/enforce`, `/sys/devices/system/cpu/...`, `/sys/block/zram0/...`, `/proc` listing) with zero-audit platform APIs.
    - Used reflection on platform `android.os.SELinux.isSELinuxEnforced()` and standard `System.getProperty("os.version")`.
    - Added thread-safe static hardware telemetry caching in `KernelEngineController` to eliminate logcat `E/audit: rate limit exceeded`.
+11. [x] **GitHub Actions Workflow CI & Gradle Wrapper Remediation**:
+   - Resolved `gradle: command not found` in `.github/workflows/android.yml` by explicitly provisioning Gradle `9.3.1` via `gradle/actions/setup-gradle@v3`.
+   - Generated and committed missing `gradle/wrapper/gradle-wrapper.jar` and `gradle-wrapper.properties`.
+   - Added explicit `chmod +x gradlew` step to eliminate `Permission denied` exit code 126 in Linux runners.
+   - Upgraded release action to `softprops/action-gh-release@v2` and added branch support for both `main` and `master` with manual `workflow_dispatch`.
 
