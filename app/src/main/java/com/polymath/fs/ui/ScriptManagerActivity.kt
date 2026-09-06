@@ -85,6 +85,7 @@ class ScriptManagerActivity : AppCompatActivity() {
                 checkedIds.contains(R.id.chip_utils) -> "Utils"
                 checkedIds.contains(R.id.chip_core) -> "Core"
                 checkedIds.contains(R.id.chip_analytics) -> "SystemAnalytics"
+                checkedIds.contains(R.id.chip_os_runtime) -> "OSRuntime"
                 else -> "All"
             }
             filterScripts()

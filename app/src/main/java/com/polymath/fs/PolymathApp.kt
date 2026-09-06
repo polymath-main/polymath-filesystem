@@ -21,6 +21,7 @@ class PolymathApp : Application() {
     val shellHolder by lazy { RootShellHolder() }
     val fileSystemRepository by lazy { FileSystemRepository(shellHolder) }
     val jsBridge by lazy { PolymathJSBridge(fileSystemRepository, this, shellHolder) }
+    val jsRuntime by lazy { jsBridge.jsRuntime }
     val listDirUseCase by lazy { ListDirUseCase(fileSystemRepository) }
     val deleteFilesUseCase by lazy { DeleteFilesUseCase(fileSystemRepository) }
     val renameUseCase by lazy { RenameUseCase(fileSystemRepository) }

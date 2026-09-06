@@ -17,6 +17,124 @@
         app:navigationIcon="@android:drawable/ic_menu_revert"
         app:navigationIconTint="#f8fafc" />
 
+    <!-- Find & Replace Collapsible Panel -->
+    <LinearLayout
+        android:id="@+id/panel_search_replace"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#111827"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/et_find"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_editor_search_field"
+                android:hint="Find text..."
+                android:paddingHorizontal="10dp"
+                android:textColor="#f8fafc"
+                android:textColorHint="#64748b"
+                android:textSize="13sp"
+                android:inputType="text" />
+
+            <TextView
+                android:id="@+id/tv_find_match_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textColor="#38bdf8"
+                android:textSize="12sp"
+                android:text="0/0" />
+
+            <TextView
+                android:id="@+id/btn_find_prev"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="6dp"
+                android:gravity="center"
+                android:text="▲"
+                android:textColor="#f8fafc"
+                android:textSize="12sp"
+                android:background="?android:attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btn_find_next"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:gravity="center"
+                android:text="▼"
+                android:textColor="#f8fafc"
+                android:textSize="12sp"
+                android:background="?android:attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btn_close_search"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:gravity="center"
+                android:text="✕"
+                android:textColor="#94a3b8"
+                android:textSize="14sp"
+                android:background="?android:attr/selectableItemBackground" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/et_replace"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_editor_search_field"
+                android:hint="Replace with..."
+                android:paddingHorizontal="10dp"
+                android:textColor="#f8fafc"
+                android:textColorHint="#64748b"
+                android:textSize="13sp"
+                android:inputType="text" />
+
+            <TextView
+                android:id="@+id/btn_replace_one"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:gravity="center"
+                android:paddingHorizontal="8dp"
+                android:text="Replace"
+                android:textColor="#38bdf8"
+                android:textSize="12sp"
+                android:background="?android:attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btn_replace_all"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_marginStart="4dp"
+                android:gravity="center"
+                android:paddingHorizontal="8dp"
+                android:text="Replace All"
+                android:textColor="#38bdf8"
+                android:textSize="12sp"
+                android:background="?android:attr/selectableItemBackground" />
+        </LinearLayout>
+    </LinearLayout>
+
     <!-- Code Quick Accessory Bar -->
     <HorizontalScrollView
         android:layout_width="match_parent"
@@ -31,6 +149,39 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingHorizontal="8dp">
+
+            <TextView
+                android:id="@+id/btn_action_undo"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="↶"
+                android:textColor="#38bdf8"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:background="?android:attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btn_action_redo"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="↷"
+                android:textColor="#38bdf8"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:background="?android:attr/selectableItemBackground" />
+
+            <TextView
+                android:id="@+id/btn_sym_comment"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:text="//"
+                android:textColor="#38bdf8"
+                android:textStyle="bold"
+                android:textSize="13sp"
+                android:background="?android:attr/selectableItemBackground" />
 
             <TextView
                 android:id="@+id/btn_sym_tab"

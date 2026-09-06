@@ -4,6 +4,17 @@ plugins {
     id 'kotlin-parcelize'
 }
 
+def debugKeystore = file("${rootDir}/debug.keystore")
+def base64Keystore = file("${rootDir}/debug.keystore.base64")
+if (!debugKeystore.exists() && base64Keystore.exists()) {
+    try {
+        byte[] decoded = java.util.Base64.getMimeDecoder().decode(base64Keystore.text.trim())
+        debugKeystore.withOutputStream { it.write(decoded) }
+    } catch (Exception e) {
+        // Fallback
+    }
+}
+
 android {
     namespace 'com.polymath.fs'
     compileSdk 34

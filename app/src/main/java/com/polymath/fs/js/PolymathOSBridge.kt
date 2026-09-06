@@ -28,6 +28,11 @@ interface PolymathOSNativeInterface {
     fun ftpRequest(host: String, port: Int, user: String, pass: String, action: String, path: String): String
     fun smbRequest(host: String, port: Int, user: String, pass: String, action: String, path: String): String
     fun consoleLog(level: String, message: String)
+    fun getDiskStats(): String
+    fun getKernelStats(): String
+    fun findFiles(dir: String, extension: String): String
+    fun executeShell(cmd: String): String
+    fun exists(path: String): Boolean
 }
 
 class PolymathOSNativeImpl(
@@ -257,6 +262,125 @@ class PolymathOSNativeImpl(
                 put("status", "SMB connection to $host:$port unreachable: ${e.message}")
             }
             res.toString()
+        }
+    }
+
+    override fun getDiskStats(): String {
+        return try {
+            val report = com.polymath.fs.core.StorageTelemetryManager.getStorageTelemetry(context)
+            val json = JSONObject().apply {
+                put("totalBytes", report.primaryTotalBytes)
+                put("freeBytes", report.primaryFreeBytes)
+                put("usedBytes", report.primaryUsedBytes)
+                put("percentage", report.primaryUsedPercent)
+                put("totalFormatted", com.polymath.fs.core.StorageTelemetryManager.formatBytes(report.primaryTotalBytes))
+                put("freeFormatted", com.polymath.fs.core.StorageTelemetryManager.formatBytes(report.primaryFreeBytes))
+                put("usedFormatted", com.polymath.fs.core.StorageTelemetryManager.formatBytes(report.primaryUsedBytes))
+                put("internalTotalFormatted", com.polymath.fs.core.StorageTelemetryManager.formatBytes(report.internalTotalBytes))
+                put("internalFreeFormatted", com.polymath.fs.core.StorageTelemetryManager.formatBytes(report.internalFreeBytes))
+            }
+            json.toString()
+        } catch (e: Exception) {
+            JSONObject().put("error", e.message ?: "Failed to query disk stats").toString()
+        }
+    }
+
+    override fun getKernelStats(): String {
+        return try {
+            val kernelController = com.polymath.fs.core.KernelEngineController()
+            val telemetrics = runBlocking { kernelController.getKernelTelemetry() }
+            val json = JSONObject().apply {
+                put("kernelRelease", telemetrics.kernelRelease)
+                put("kernelVersion", telemetrics.kernelVersion)
+                put("uptimeSeconds", telemetrics.uptimeSeconds)
+                put("processCount", telemetrics.processCount)
+                put("isSeLinuxEnforcing", telemetrics.isSeLinuxEnforcing)
+                put("zramCompAlgorithm", telemetrics.zramCompAlgorithm)
+                put("loadAverages", org.json.JSONArray(listOf(telemetrics.loadAverages.first, telemetrics.loadAverages.second, telemetrics.loadAverages.third)))
+                put("cpu", JSONObject().apply {
+                    put("architecture", telemetrics.cpuInfo.architecture)
+                    put("cores", telemetrics.cpuInfo.cores)
+                    put("bogomips", telemetrics.cpuInfo.bogomips)
+                    put("governor", telemetrics.cpuInfo.governor)
+                    put("curFreqMhz", telemetrics.cpuInfo.curFreqMhz)
+                    put("maxFreqMhz", telemetrics.cpuInfo.maxFreqMhz)
+                    put("minFreqMhz", telemetrics.cpuInfo.minFreqMhz)
+                    put("frequencies", org.json.JSONArray(telemetrics.cpuInfo.scalingCurFreqList))
+                })
+                put("mem", JSONObject().apply {
+                    put("totalMemKb", telemetrics.memInfo.totalMemKb)
+                    put("freeMemKb", telemetrics.memInfo.freeMemKb)
+                    put("availableMemKb", telemetrics.memInfo.availableMemKb)
+                    put("buffersKb", telemetrics.memInfo.buffersKb)
+                    put("cachedKb", telemetrics.memInfo.cachedKb)
+                    put("swapTotalKb", telemetrics.memInfo.swapTotalKb)
+                    put("swapFreeKb", telemetrics.memInfo.swapFreeKb)
+                })
+            }
+            json.toString()
+        } catch (e: Exception) {
+            JSONObject().put("error", e.message ?: "Failed to query kernel stats").toString()
+        }
+    }
+
+    override fun findFiles(dir: String, extension: String): String {
+        return try {
+            val targetDir = File(dir)
+            val cleanExt = extension.removePrefix(".").lowercase(Locale.ROOT)
+            val matches = mutableListOf<JSONObject>()
+            if (targetDir.exists()) {
+                val queue = java.util.ArrayDeque<Pair<File, Int>>()
+                queue.add(Pair(targetDir, 0))
+                val pruned = setOf("/proc", "/sys", "/dev", "/acct", "/config")
+                while (queue.isNotEmpty() && matches.size < 200) {
+                    val (current, depth) = queue.removeFirst()
+                    if (depth > 10 || pruned.contains(current.absolutePath)) continue
+                    val children = current.listFiles() ?: continue
+                    for (file in children) {
+                        if (file.isDirectory) {
+                            if (depth + 1 <= 10) queue.add(Pair(file, depth + 1))
+                        } else if (cleanExt.isEmpty() || file.extension.equals(cleanExt, ignoreCase = true)) {
+                            matches.add(JSONObject().apply {
+                                put("name", file.name)
+                                put("path", file.absolutePath)
+                                put("size", file.length())
+                                put("lastModified", file.lastModified())
+                            })
+                        }
+                    }
+                }
+            }
+            org.json.JSONArray(matches).toString()
+        } catch (e: Exception) {
+            "[]"
+        }
+    }
+
+    override fun executeShell(cmd: String): String {
+        return try {
+            val result = runBlocking { shellHolder.execute(cmd) }
+            val json = JSONObject().apply {
+                put("success", result.isSuccess)
+                put("output", result.output.joinToString("\n"))
+                put("error", result.error.joinToString("\n"))
+                put("code", result.code)
+            }
+            json.toString()
+        } catch (e: Exception) {
+            JSONObject().apply {
+                put("success", false)
+                put("output", "")
+                put("error", e.message ?: "Execution failed")
+                put("code", -1)
+            }.toString()
+        }
+    }
+
+    override fun exists(path: String): Boolean {
+        return try {
+            File(path).exists()
+        } catch (e: Exception) {
+            false
         }
     }
 }

@@ -128,7 +128,7 @@ class FileBrowserFragment : Fragment() {
                     viewModel.navigateUp()
                 } else {
                     isEnabled = false
-                    requireActivity().onBackPressed()
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
                 }
             }
         })

@@ -8,7 +8,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.Editable
+import android.text.Spannable
 import android.text.TextWatcher
+import android.text.style.BackgroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -41,6 +43,26 @@ class EditorActivity : AppCompatActivity() {
     private lateinit var consolePanel: LinearLayout
     private lateinit var scrollConsole: ScrollView
 
+    // Search & Replace UI
+    private lateinit var panelSearchReplace: LinearLayout
+    private lateinit var etFind: EditText
+    private lateinit var etReplace: EditText
+    private lateinit var tvFindMatchCount: TextView
+    private lateinit var btnFindPrev: TextView
+    private lateinit var btnFindNext: TextView
+    private lateinit var btnCloseSearch: TextView
+    private lateinit var btnReplaceOne: TextView
+    private lateinit var btnReplaceAll: TextView
+
+    private val searchMatches = mutableListOf<Int>()
+    private var currentMatchIndex = -1
+
+    // Undo / Redo History
+    private val undoStack = mutableListOf<String>()
+    private val redoStack = mutableListOf<String>()
+    private var isUndoOrRedo = false
+    private val maxHistorySize = 50
+
     private var currentFile: File? = null
     private var isModified = false
     private var indentString = "  " // 2 spaces default
@@ -58,6 +80,12 @@ class EditorActivity : AppCompatActivity() {
         initViews()
         setupAccessoryBar()
         setupEditorWatcher()
+
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                handleExit()
+            }
+        })
 
         val path = intent.getStringExtra("path")
             ?: intent.getStringExtra("filePath")
@@ -83,6 +111,19 @@ class EditorActivity : AppCompatActivity() {
         tvConsoleCount = findViewById(R.id.tv_console_count)
         consolePanel = findViewById(R.id.console_panel)
         scrollConsole = findViewById(R.id.scroll_console)
+
+        // Find & Replace Views
+        panelSearchReplace = findViewById(R.id.panel_search_replace)
+        etFind = findViewById(R.id.et_find)
+        etReplace = findViewById(R.id.et_replace)
+        tvFindMatchCount = findViewById(R.id.tv_find_match_count)
+        btnFindPrev = findViewById(R.id.btn_find_prev)
+        btnFindNext = findViewById(R.id.btn_find_next)
+        btnCloseSearch = findViewById(R.id.btn_close_search)
+        btnReplaceOne = findViewById(R.id.btn_replace_one)
+        btnReplaceAll = findViewById(R.id.btn_replace_all)
+
+        setupSearchReplaceLogic()
 
         findViewById<TextView>(R.id.btn_console_clear).setOnClickListener {
             clearConsole()
@@ -111,6 +152,16 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun setupAccessoryBar() {
+        findViewById<TextView>(R.id.btn_action_undo)?.setOnClickListener {
+            performUndo()
+        }
+        findViewById<TextView>(R.id.btn_action_redo)?.setOnClickListener {
+            performRedo()
+        }
+        findViewById<TextView>(R.id.btn_sym_comment)?.setOnClickListener {
+            toggleCommentAtSelection()
+        }
+
         val symbols = mapOf(
             R.id.btn_sym_tab to indentString,
             R.id.btn_sym_brace_open to "{\n$indentString\n}",
@@ -135,6 +186,185 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
+    private fun pushUndoSnapshot(text: String) {
+        if (undoStack.isEmpty() || undoStack.last() != text) {
+            undoStack.add(text)
+            if (undoStack.size > maxHistorySize) {
+                undoStack.removeAt(0)
+            }
+        }
+    }
+
+    private fun performUndo() {
+        if (undoStack.isEmpty()) {
+            Toast.makeText(this, "Nothing to undo", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val currentText = etCode.text.toString()
+        redoStack.add(currentText)
+        val prevText = undoStack.removeAt(undoStack.lastIndex)
+        isUndoOrRedo = true
+        isFormatting = true
+        etCode.setText(prevText)
+        etCode.setSelection(prevText.length.coerceAtMost(etCode.text.length))
+        isFormatting = false
+        isUndoOrRedo = false
+        updateLineNumbers()
+        highlightHandler.postDelayed({
+            isFormatting = true
+            CodeSyntaxHighlighter.highlight(etCode.text, currentFile?.extension ?: "js")
+            isFormatting = false
+        }, 100)
+    }
+
+    private fun performRedo() {
+        if (redoStack.isEmpty()) {
+            Toast.makeText(this, "Nothing to redo", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val currentText = etCode.text.toString()
+        undoStack.add(currentText)
+        val nextText = redoStack.removeAt(redoStack.lastIndex)
+        isUndoOrRedo = true
+        isFormatting = true
+        etCode.setText(nextText)
+        etCode.setSelection(nextText.length.coerceAtMost(etCode.text.length))
+        isFormatting = false
+        isUndoOrRedo = false
+        updateLineNumbers()
+        highlightHandler.postDelayed({
+            isFormatting = true
+            CodeSyntaxHighlighter.highlight(etCode.text, currentFile?.extension ?: "js")
+            isFormatting = false
+        }, 100)
+    }
+
+    private fun toggleCommentAtSelection() {
+        val start = etCode.selectionStart.coerceAtLeast(0)
+        val end = etCode.selectionEnd.coerceAtLeast(0)
+        val text = etCode.text.toString()
+
+        if (start == end) {
+            // Comment current line
+            val lineStart = text.lastIndexOf('\n', (start - 1).coerceAtLeast(0)).let { if (it == -1) 0 else it + 1 }
+            val lineEnd = text.indexOf('\n', start).let { if (it == -1) text.length else it }
+            val line = text.substring(lineStart, lineEnd)
+
+            val newLine = if (line.trimStart().startsWith("//")) {
+                line.replaceFirst("//", "")
+            } else {
+                "// $line"
+            }
+            etCode.text.replace(lineStart, lineEnd, newLine)
+        } else {
+            // Wrap selection in block comment or line comments
+            val selected = text.substring(start, end)
+            val replaced = if (selected.startsWith("/*") && selected.endsWith("*/")) {
+                selected.removeSurrounding("/*", "*/").trim()
+            } else {
+                "/* $selected */"
+            }
+            etCode.text.replace(start, end, replaced)
+        }
+    }
+
+    private fun setupSearchReplaceLogic() {
+        btnCloseSearch.setOnClickListener {
+            panelSearchReplace.visibility = View.GONE
+            clearSearchHighlights()
+        }
+
+        etFind.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                performSearch(s?.toString() ?: "")
+            }
+        })
+
+        btnFindNext.setOnClickListener {
+            navigateSearchMatch(1)
+        }
+
+        btnFindPrev.setOnClickListener {
+            navigateSearchMatch(-1)
+        }
+
+        btnReplaceOne.setOnClickListener {
+            val query = etFind.text.toString()
+            val replacement = etReplace.text.toString()
+            if (query.isNotEmpty() && searchMatches.isNotEmpty() && currentMatchIndex in searchMatches.indices) {
+                val matchPos = searchMatches[currentMatchIndex]
+                etCode.text.replace(matchPos, matchPos + query.length, replacement)
+                performSearch(query)
+            }
+        }
+
+        btnReplaceAll.setOnClickListener {
+            val query = etFind.text.toString()
+            val replacement = etReplace.text.toString()
+            if (query.isNotEmpty()) {
+                val original = etCode.text.toString()
+                if (original.contains(query)) {
+                    pushUndoSnapshot(original)
+                    val replaced = original.replace(query, replacement)
+                    isFormatting = true
+                    etCode.setText(replaced)
+                    isFormatting = false
+                    performSearch(query)
+                    Toast.makeText(this, "Replaced all occurrences", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun performSearch(query: String) {
+        searchMatches.clear()
+        currentMatchIndex = -1
+
+        if (query.isEmpty()) {
+            tvFindMatchCount.text = "0/0"
+            clearSearchHighlights()
+            return
+        }
+
+        val text = etCode.text.toString()
+        var index = text.indexOf(query, 0, ignoreCase = true)
+        while (index >= 0) {
+            searchMatches.add(index)
+            index = text.indexOf(query, index + query.length.coerceAtLeast(1), ignoreCase = true)
+        }
+
+        if (searchMatches.isNotEmpty()) {
+            currentMatchIndex = 0
+            tvFindMatchCount.text = "1/${searchMatches.size}"
+            highlightCurrentMatch(query)
+        } else {
+            tvFindMatchCount.text = "0/0"
+            clearSearchHighlights()
+        }
+    }
+
+    private fun navigateSearchMatch(direction: Int) {
+        if (searchMatches.isEmpty()) return
+        currentMatchIndex = (currentMatchIndex + direction + searchMatches.size) % searchMatches.size
+        tvFindMatchCount.text = "${currentMatchIndex + 1}/${searchMatches.size}"
+        highlightCurrentMatch(etFind.text.toString())
+    }
+
+    private fun highlightCurrentMatch(query: String) {
+        if (currentMatchIndex !in searchMatches.indices) return
+        val pos = searchMatches[currentMatchIndex]
+        etCode.setSelection(pos, (pos + query.length).coerceAtMost(etCode.text.length))
+    }
+
+    private fun clearSearchHighlights() {
+        val spans = etCode.text.getSpans(0, etCode.text.length, BackgroundColorSpan::class.java)
+        for (span in spans) {
+            etCode.text.removeSpan(span)
+        }
+    }
+
     private fun insertTextAtCursor(text: String) {
         val start = etCode.selectionStart.coerceAtLeast(0)
         val end = etCode.selectionEnd.coerceAtLeast(0)
@@ -144,8 +374,13 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun setupEditorWatcher() {
+        var beforeText = ""
         etCode.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+                if (!isFormatting && !isUndoOrRedo && s != null) {
+                    beforeText = s.toString()
+                }
+            }
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 if (isFormatting) return
                 isModified = true
@@ -153,6 +388,10 @@ class EditorActivity : AppCompatActivity() {
             }
 
             override fun afterTextChanged(s: Editable?) {
+                if (!isFormatting && !isUndoOrRedo && beforeText.isNotEmpty()) {
+                    pushUndoSnapshot(beforeText)
+                    beforeText = ""
+                }
                 if (isFormatting || s == null) return
                 highlightRunnable?.let { highlightHandler.removeCallbacks(it) }
                 highlightRunnable = Runnable {
@@ -330,6 +569,23 @@ class EditorActivity : AppCompatActivity() {
                 saveFile()
                 true
             }
+            R.id.action_search -> {
+                panelSearchReplace.visibility = if (panelSearchReplace.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                if (panelSearchReplace.visibility == View.VISIBLE) {
+                    etFind.requestFocus()
+                } else {
+                    clearSearchHighlights()
+                }
+                true
+            }
+            R.id.action_templates -> {
+                showCodeTemplatesDialog()
+                true
+            }
+            R.id.action_format_code -> {
+                formatCodeIndentation()
+                true
+            }
             R.id.action_new_file -> {
                 showNewFileDialog()
                 true
@@ -356,6 +612,125 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCodeTemplatesDialog() {
+        val templates = arrayOf(
+            "Quick File Search (PolymathOS.findFiles)",
+            "Storage Analyzer (PolymathOS.getDiskStats)",
+            "Text File Transformer (PolymathOS.readFile & writeFile)",
+            "Execute Shell Command (PolymathOS.executeShell)",
+            "Display Custom Alert (Polymath.alert)",
+            "Async Promise Batch Operation"
+        )
+
+        val snippets = arrayOf(
+            """// Polymath File Search
+const files = PolymathOS.findFiles("/sdcard", ".apk");
+console.log("Found APKs count: " + files.length);
+files.forEach((file, idx) => {
+  console.log(`[${'$'}{idx + 1}] ${'$'}{file}`);
+});
+""",
+            """// Polymath Storage Analyzer
+const stats = PolymathOS.getDiskStats();
+console.log("=== Disk Usage Summary ===");
+console.log("Total: " + stats.total);
+console.log("Available: " + stats.available);
+console.log("Used: " + stats.used + " (" + stats.percentage + "%)");
+""",
+            """// Read & Transform File
+const samplePath = "/sdcard/Download/test.txt";
+if (PolymathOS.exists(samplePath)) {
+  const content = PolymathOS.readFile(samplePath);
+  console.log("Original content length: " + content.length);
+  const upper = content.toUpperCase();
+  PolymathOS.writeFile(samplePath + ".bak", upper);
+  Polymath.alert("Success", "Transformed file saved to " + samplePath + ".bak");
+} else {
+  console.log("File not found at " + samplePath);
+}
+""",
+            """// Shell Execution
+const res = PolymathOS.executeShell("ls -la /sdcard");
+console.log("Shell Output:");
+console.log(res);
+""",
+            """// Interactive User Alert
+Polymath.alert("Polymath Notification", "Automated file processing completed successfully!");
+""",
+            """// Async Batch Flow
+async function runBatch() {
+  console.log("Starting batch processing...");
+  await new Promise(r => setTimeout(r, 500));
+  console.log("Step 1 done");
+  await new Promise(r => setTimeout(r, 500));
+  console.log("Step 2 done");
+  console.log("Batch complete!");
+}
+runBatch();
+"""
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Insert JS Code Template")
+            .setItems(templates) { _, which ->
+                val snippet = snippets[which]
+                insertTextAtCursor(snippet)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun formatCodeIndentation() {
+        val original = etCode.text.toString()
+        if (original.isEmpty()) return
+        pushUndoSnapshot(original)
+
+        val lines = original.split("\n")
+        val formatted = StringBuilder()
+        var currentIndent = 0
+
+        for (rawLine in lines) {
+            val trimmed = rawLine.trim()
+            if (trimmed.isEmpty()) {
+                formatted.append("\n")
+                continue
+            }
+
+            // Decrease indent before this line if it starts with closing brace/bracket
+            var startsWithClosing = 0
+            for (ch in trimmed) {
+                if (ch == '}' || ch == ']' || ch == ')') startsWithClosing++
+                else break
+            }
+            val lineIndent = (currentIndent - startsWithClosing).coerceAtLeast(0)
+
+            for (i in 0 until lineIndent) {
+                formatted.append(indentString)
+            }
+            formatted.append(trimmed).append("\n")
+
+            // Count openings and closings to update currentIndent
+            var openings = 0
+            var closings = 0
+            for (ch in trimmed) {
+                if (ch == '{' || ch == '[' || ch == '(') openings++
+                if (ch == '}' || ch == ']' || ch == ')') closings++
+            }
+            currentIndent = (currentIndent + openings - closings).coerceAtLeast(0)
+        }
+
+        isFormatting = true
+        etCode.setText(formatted.toString().trimEnd())
+        isFormatting = false
+        updateLineNumbers()
+        highlightHandler.postDelayed({
+            isFormatting = true
+            CodeSyntaxHighlighter.highlight(etCode.text, currentFile?.extension ?: "js")
+            isFormatting = false
+        }, 100)
+        Toast.makeText(this, "Formatted code", Toast.LENGTH_SHORT).show()
+    }
+
     private fun handleExit() {
         if (isModified) {
             MaterialAlertDialogBuilder(this)
@@ -373,9 +748,5 @@ class EditorActivity : AppCompatActivity() {
         } else {
             finish()
         }
-    }
-
-    override fun onBackPressed() {
-        handleExit()
     }
 }

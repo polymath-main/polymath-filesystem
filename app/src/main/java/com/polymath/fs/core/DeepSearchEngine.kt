@@ -57,7 +57,7 @@ object DeepSearchEngine {
         }
 
         val rootDir = File(query.rootPath)
-        if (!rootDir.exists() || !rootDir.canRead()) {
+        if (!rootDir.exists()) {
             emit(emptyList())
             return@flow
         }

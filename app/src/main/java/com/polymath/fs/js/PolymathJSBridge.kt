@@ -59,23 +59,9 @@ class SecurityException(msg: String) : RuntimeException(msg)
 class PolymathJSBridge @Inject constructor(
     private val repository: FileSystemRepository,
     private val context: Context,
-    private val shellHolder: RootShellHolder = RootShellHolder()
+    private val shellHolder: RootShellHolder = RootShellHolder(),
+    val jsRuntime: com.polymath.fs.js.runtime.PolymathJSRuntime = com.polymath.fs.js.runtime.PolymathJSRuntime(context, repository, shellHolder)
 ) {
-
-    private fun checkPermission(manifest: ExtensionManifest, permission: String) {
-        if (!manifest.permissions.contains(permission) && !manifest.permissions.contains("all")) {
-            throw SecurityException("Extension ${manifest.id} lacks permission: $permission")
-        }
-    }
-
-    private fun parseStringArray(jsonArrayStr: String): List<String> {
-        val arr = JSONArray(jsonArrayStr)
-        val list = mutableListOf<String>()
-        for (i in 0 until arr.length()) {
-            list.add(arr.getString(i))
-        }
-        return list
-    }
 
     fun executeExtension(
         manifestJson: String,
@@ -84,156 +70,16 @@ class PolymathJSBridge @Inject constructor(
         onConsoleLog: ((String, String) -> Unit)? = null,
         selectedFiles: List<String>? = null
     ): String {
-        val manifest = ExtensionManifest.fromJson(manifestJson)
-        var result = ""
-        QuickJs.create().use { quickJs ->
-            
-            val fsInterface = object : PolymathFS {
-                override fun listDir(path: String): String {
-                    checkPermission(manifest, "fs.read")
-                    val nodes = runBlocking { repository.listDir(path) }
-                    val array = JSONArray()
-                    nodes.forEach { node ->
-                        val obj = JSONObject()
-                        obj.put("name", node.name)
-                        obj.put("path", node.path)
-                        obj.put("size", node.size)
-                        obj.put("lastModified", node.lastModified)
-                        obj.put("isDirectory", node.isDirectory)
-                        array.put(obj)
-                    }
-                    return array.toString()
-                }
-
-                override fun copy(srcJson: String, dest: String): Boolean {
-                    checkPermission(manifest, "fs.write")
-                    val src = parseStringArray(srcJson)
-                    runBlocking {
-                        repository.copy(src, dest).collect { }
-                    }
-                    return true
-                }
-
-                override fun move(srcJson: String, dest: String): Boolean {
-                    checkPermission(manifest, "fs.write")
-                    val src = parseStringArray(srcJson)
-                    runBlocking {
-                        repository.move(src, dest).collect { }
-                    }
-                    return true
-                }
-
-                override fun delete(pathsJson: String): Boolean {
-                    checkPermission(manifest, "fs.write")
-                    val paths = parseStringArray(pathsJson)
-                    return runBlocking { repository.delete(paths) }
-                }
-
-                override fun mkdir(path: String): Boolean {
-                    checkPermission(manifest, "fs.write")
-                    return runBlocking { repository.mkdir(path) }
-                }
-
-                override fun rename(oldPath: String, newName: String): Boolean {
-                    checkPermission(manifest, "fs.write")
-                    return runBlocking { repository.rename(oldPath, newName) }
-                }
-            }
-
-            val uiInterface = object : PolymathUI {
-                override fun showToast(message: String) {
-                    checkPermission(manifest, "ui.toast")
-                    runBlocking(Dispatchers.Main) {
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-
-            val osNativeImpl = PolymathOSNativeImpl(context, repository, shellHolder, onAlert, onConsoleLog)
-
-            quickJs.set("PolymathFS", PolymathFS::class.java, fsInterface)
-            quickJs.set("PolymathUI", PolymathUI::class.java, uiInterface)
-            quickJs.set("PolymathOSNative", PolymathOSNativeInterface::class.java, osNativeImpl)
-            
-            // Format selectedFiles array as JSON string
-            val selectedFilesJson = if (selectedFiles != null) {
-                JSONArray(selectedFiles).toString()
-            } else {
-                "[]"
-            }
-
-            // Set up Polymath & PolymathOS namespaces, console logging, and global polyfills
-            quickJs.evaluate("""
-                var Polymath = {
-                    fs: PolymathFS,
-                    ui: PolymathUI
-                };
-
-                var window = this;
-                var global = this;
-                var selectedFiles = $selectedFilesJson;
-
-                var PolymathOS = {
-                    toast: function(msg) { PolymathOSNative.toast(String(msg)); },
-                    alert: function(arg1, arg2) {
-                        if (arg2 !== undefined) {
-                            return PolymathOSNative.alert2(String(arg1), String(arg2));
-                        } else {
-                            return PolymathOSNative.alert2("Polymath Alert", String(arg1));
-                        }
-                    },
-                    prompt: function(title, callbackName) {
-                        var res = PolymathOSNative.prompt2(String(title), callbackName ? String(callbackName) : "");
-                        if (callbackName && typeof window[callbackName] === 'function') {
-                            try { window[callbackName](res); } catch(e) {}
-                        }
-                        return res;
-                    },
-                    setTheme: function(json) { return PolymathOSNative.setTheme(String(json)); },
-                    daemonCommand: function(action, payload) { return PolymathOSNative.daemonCommand(String(action), String(payload || "")); },
-                    listen: function(event, path, cb) { return PolymathOSNative.listen(String(event), String(path), String(cb || "")); },
-                    readFile: function(path) { return PolymathOSNative.readFile(String(path)); },
-                    writeFile: function(path, content) { return PolymathOSNative.writeFile(String(path), String(content)); },
-                    ftpRequest: function(host, port, user, pass, action, path) {
-                        return PolymathOSNative.ftpRequest(String(host), parseInt(port)||21, String(user), String(pass), String(action), String(path));
-                    },
-                    smbRequest: function(host, port, user, pass, action, path) {
-                        return PolymathOSNative.smbRequest(String(host), parseInt(port)||445, String(user), String(pass), String(action), String(path));
-                    }
-                };
-
-                var console = {
-                    log: function() {
-                        var msg = Array.prototype.slice.call(arguments).map(function(a) {
-                            return typeof a === 'object' ? JSON.stringify(a) : String(a);
-                        }).join(" ");
-                        PolymathOSNative.consoleLog("LOG", msg);
-                    },
-                    info: function() {
-                        var msg = Array.prototype.slice.call(arguments).map(function(a) {
-                            return typeof a === 'object' ? JSON.stringify(a) : String(a);
-                        }).join(" ");
-                        PolymathOSNative.consoleLog("INFO", msg);
-                    },
-                    warn: function() {
-                        var msg = Array.prototype.slice.call(arguments).map(function(a) {
-                            return typeof a === 'object' ? JSON.stringify(a) : String(a);
-                        }).join(" ");
-                        PolymathOSNative.consoleLog("WARN", msg);
-                    },
-                    error: function() {
-                        var msg = Array.prototype.slice.call(arguments).map(function(a) {
-                            return typeof a === 'object' ? JSON.stringify(a) : String(a);
-                        }).join(" ");
-                        PolymathOSNative.consoleLog("ERROR", msg);
-                    }
-                };
-            """.trimIndent())
-
-            val res = quickJs.evaluate(script)
-            result = res?.toString() ?: ""
-        }
-        return result
+        val manifest = try { ExtensionManifest.fromJson(manifestJson) } catch (e: Exception) { null }
+        val scriptName = manifest?.name ?: "extension.js"
+        return jsRuntime.execute(
+            script = script,
+            scriptName = scriptName,
+            workingDir = "/storage/emulated/0",
+            selectedFiles = selectedFiles,
+            onAlert = onAlert,
+            onConsoleLog = onConsoleLog
+        )
     }
 
     fun executeScript(
@@ -243,17 +89,14 @@ class PolymathJSBridge @Inject constructor(
         onConsoleLog: ((String, String) -> Unit)? = null,
         selectedFiles: List<String>? = null
     ): String {
-        val defaultManifestJson = JSONObject().apply {
-            put("id", scriptName)
-            put("name", scriptName)
-            put("version", "1.0.0")
-            put("permissions", JSONArray().apply {
-                put("all")
-                put("fs.read")
-                put("fs.write")
-                put("ui.toast")
-            })
-        }.toString()
-        return executeExtension(defaultManifestJson, script, onAlert, onConsoleLog, selectedFiles)
+        return jsRuntime.execute(
+            script = script,
+            scriptName = scriptName,
+            workingDir = "/storage/emulated/0",
+            selectedFiles = selectedFiles,
+            onAlert = onAlert,
+            onConsoleLog = onConsoleLog
+        )
     }
 }
+

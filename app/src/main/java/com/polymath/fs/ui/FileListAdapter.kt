@@ -73,7 +73,7 @@ class FileListAdapter(
 
         init {
             itemView.setOnClickListener {
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val file = getItem(position)
                     if (isSelectionMode) {
@@ -85,7 +85,7 @@ class FileListAdapter(
             }
             
             itemView.setOnLongClickListener {
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION && !isSelectionMode) {
                     isSelectionMode = true
                     toggleSelection(getItem(position).path)
@@ -94,7 +94,7 @@ class FileListAdapter(
             }
             
             btnMenu.setOnClickListener { view ->
-                val position = adapterPosition
+                val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onMenuClick(getItem(position), view)
                 }

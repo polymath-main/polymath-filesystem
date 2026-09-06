@@ -1,23 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base application theme. -->
-    <style name="Theme.PolymathFileSystem" parent="Theme.AppCompat.DayNight.DarkActionBar">
+    <style name="Theme.PolymathFileSystem" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/ocean_primary</item>
         <item name="colorPrimaryDark">@color/ocean_primary_dark</item>
         <item name="colorAccent">@color/ocean_accent</item>
+        <item name="android:windowBackground">@drawable/bg_fluid_gradient</item>
     </style>
 
     <!-- 1. Cyberpunk -->
-    <style name="Theme.Cyberpunk" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Cyberpunk" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/cyberpunk_primary</item>
         <item name="colorPrimaryDark">@color/cyberpunk_primary_dark</item>
         <item name="colorAccent">@color/cyberpunk_accent</item>
-        <item name="android:windowBackground">@color/cyberpunk_background</item>
+        <item name="colorSecondary">#00F0FF</item>
+        <item name="colorSecondaryContainer">#164e63</item>
+        <item name="colorOnSecondaryContainer">#38bdf8</item>
+        <item name="android:windowBackground">@drawable/bg_fluid_gradient</item>
         <item name="android:textColorPrimary">#FFFFFF</item>
     </style>
 
     <!-- 2. Ocean Breeze -->
-    <style name="Theme.OceanBreeze" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.OceanBreeze" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/ocean_primary</item>
         <item name="colorPrimaryDark">@color/ocean_primary_dark</item>
         <item name="colorAccent">@color/ocean_accent</item>
@@ -26,7 +30,7 @@
     </style>
 
     <!-- 3. Dracula -->
-    <style name="Theme.Dracula" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Dracula" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/dracula_primary</item>
         <item name="colorPrimaryDark">@color/dracula_primary_dark</item>
         <item name="colorAccent">@color/dracula_accent</item>
@@ -35,7 +39,7 @@
     </style>
 
     <!-- 4. Solarized Dark -->
-    <style name="Theme.SolarizedDark" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.SolarizedDark" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/solarized_primary</item>
         <item name="colorPrimaryDark">@color/solarized_primary_dark</item>
         <item name="colorAccent">@color/solarized_accent</item>
@@ -44,7 +48,7 @@
     </style>
 
     <!-- 5. Sunset -->
-    <style name="Theme.Sunset" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Sunset" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/sunset_primary</item>
         <item name="colorPrimaryDark">@color/sunset_primary_dark</item>
         <item name="colorAccent">@color/sunset_accent</item>
@@ -53,7 +57,7 @@
     </style>
 
     <!-- 6. Hacker Green -->
-    <style name="Theme.HackerGreen" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.HackerGreen" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/hacker_primary</item>
         <item name="colorPrimaryDark">@color/hacker_primary_dark</item>
         <item name="colorAccent">@color/hacker_accent</item>
@@ -62,7 +66,7 @@
     </style>
 
     <!-- 7. Neon -->
-    <style name="Theme.Neon" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Neon" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/neon_primary</item>
         <item name="colorPrimaryDark">@color/neon_primary_dark</item>
         <item name="colorAccent">@color/neon_accent</item>
@@ -71,7 +75,7 @@
     </style>
 
     <!-- 8. Material You -->
-    <style name="Theme.MaterialYou" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.MaterialYou" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/material_you_primary</item>
         <item name="colorPrimaryDark">@color/material_you_primary_dark</item>
         <item name="colorAccent">@color/material_you_accent</item>
@@ -80,7 +84,7 @@
     </style>
 
     <!-- 9. iOS-like -->
-    <style name="Theme.IosLike" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="Theme.IosLike" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">@color/ios_primary</item>
         <item name="colorPrimaryDark">@color/ios_primary_dark</item>
         <item name="colorAccent">@color/ios_accent</item>
@@ -89,7 +93,7 @@
     </style>
 
     <!-- 10. True AMOLED -->
-    <style name="Theme.TrueAmoled" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.TrueAmoled" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/amoled_primary</item>
         <item name="colorPrimaryDark">@color/amoled_primary_dark</item>
         <item name="colorAccent">@color/amoled_accent</item>

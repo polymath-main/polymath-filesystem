@@ -143,10 +143,13 @@ class BulkScriptExecutionBottomSheet : BottomSheetDialogFragment() {
 
             holder.itemView.setOnClickListener {
                 val oldPos = selectedPosition
-                selectedPosition = holder.adapterPosition
-                notifyItemChanged(oldPos)
-                notifyItemChanged(selectedPosition)
-                onSelect(selectedPosition)
+                val currentPos = holder.bindingAdapterPosition
+                if (currentPos != RecyclerView.NO_POSITION) {
+                    selectedPosition = currentPos
+                    notifyItemChanged(oldPos)
+                    notifyItemChanged(selectedPosition)
+                    onSelect(selectedPosition)
+                }
             }
         }
 

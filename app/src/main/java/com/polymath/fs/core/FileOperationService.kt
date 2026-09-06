@@ -8,6 +8,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.polymath.fs.PolymathApp
 import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
@@ -45,7 +46,7 @@ class FileOperationService : Service() {
                     copyFilesUseCase(src, dest).collectLatest { progress ->
                         updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Copying files...")
                         if (progress.isComplete) {
-                            stopForeground(true)
+                            ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                             stopSelf()
                         }
                     }
@@ -54,7 +55,7 @@ class FileOperationService : Service() {
                     moveFilesUseCase(src, dest).collectLatest { progress ->
                         updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Moving files...")
                         if (progress.isComplete) {
-                            stopForeground(true)
+                            ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
                             stopSelf()
                         }
                     }

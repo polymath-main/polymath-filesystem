@@ -89,6 +89,7 @@ object BuiltInScriptManager {
             name.startsWith("AutoOrganizer") -> "AutoOrganizer"
             name.startsWith("GhostVault") -> "GhostVault"
             name.startsWith("SystemAnalytics") -> "SystemAnalytics"
+            name.startsWith("OSRuntime_") || name.equals("OSRuntime.js", ignoreCase = true) -> "OSRuntime"
             else -> "Custom"
         }
 
@@ -98,6 +99,9 @@ object BuiltInScriptManager {
             .trim()
 
         val description = when {
+            name.contains("SystemInspector", ignoreCase = true) -> "Inspects CPU architecture, kernel signatures, load average, and memory via POSIX modules"
+            name.contains("PosixFileEngine", ignoreCase = true) -> "Demonstrates POSIX file operations, binary buffer transforms, and crypto hashes"
+            name.contains("NetworkProbe", ignoreCase = true) -> "Probes network interfaces and performs live HTTP requests via native fetch"
             name.contains("AutoOrganizer", ignoreCase = true) -> "Categorizes downloads into Images, Videos, Documents, Audio, and Archives"
             name.contains("AutomationDaemon", ignoreCase = true) -> "Background watcher daemon that auto-sorts new incoming files"
             name.contains("ThemeEngine", ignoreCase = true) -> "Applies modular dynamic dark and light UI color schemes"

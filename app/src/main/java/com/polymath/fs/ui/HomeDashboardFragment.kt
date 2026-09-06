@@ -25,6 +25,7 @@ import com.polymath.fs.R
 import com.polymath.fs.core.BuiltInScriptManager
 import com.polymath.fs.core.ScriptScheduleItem
 import com.polymath.fs.core.ScriptScheduleManager
+import com.polymath.fs.core.StorageTelemetryManager
 import com.polymath.fs.viewers.EditorActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -50,6 +51,12 @@ class HomeDashboardFragment : Fragment() {
     private lateinit var tvNoSchedules: TextView
     private lateinit var btnScheduleNewScript: MaterialButton
 
+    private lateinit var tvKernelRelease: TextView
+    private lateinit var tvKernelCpu: TextView
+    private lateinit var tvKernelLoad: TextView
+    private lateinit var tvKernelMem: TextView
+    private lateinit var tvKernelState: TextView
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -63,6 +70,7 @@ class HomeDashboardFragment : Fragment() {
 
         initViews(view)
         loadStorageTelemetry()
+        loadKernelTelemetry()
         setupDirectoryShortcuts(view)
         loadJsEngineOverview()
         loadScheduledAutomations()
@@ -72,6 +80,7 @@ class HomeDashboardFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         loadStorageTelemetry()
+        loadKernelTelemetry()
         loadJsEngineOverview()
         loadScheduledAutomations()
     }
@@ -94,6 +103,12 @@ class HomeDashboardFragment : Fragment() {
         tvNoSchedules = view.findViewById(R.id.tv_no_schedules)
         btnScheduleNewScript = view.findViewById(R.id.btn_schedule_new_script)
 
+        tvKernelRelease = view.findViewById(R.id.tv_kernel_release)
+        tvKernelCpu = view.findViewById(R.id.tv_kernel_cpu)
+        tvKernelLoad = view.findViewById(R.id.tv_kernel_load)
+        tvKernelMem = view.findViewById(R.id.tv_kernel_mem)
+        tvKernelState = view.findViewById(R.id.tv_kernel_state)
+
         btnBrowseAllScripts.setOnClickListener {
             startActivity(Intent(requireContext(), ScriptManagerActivity::class.java))
         }
@@ -105,29 +120,49 @@ class HomeDashboardFragment : Fragment() {
 
     private fun loadStorageTelemetry() {
         try {
-            val dataPath = Environment.getDataDirectory().path
-            val stat = StatFs(dataPath)
-            val blockSize = stat.blockSizeLong
-            val totalBlocks = stat.blockCountLong
-            val availableBlocks = stat.availableBlocksLong
+            val report = StorageTelemetryManager.getStorageTelemetry(requireContext())
 
-            val totalBytes = totalBlocks * blockSize
-            val freeBytes = availableBlocks * blockSize
-            val usedBytes = (totalBytes - freeBytes).coerceAtLeast(0)
+            progressStorage.progress = report.primaryUsedPercent
+            tvStoragePercent.text = "${report.primaryUsedPercent}% Used"
+            tvStorageUsed.text = "Used: ${StorageTelemetryManager.formatBytes(report.primaryUsedBytes)} / ${StorageTelemetryManager.formatBytes(report.primaryTotalBytes)}"
+            tvStorageFree.text = "Free: ${StorageTelemetryManager.formatBytes(report.primaryFreeBytes)}"
 
-            val percent = if (totalBytes > 0) ((usedBytes * 100) / totalBytes).toInt() else 0
+            tvInternalStat.text = "Free: ${StorageTelemetryManager.formatBytes(report.internalFreeBytes)} (${StorageTelemetryManager.formatBytes(report.internalTotalBytes)})"
 
-            progressStorage.progress = percent
-            tvStoragePercent.text = "$percent% Used"
-            tvStorageUsed.text = "Used: ${Formatter.formatFileSize(requireContext(), usedBytes)}"
-            tvStorageFree.text = "Free: ${Formatter.formatFileSize(requireContext(), freeBytes)}"
-            tvInternalStat.text = "Free: ${Formatter.formatFileSize(requireContext(), freeBytes)}"
-
-            val rootStatFs = StatFs("/")
-            val rootFree = rootStatFs.availableBlocksLong * rootStatFs.blockSizeLong
-            tvRootStat.text = "Free: ${Formatter.formatFileSize(requireContext(), rootFree)}"
+            val systemDesc = if (report.systemIsReadOnly) {
+                "Read-Only (${StorageTelemetryManager.formatBytes(report.systemTotalBytes)})"
+            } else {
+                "Free: ${StorageTelemetryManager.formatBytes(report.systemFreeBytes)}"
+            }
+            tvRootStat.text = systemDesc
         } catch (e: Exception) {
             tvStoragePercent.text = "Storage Available"
+        }
+    }
+
+    private fun loadKernelTelemetry() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val kernelController = com.polymath.fs.core.KernelEngineController()
+                val telemetrics = kernelController.getKernelTelemetry()
+                withContext(Dispatchers.Main) {
+                    tvKernelRelease.text = telemetrics.kernelRelease
+                    tvKernelCpu.text = "${telemetrics.cpuInfo.cores} Cores @ ${telemetrics.cpuInfo.architecture}"
+                    val (l1, l5, l15) = telemetrics.loadAverages
+                    tvKernelLoad.text = String.format(java.util.Locale.US, "%.2f, %.2f, %.2f", l1, l5, l15)
+                    
+                    val availMb = telemetrics.memInfo.availableMemKb / 1024
+                    val totalMb = telemetrics.memInfo.totalMemKb / 1024
+                    if (totalMb > 0) {
+                        tvKernelMem.text = "${availMb}MB avail / ${totalMb}MB"
+                    } else {
+                        tvKernelMem.text = "Active Linux Mem"
+                    }
+
+                    val seLinuxStr = if (telemetrics.isSeLinuxEnforcing) "Enforcing" else "Permissive"
+                    tvKernelState.text = "${telemetrics.cpuInfo.governor} | $seLinuxStr"
+                }
+            } catch (ignored: Exception) {}
         }
     }
 

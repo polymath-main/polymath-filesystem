@@ -174,6 +174,175 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- KERNEL ENGINE & HARDWARE TELEMETRY CARD -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                app:cardBackgroundColor="#1e293b"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#3338bdf8"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentStart="true"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚙️"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:text="Polymath Kernel Engine"
+                                android:textColor="#38bdf8"
+                                android:textSize="13sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tv_kernel_release"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="#0f172a"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:textColor="#34d399"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace"
+                            tools:text="Linux 6.1.25-android" />
+                    </RelativeLayout>
+
+                    <!-- CPU & Load Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="CPU Architecture"
+                                android:textColor="#64748b"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tv_kernel_cpu"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                tools:text="8 Cores @ aarch64" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Kernel Load Average"
+                                android:textColor="#64748b"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tv_kernel_load"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                tools:text="1.24, 0.98, 0.85" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Memory & Process Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Active Memory (MemAvailable)"
+                                android:textColor="#64748b"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tv_kernel_mem"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                tools:text="3.4 GB / 8.0 GB" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="OS State &amp; Governor"
+                                android:textColor="#64748b"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tv_kernel_state"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                tools:text="schedutil | Enforcing" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
             <!-- 2. DIRECTORY BROWSING SHORTCUTS -->
             <TextView
                 android:layout_width="wrap_content"

@@ -2,7 +2,7 @@
 <resources>
     <!-- Cyberpunk -->
     <color name="cyberpunk_primary">#FCE205</color>
-    <color name="cyberpunk_primary_dark">#FF003C</color>
+    <color name="cyberpunk_primary_dark">#00E5FF</color>
     <color name="cyberpunk_accent">#00F0FF</color>
     <color name="cyberpunk_background">#0D0D0D</color>
 
@@ -15,7 +15,7 @@
     <!-- Dracula -->
     <color name="dracula_primary">#BD93F9</color>
     <color name="dracula_primary_dark">#6272A4</color>
-    <color name="dracula_accent">#FF79C6</color>
+    <color name="dracula_accent">#8BE9FD</color>
     <color name="dracula_background">#282A36</color>
 
     <!-- Solarized Dark -->
@@ -37,10 +37,10 @@
     <color name="hacker_background">#0D0208</color>
 
     <!-- Neon -->
-    <color name="neon_primary">#FF00FF</color>
-    <color name="neon_primary_dark">#8A2BE2</color>
-    <color name="neon_accent">#00FFFF</color>
-    <color name="neon_background">#1A1A1D</color>
+    <color name="neon_primary">#06B6D4</color>
+    <color name="neon_primary_dark">#3B82F6</color>
+    <color name="neon_accent">#10B981</color>
+    <color name="neon_background">#0F172A</color>
 
     <!-- Material You (Dynamic colors simulation) -->
     <color name="material_you_primary">#A8C7FA</color>

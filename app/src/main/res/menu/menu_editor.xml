@@ -15,8 +15,24 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/action_search"
+        android:title="Find &amp; Replace"
+        android:icon="@android:drawable/ic_menu_search"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_new_file"
         android:title="New File"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_templates"
+        android:title="Insert JS Template..."
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_format_code"
+        android:title="Format Indentation"
         app:showAsAction="never" />
 
     <item
