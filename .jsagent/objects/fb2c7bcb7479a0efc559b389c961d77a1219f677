@@ -1,0 +1,6 @@
+function onNewDownload(event) {
+    if (event && event.file && (event.file.endsWith(".log") || event.file.endsWith(".tmp"))) {
+        PolymathOS.daemonCommand("archive", event.file);
+        PolymathOS.toast("Auto-Archived: " + event.file);
+    }
+}

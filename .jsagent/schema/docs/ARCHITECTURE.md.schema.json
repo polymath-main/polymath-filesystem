@@ -1,0 +1,14 @@
+{
+  "file": "ARCHITECTURE.md",
+  "extension": ".md",
+  "pointers": {
+    "md_section_1_1_the_storage_inaccuracy_problem_analysis": "73e0b2af85d90dbcb0d4ff25aed7c6a4821dcd20",
+    "md_section_1_2_accurate_storage_resolution_engine___storagetelemetrymanager__": "20ce7237422f8e505b926fdd44839ab024946ece",
+    "md_section_2_1_low_latency_search_specifications": "a0d95a28a6b753e019bc3e78d0c4f48e218a4509",
+    "md_section_3_1_quickjs_embedded_sandbox": "2786a955135798bef4ec4dd71a4e3280af5de53d",
+    "md_section_4_1_presentation_layer_principles": "cfa139256957e211ba2ca79d01c8937759b263e8",
+    "md_section_5_1_direct_kernel_interface___kernelenginecontroller__": "f3ac9eb97d78bf428797e1c63fcee50daf1aa252",
+    "md_section_6_1_philosophy__sandbox_elimination___full_system_control": "f5be8f4fb050f6fff486d2d38b5bc47354858508",
+    "__skeleton__": "3f954e2a095c4e0e2fdad6bb8152fe88ac466111"
+  }
+}

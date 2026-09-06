@@ -1,0 +1,7 @@
+### 1.1 The Storage Inaccuracy Problem Analysis
+Historically, standard Android apps exhibit severe storage telemetry inaccuracies due to:
+1. **Misattributed Partition Targets:** Reading `Environment.getDataDirectory()` (`/data`) instead of primary shared external storage (`/storage/emulated/0`), leading to disjointed numbers compared to Android System Settings.
+2. **Root Partition Quirks:** Reading `/` (rootfs) with `StatFs`, which in modern Android is an overlayfs or read-only ramdisk reporting `0 B Available`, creating an impression of broken telemetry.
+3. **Block Size Arithmetic Overflow:** Multiplying 32-bit block counts before casting to 64-bit `Long`.
+4. **Available vs. Free Blocks Discrepancy:** Conflating `freeBlocksLong` (including system-reserved blocks inaccessible to user apps) with `availableBlocksLong` (actually usable by user processes).
+

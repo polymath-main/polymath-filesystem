@@ -1,0 +1,10 @@
+### 4.1 Presentation Layer Principles
+- **Aesthetic Direction:** Modern Dark Glassmorphic canvas with deep slate foundations (`#0F172A`, `#1E293B`), paired with luminous accent highlights (Sky Blue `#38BDF8`, Emerald `#34D399`, Violet `#A855F7`).
+- **Visual Hierarchy:**
+  - Storage telemetry card featuring clear progress gauge, byte accounting, and partition badges.
+  - Directory navigation grid with responsive glass ripple feedback.
+  - Virtualized RecyclerViews with smooth diffing for file lists and script catalogues.
+- **Accessibility:** Minimum touch targets of 48dp x 48dp, semantic labels, TalkBack compatibility, and responsive typography scaling.
+
+---
+

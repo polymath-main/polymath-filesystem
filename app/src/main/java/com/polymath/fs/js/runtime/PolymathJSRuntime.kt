@@ -54,6 +54,7 @@ class PolymathJSRuntime @Inject constructor(
         scriptName: String = "script.js",
         workingDir: String = "/storage/emulated/0",
         selectedFiles: List<String>? = null,
+        actionId: String? = null,
         onAlert: ((title: String, message: String) -> Unit)? = null,
         onConsoleLog: ((level: String, message: String) -> Unit)? = null
     ): String {
@@ -163,16 +164,18 @@ class PolymathJSRuntime @Inject constructor(
         quickJs.set("PolymathContextMenu", PolymathContextMenu::class.java, contextMenuInterface)
 
         val selectedFilesJson = if (selectedFiles != null) JSONArray(selectedFiles).toString() else "[]"
+        val actionIdJson = if (actionId != null) "\"$actionId\"" else "null"
 
         // 3. Inject Full POSIX & Node.js Environment Bootstrap
-        val bootstrapScript = buildBootstrapScript(scriptName, workingDir, selectedFilesJson)
+        val bootstrapScript = buildBootstrapScript(scriptName, workingDir, selectedFilesJson, actionIdJson)
         quickJs.evaluate(bootstrapScript)
     }
 
     private fun buildBootstrapScript(
         scriptName: String,
         workingDir: String,
-        selectedFilesJson: String
+        selectedFilesJson: String,
+        actionIdJson: String
     ): String {
         return """
             var global = this;
@@ -183,7 +186,10 @@ class PolymathJSRuntime @Inject constructor(
 
             // 1. Process Global Object
             var process = {
-                env: JSON.parse(_process.getEnv()),
+                env: Object.assign(JSON.parse(_process.getEnv()), { 
+                    ACTION_ID: $actionIdJson, 
+                    SELECTED_FILES: JSON.stringify($selectedFilesJson) 
+                }),
                 platform: _os.getPlatform(),
                 arch: _os.getArch(),
                 pid: _process.getPid(),

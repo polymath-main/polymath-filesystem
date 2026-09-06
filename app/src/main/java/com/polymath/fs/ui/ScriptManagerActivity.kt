@@ -316,12 +316,16 @@ class ScriptManagerActivity : BaseDynamicActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            android.R.id.home -> {
-                finish()
+            R.id.action_store -> {
+                startActivity(Intent(this, ExtensionStoreActivity::class.java))
                 true
             }
             R.id.action_bulk_execution -> {
                 showBulkExecutionPicker()
+                true
+            }
+            android.R.id.home -> {
+                finish()
                 true
             }
             R.id.action_share_library -> {

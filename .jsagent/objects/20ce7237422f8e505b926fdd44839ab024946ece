@@ -1,0 +1,43 @@
+### 1.2 Accurate Storage Resolution Engine (`StorageTelemetryManager`)
+The system introduces a unified, robust telemetry engine:
+
+```text
++-------------------------------------------------------------------------+
+|                        StorageTelemetryManager                          |
++-------------------------------------------------------------------------+
+       |                                       |
+       v                                       v
+[Primary Shared Storage]              [Partition Breakdown]
+ - /storage/emulated/0                 - Internal Data (/data)
+ - StorageStatsManager (if allowed)    - System Image (/system)
+ - StatFs fallback                     - Root & RAM mounts
+       |                                       |
+       +-------------------+-------------------+
+                           |
+                           v
+              +-------------------------+
+              | StorageTelemetryReport  |
+              | - totalBytes            |
+              | - freeBytes             |
+              | - usedBytes             |
+              | - usedPercentage        |
+              | - internalFreeBytes     |
+              | - internalTotalBytes    |
+              | - systemPartitionStatus |
+              +-------------------------+
+                           |
+           +---------------+---------------+
+           v                               v
+[Dashboard UI View]             [PolymathOS JavaScript Bridge]
+ - LinearProgressIndicator       - PolymathOS.getDiskStats()
+ - Formatted Byte Strings        - Real JSON disk metrics
+```
+
+#### Multi-Tier Calculation Pipeline:
+- **Tier 1 (Android System Quotas):** Queries `StorageStatsManager.getTotalBytes(UUID_DEFAULT)` and `getFreeBytes(UUID_DEFAULT)` where permission permits.
+- **Tier 2 (Shared Volume StatFs):** Computes `statFs.blockSizeLong * statFs.blockCountLong` and `statFs.blockSizeLong * statFs.availableBlocksLong` on `/storage/emulated/0`.
+- **Tier 3 (Data Partition StatFs):** Computes `/data` metrics independently so users see exact breakdown between shared storage and app internal partition.
+- **Tier 4 (System Partition Inspection):** Checks `/system` mount for total capacity and read-only status, presenting a true Linux filesystem mount description rather than a misleading `0 B Free`.
+
+---
+

@@ -1,0 +1,17 @@
+// Polymath File System - Network Module
+// [FtpManager.js] FTP Client Connection & Endpoint Validator
+
+var ftpConfig = {
+    host: "127.0.0.1",
+    port: 21,
+    user: "anonymous",
+    pass: "",
+    path: "/"
+};
+
+/* __JAGE_REF_js_block_startFtpManager__ */
+
+/* __JAGE_REF_js_block_ftpOnHostEntered__ */
+
+startFtpManager();
+"FTP Manager: Checked connection to " + ftpConfig.host + ":" + ftpConfig.port;

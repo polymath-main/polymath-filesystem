@@ -1,0 +1,3 @@
+function ftpOnHostEntered(host) {
+    if (host) ftpConfig.host = host;
+}

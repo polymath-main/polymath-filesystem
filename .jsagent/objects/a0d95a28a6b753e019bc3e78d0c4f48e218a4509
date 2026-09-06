@@ -1,0 +1,10 @@
+### 2.1 Low-Latency Search Specifications
+The search engine (`DeepSearchEngine`) operates across hundreds of thousands of files on external storage with minimal latency:
+
+1. **Pruned Traversal:** Explicit blacklisting of virtual and recursive kernel namespaces (`/proc`, `/sys`, `/dev`, `/acct`, `/config`).
+2. **Breadth-First ArrayDeque Iteration:** Non-recursive, iterative queue processing that prevents stack overflow and limits active memory footprint.
+3. **Sublinear Token Matching:** Multi-term whitespace tokenization evaluated against pre-lowercased file names with early-exit predicates.
+4. **Reactive Chunking via Kotlin Flow:** Batched emission (20 items or 50ms intervals) via `Dispatchers.IO`, preventing UI thread stutter and ensuring instant first-result response times (<100ms).
+
+---
+

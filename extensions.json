@@ -1,0 +1,20 @@
+[
+  {
+    "id": "media_cleaner",
+    "name": "Media Cleaner",
+    "version": "1.0.0",
+    "author": "Polymath Core",
+    "description": "Scans your selected files and securely wipes hidden thumbnails and temp videos.",
+    "scriptUrl": "https://raw.githubusercontent.com/polymath-main/polymath-filesystem/main/extensions/media_cleaner/main.js",
+    "manifestUrl": "https://raw.githubusercontent.com/polymath-main/polymath-filesystem/main/extensions/media_cleaner/manifest.json"
+  },
+  {
+    "id": "sys_debloater",
+    "name": "System Debloater",
+    "version": "2.1.0",
+    "author": "Polymath Core",
+    "description": "Removes aggressive cached bloat from Android package dirs (Requires Root).",
+    "scriptUrl": "https://raw.githubusercontent.com/polymath-main/polymath-filesystem/main/extensions/sys_debloater/main.js",
+    "manifestUrl": "https://raw.githubusercontent.com/polymath-main/polymath-filesystem/main/extensions/sys_debloater/manifest.json"
+  }
+]

@@ -1,0 +1,3 @@
+function smbOnHostEntered(host) {
+    if (host) smbConfig.host = host;
+}

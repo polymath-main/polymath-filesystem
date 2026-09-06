@@ -1,0 +1,13 @@
+### 3.1 QuickJS Embedded Sandbox
+Polymath features a high-performance QuickJS engine embedded through JNI:
+- **`PolymathFS`**: Direct bridge for high-speed file operations (`listDir`, `copy`, `move`, `delete`, `mkdir`, `rename`).
+- **`PolymathOSNativeInterface`**: Low-level bridge executing real Android and Linux operations:
+  - `getDiskStats()`: Direct access to real storage telemetry.
+  - `findFiles(root, ext)`: Fast native file discovery.
+  - `executeShell(cmd)`: Real root/user shell execution with stdout/stderr capture.
+  - `readFile()` / `writeFile()`: Direct IO stream operations.
+  - `alert2()` / `prompt2()`: Non-blocking native UI interactions.
+  - `ftpRequest()` / `smbRequest()`: Real socket probes for remote network nodes.
+
+---
+

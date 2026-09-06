@@ -1,0 +1,10 @@
+// Polymath File System - Core Modular Extension
+// [ThemeEngine.js]
+// Dynamic theme customization module.
+
+/* __JAGE_REF_js_block_applyNightMode__ */
+
+/* __JAGE_REF_js_block_applyDayMode__ */
+
+applyNightMode();
+"ThemeEngine: Night Mode applied successfully";

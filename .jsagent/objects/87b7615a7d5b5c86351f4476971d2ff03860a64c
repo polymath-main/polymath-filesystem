@@ -1,0 +1,17 @@
+// Polymath File System - Network Module
+// [SmbManager.js] SMB / CIFS Network Share Connection Manager
+
+var smbConfig = {
+    host: "127.0.0.1",
+    port: 445,
+    user: "guest",
+    pass: "",
+    path: "/"
+};
+
+/* __JAGE_REF_js_block_startSmbManager__ */
+
+/* __JAGE_REF_js_block_smbOnHostEntered__ */
+
+startSmbManager();
+"SMB Manager: Queried " + smbConfig.host + ":" + smbConfig.port;

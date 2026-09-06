@@ -1,0 +1,13 @@
+### 6.1 Philosophy: Sandbox Elimination & Full System Control
+Rather than trapping JavaScript scripts in a restricted, throwaway sandbox with artificial permission walls, Polymath implements a real, production-grade OS Runtime Environment inspired by Node.js and POSIX systems:
+1. **Unrestricted System Privilege**: No artificial permission checks (`checkPermission`, `SecurityException`) or crippled APIs. Scripts have direct, raw access to the file system, network sockets, root/user shells, and kernel interfaces.
+2. **CommonJS Module Subsystem (`require`)**:
+   - Built-in core modules: `fs`, `os`, `path`, `child_process`, `http`, `crypto`, `kernel`.
+   - File-based modules: `require('/path/to/file.js')` resolving local libraries.
+3. **POSIX Global Environment**:
+   - Full `process` object: `process.env`, `process.platform`, `process.arch`, `process.uptime()`, `process.pid`, `process.cwd()`, `process.chdir()`, `process.argv`, `process.exit()`.
+   - Native `Buffer` support: utf-8, base64, hex encoding and byte slice manipulation.
+   - Global `fetch(url, options)`: Synchronous and asynchronous HTTP/HTTPS client.
+   - Comprehensive timers: `setTimeout`, `clearTimeout`, `setInterval`, `clearInterval`.
+   - Console timing & trace: `console.time()`, `console.timeEnd()`, `console.trace()`.
+

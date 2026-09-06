@@ -19,10 +19,7 @@ object ExtensionManager {
 
         return hooks.values.filter { hook ->
             try {
-                val pattern = Pattern.compile(hook.filterRegex, Pattern.CASE_INSENSITIVE)
-                // Applicable if AT LEAST ONE selected file matches the regex, or ALL? 
-                // Let's say all selected files must match the regex to show the action.
-                selectedFilePaths.all { path -> pattern.matcher(path).find() }
+                selectedFilePaths.all { path -> hook.compiledRegex.matcher(path).find() }
             } catch (e: Exception) {
                 false
             }

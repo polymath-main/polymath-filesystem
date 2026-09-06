@@ -69,8 +69,8 @@ class FileBrowserFragment : Fragment() {
                             val script = scriptFile.readText()
                             val manifest = if (manifestFile.exists()) manifestFile.readText() else "{}"
                             
-                            val bridge = com.polymath.fs.js.PolymathJSBridge(viewModel.repository, requireContext())
-                            bridge.executeExtension(manifest, script, selectedFiles = paths)
+                            val bridge = com.polymath.fs.js.PolymathJSBridge(viewModel.repository, requireContext().applicationContext)
+                            bridge.executeExtension(manifest, script, selectedFiles = paths, actionId = hook.id)
                         }
                     } catch (e: Exception) {
                         e.printStackTrace()

@@ -3,6 +3,7 @@ package com.polymath.fs.core
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 
 abstract class BaseDynamicActivity : AppCompatActivity() {
@@ -15,10 +16,12 @@ abstract class BaseDynamicActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         lifecycleScope.launch {
-            ThemeManager.themeChangeEvents.collect {
-                val newResId = ThemeManager.getThemeResId(this@BaseDynamicActivity)
-                if (newResId != currentThemeResId) {
-                    recreate()
+            androidx.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                ThemeManager.themeChangeEvents.collect {
+                    val newResId = ThemeManager.getThemeResId(this@BaseDynamicActivity)
+                    if (newResId != currentThemeResId) {
+                        recreate()
+                    }
                 }
             }
         }

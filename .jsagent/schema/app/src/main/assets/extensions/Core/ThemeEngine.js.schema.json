@@ -2,8 +2,8 @@
   "file": "ThemeEngine.js",
   "extension": ".js",
   "pointers": {
-    "js_block_applyNightMode": "ced857d6fb86ce5b27bc256a14d82c30fc28110e",
-    "js_block_applyDayMode": "ad608013f389649f83ae34332b034d5a19d0a1e0",
-    "__skeleton__": "6dd68cd2140632ecab36b63a7fceb76c619717a7"
+    "js_block_applyNightMode": "7a1065f3e6fb9219d58d651938d54f945b0e367d",
+    "js_block_applyDayMode": "7bece480a2d68fe495b71859835e92e072922c93",
+    "__skeleton__": "2bc97d6f70c8a8eb566c5ac8aaef5f11e76e75d8"
   }
 }

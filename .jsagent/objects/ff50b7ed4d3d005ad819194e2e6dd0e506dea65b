@@ -1,0 +1,12 @@
+/* __JAGE_REF_md_section_polymath_file_system___javascript_engine___context__ */
+/* __JAGE_REF_md_section_system_overview___core_directives__ */
+### Guiding Principles
+1. **Absolute Real-World Architecture:** No mocked data, no fake timers, and no simulated infrastructure. Every byte, file node, and process reflects actual OS-level states.
+2. **Modular Architecture:** Clean separation of concerns across decoupled packages:
+   - `core`: OS-level utilities, root shell interfaces, storage telemetry, and search algorithms.
+   - `data`: Repositories, Room SQLite databases, DAOs, and entities.
+   - `js`: QuickJS engine bridges, runtime sandbox, and extension security layer.
+   - `models`: Immutable domain models and state representations.
+   - `ui`: Presentation layer, custom view holders, fragments, and activities adhering strictly to Material 3.
+   - `viewers`: Code editors, text viewers, media players, and specialized viewers.
+3. **Low Latency & High Performance:** Sublinear search algorithms, IO-bounded Coroutine dispatchers, memory-efficient string matching, and zero UI-thread blocking.

@@ -1,0 +1,11 @@
+### 5.1 Direct Kernel Interface (`KernelEngineController`)
+Polymath interfaces with the Linux and Android kernel through direct inspection of hardware buses and virtual file systems:
+- **/proc/sys/kernel/osrelease & /proc/version**: Direct kernel release and compilation signature extraction.
+- **/proc/uptime & /proc/loadavg**: Microsecond-precision system uptime and 1, 5, 15-minute kernel thread queue load averages.
+- **/proc/cpuinfo & /sys/devices/system/cpu**: Probes core counts, BogoMIPS hardware scaling, frequency governors (`schedutil`, `performance`), and current operating MHz.
+- **/proc/meminfo**: Evaluates hardware RAM capacity (`MemTotal`, `MemAvailable`, `Buffers`, `Cached`, `Swap`).
+- **/sys/fs/selinux/enforce**: Inspects SELinux policy enforcement mode.
+- **/sys/block/zram0/comp_algorithm**: Probes memory compression algorithm efficiency.
+
+---
+
