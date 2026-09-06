@@ -149,8 +149,18 @@ class PolymathJSRuntime @Inject constructor(
             }
         }
 
+        val contextMenuInterface = object : PolymathContextMenu {
+            override fun register(id: String, displayName: String, filterRegex: String, jsCallbackId: String) {
+                com.polymath.fs.core.ExtensionManager.registerContextHook(id, displayName, filterRegex, jsCallbackId)
+            }
+            override fun unregister(id: String) {
+                com.polymath.fs.core.ExtensionManager.unregisterContextHook(id)
+            }
+        }
+
         quickJs.set("PolymathFS", PolymathFS::class.java, fsInterface)
         quickJs.set("PolymathUI", PolymathUI::class.java, uiInterface)
+        quickJs.set("PolymathContextMenu", PolymathContextMenu::class.java, contextMenuInterface)
 
         val selectedFilesJson = if (selectedFiles != null) JSONArray(selectedFiles).toString() else "[]"
 

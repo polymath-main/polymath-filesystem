@@ -37,10 +37,49 @@ class FileBrowserFragment : Fragment() {
             return true
         }
 
-        override fun onPrepareActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean = false
+        private var dynamicMenuItemsMap = mutableMapOf<Int, com.polymath.fs.core.ContextHook>()
+
+        override fun onPrepareActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean {
+            val paths = adapter.selectedItems.toList()
+            dynamicMenuItemsMap.keys.forEach { menu.removeItem(it) }
+            dynamicMenuItemsMap.clear()
+
+            val hooks = com.polymath.fs.core.ExtensionManager.getApplicableHooks(paths)
+            var idCounter = 10000
+            hooks.forEach { hook ->
+                val id = idCounter++
+                dynamicMenuItemsMap[id] = hook
+                menu.add(android.view.Menu.NONE, id, android.view.Menu.NONE, hook.displayName)
+            }
+            return true
+        }
 
         override fun onActionItemClicked(mode: androidx.appcompat.view.ActionMode, item: android.view.MenuItem): Boolean {
             val paths = adapter.selectedItems.toList()
+            
+            if (dynamicMenuItemsMap.containsKey(item.itemId)) {
+                val hook = dynamicMenuItemsMap[item.itemId]!!
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    try {
+                        val extDir = java.io.File(requireContext().getDir("app_extensions", android.content.Context.MODE_PRIVATE), hook.id)
+                        val scriptFile = java.io.File(extDir, "main.js")
+                        val manifestFile = java.io.File(extDir, "manifest.json")
+                        
+                        if (scriptFile.exists()) {
+                            val script = scriptFile.readText()
+                            val manifest = if (manifestFile.exists()) manifestFile.readText() else "{}"
+                            
+                            val bridge = com.polymath.fs.js.PolymathJSBridge(viewModel.repository, requireContext())
+                            bridge.executeExtension(manifest, script, selectedFiles = paths)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+                mode.finish()
+                return true
+            }
+            
             when (item.itemId) {
                 com.polymath.fs.R.id.action_bulk_script -> {
                     val sheet = BulkScriptExecutionBottomSheet()

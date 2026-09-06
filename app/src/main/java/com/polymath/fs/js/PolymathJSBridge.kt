@@ -53,6 +53,11 @@ interface PolymathUI {
     fun showToast(message: String)
 }
 
+interface PolymathContextMenu {
+    fun register(id: String, displayName: String, filterRegex: String, jsCallbackId: String)
+    fun unregister(id: String)
+}
+
 class SecurityException(msg: String) : RuntimeException(msg)
 
 @Singleton
