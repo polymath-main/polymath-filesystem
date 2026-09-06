@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.size.Scale
 import com.polymath.fs.R
+import com.polymath.fs.databinding.ItemFileBinding
 import com.polymath.fs.models.FileNode
 import java.io.File
 import java.text.SimpleDateFormat
@@ -53,9 +54,8 @@ class FileListAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_file, parent, false)
-        return FileViewHolder(view)
+        val binding = ItemFileBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return FileViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: FileViewHolder, position: Int) {
@@ -63,16 +63,12 @@ class FileListAdapter(
         holder.bind(file)
     }
 
-    inner class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val fileIcon: android.widget.ImageView = itemView.findViewById(R.id.fileIcon)
-        private val fileName: TextView = itemView.findViewById(R.id.fileName)
-        private val fileDetails: TextView = itemView.findViewById(R.id.fileDetails)
-        private val btnMenu: TextView = itemView.findViewById(R.id.btnMenu)
+    inner class FileViewHolder(private val binding: ItemFileBinding) : RecyclerView.ViewHolder(binding.root) {
         
         private val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
 
         init {
-            itemView.setOnClickListener {
+            binding.root.setOnClickListener {
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val file = getItem(position)
@@ -84,7 +80,7 @@ class FileListAdapter(
                 }
             }
             
-            itemView.setOnLongClickListener {
+            binding.root.setOnLongClickListener {
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION && !isSelectionMode) {
                     isSelectionMode = true
@@ -93,7 +89,7 @@ class FileListAdapter(
                 true
             }
             
-            btnMenu.setOnClickListener { view ->
+            binding.btnMenu.setOnClickListener { view ->
                 val position = bindingAdapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     onMenuClick(getItem(position), view)
@@ -103,9 +99,9 @@ class FileListAdapter(
 
         fun bind(file: FileNode) {
             val isSelected = selectedItems.contains(file.path)
-            itemView.setBackgroundColor(if (isSelected) android.graphics.Color.parseColor("#3338bdf8") else android.graphics.Color.TRANSPARENT)
+            binding.root.setCardBackgroundColor(if (isSelected) android.graphics.Color.parseColor("#3338bdf8") else android.graphics.Color.parseColor("#1e293b"))
             
-            fileName.text = file.name
+            binding.fileName.text = file.name
             
             val iconPackPrefix = when (viewOptions.iconPack) {
                 com.polymath.fs.models.IconPack.FLUENT -> "ic_fluent"
@@ -115,11 +111,11 @@ class FileListAdapter(
             }
 
             if (file.isDirectory) {
-                fileIcon.setPadding(8, 8, 8, 8)
+                binding.fileIcon.setPadding(8, 8, 8, 8)
                 val finalIconType = if (file.name.startsWith(".")) "hidden" else if (file.name == "sys" || file.name == "system") "system" else "folder"
                 val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$finalIconType", "drawable", itemView.context.packageName)
-                fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_folder)
-                fileDetails.text = dateFormat.format(Date(file.lastModified))
+                binding.fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_folder)
+                binding.fileDetails.text = dateFormat.format(Date(file.lastModified))
             } else {
                 val ext = file.name.substringAfterLast('.', "").lowercase()
                 val isImage = ext in listOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "heic", "avif")
@@ -144,40 +140,40 @@ class FileListAdapter(
                 if (isImage) {
                     val localFile = File(file.path)
                     if (localFile.exists() && localFile.canRead()) {
-                        fileIcon.setPadding(0, 0, 0, 0)
-                        fileIcon.load(localFile) {
+                        binding.fileIcon.setPadding(0, 0, 0, 0)
+                        binding.fileIcon.load(localFile) {
                             crossfade(true)
                             scale(Scale.FILL)
                             placeholder(fallbackResId)
                             error(fallbackResId)
                             listener(
-                                onError = { _, _ -> fileIcon.setPadding(8, 8, 8, 8) },
-                                onSuccess = { _, _ -> fileIcon.setPadding(0, 0, 0, 0) }
+                                onError = { _, _ -> binding.fileIcon.setPadding(8, 8, 8, 8) },
+                                onSuccess = { _, _ -> binding.fileIcon.setPadding(0, 0, 0, 0) }
                             )
                         }
                     } else {
-                        fileIcon.setPadding(8, 8, 8, 8)
-                        fileIcon.setImageResource(fallbackResId)
+                        binding.fileIcon.setPadding(8, 8, 8, 8)
+                        binding.fileIcon.setImageResource(fallbackResId)
                     }
                 } else {
-                    fileIcon.setPadding(8, 8, 8, 8)
-                    fileIcon.setImageResource(fallbackResId)
+                    binding.fileIcon.setPadding(8, 8, 8, 8)
+                    binding.fileIcon.setImageResource(fallbackResId)
                 }
 
                 val sizeStr = Formatter.formatFileSize(itemView.context, file.size)
                 val dateStr = dateFormat.format(Date(file.lastModified))
-                fileDetails.text = "$sizeStr • $dateStr"
+                binding.fileDetails.text = "$sizeStr • $dateStr"
             }
             
             when (file) {
                 is FileNode.RootFile -> {
-                    fileDetails.text = "${fileDetails.text} • ${file.permissions}"
+                    binding.fileDetails.text = "${binding.fileDetails.text} • ${file.permissions}"
                 }
                 else -> {}
             }
             
             // Apply ViewOptions
-            fileDetails.visibility = if (viewOptions.showDetails) View.VISIBLE else View.GONE
+            binding.fileDetails.visibility = if (viewOptions.showDetails) View.VISIBLE else View.GONE
             
             val scale = itemView.context.resources.displayMetrics.density
             val sizeDp = when (viewOptions.boxSize) {
@@ -188,19 +184,16 @@ class FileListAdapter(
             }
             val sizePx = (sizeDp * scale + 0.5f).toInt()
             
-            val iconContainer = fileIcon.parent as View
+            val iconContainer = binding.fileIcon.parent as View
             val layoutParams = iconContainer.layoutParams
             layoutParams.width = sizePx
             layoutParams.height = sizePx
             iconContainer.layoutParams = layoutParams
             
-            val itemContainer = itemView.findViewById<android.widget.LinearLayout>(R.id.itemContainer)
-            if (itemContainer != null) {
-                itemContainer.orientation = if (viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
-                    android.widget.LinearLayout.VERTICAL
-                } else {
-                    android.widget.LinearLayout.HORIZONTAL
-                }
+            binding.itemContainer.orientation = if (viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
+                android.widget.LinearLayout.VERTICAL
+            } else {
+                android.widget.LinearLayout.HORIZONTAL
             }
         }
     }
