@@ -35,12 +35,6 @@
         <activity android:name=".ui.ExtensionStoreActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity android:name=".ui.ScriptManagerActivity" />
         <service android:name=".core.SearchService" android:exported="false" />
-        
-        <receiver android:name=".core.JSTesterReceiver" android:exported="true">
-            <intent-filter>
-                <action android:name="com.polymath.fs.ACTION_TEST_SCRIPT" />
-            </intent-filter>
-        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

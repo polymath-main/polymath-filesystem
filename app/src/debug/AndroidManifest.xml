@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- EXCLUSIVELY FOR DEBUG BUILDS: IPC Testing Bridge -->
+        <receiver android:name=".core.JSTesterReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="com.polymath.fs.ACTION_TEST_SCRIPT" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>
