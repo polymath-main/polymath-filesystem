@@ -18,8 +18,8 @@ class JSTesterReceiver : BroadcastReceiver() {
             val outputPath = intent.getStringExtra("outputPath") ?: return
             val selectedFilesStr = intent.getStringExtra("selectedFiles") ?: "[]"
 
-            val repo = FileSystemRepository(context)
-            val shellHolder = RootShellHolder()
+            val shellHolder = com.polymath.fs.core.RootShellHolder()
+            val repo = FileSystemRepository(shellHolder)
 
             CoroutineScope(Dispatchers.IO).launch {
                 try {

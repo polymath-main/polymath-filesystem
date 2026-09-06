@@ -16,7 +16,7 @@ abstract class BaseDynamicActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         lifecycleScope.launch {
-            androidx.lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 ThemeManager.themeChangeEvents.collect {
                     val newResId = ThemeManager.getThemeResId(this@BaseDynamicActivity)
                     if (newResId != currentThemeResId) {

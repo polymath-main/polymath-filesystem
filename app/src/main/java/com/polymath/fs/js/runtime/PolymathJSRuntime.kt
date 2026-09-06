@@ -59,15 +59,7 @@ class PolymathJSRuntime @Inject constructor(
         onConsoleLog: ((level: String, message: String) -> Unit)? = null
     ): String {
         QuickJs.create().use { quickJs ->
-            initializeEnvironment(
-                quickJs = quickJs,
-                scriptName = scriptName,
-                workingDir = workingDir,
-                selectedFiles = selectedFiles,
-                onAlert = onAlert,
-                onConsoleLog = onConsoleLog
-            )
-
+            initializeEnvironment(quickJs, scriptName, workingDir, selectedFiles, actionId, onAlert, onConsoleLog)
             val evaluated = quickJs.evaluate(script)
             return evaluated?.toString() ?: ""
         }
@@ -78,6 +70,7 @@ class PolymathJSRuntime @Inject constructor(
         scriptName: String,
         workingDir: String,
         selectedFiles: List<String>?,
+        actionId: String?,
         onAlert: ((title: String, message: String) -> Unit)?,
         onConsoleLog: ((level: String, message: String) -> Unit)?
     ) {
