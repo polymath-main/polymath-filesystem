@@ -62,15 +62,15 @@ class SynapseEngine @Inject constructor(
                 val path = requestLine.substringAfter("path=").substringBefore(" ")
                 val decodedPath = java.net.URLDecoder.decode(path, "UTF-8")
                 
-                val files = repository.listFiles(decodedPath)
+                val files = repository.listFiles(decodedPath).getOrNull() ?: emptyList()
                 val jsonArray = JSONArray()
-                files.forEach {
+                files.forEach { fileNode ->
                     val obj = JSONObject()
-                    obj.put("name", it.name)
-                    obj.put("path", it.path)
-                    obj.put("isDirectory", it.isDirectory)
-                    obj.put("size", it.size)
-                    obj.put("lastModified", it.lastModified)
+                    obj.put("name", fileNode.name)
+                    obj.put("path", fileNode.path)
+                    obj.put("isDirectory", fileNode.isDirectory)
+                    obj.put("size", fileNode.size)
+                    obj.put("lastModified", fileNode.lastModified)
                     jsonArray.put(obj)
                 }
                 
@@ -118,7 +118,7 @@ class SynapseEngine @Inject constructor(
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
                 remoteFiles.add(
-                    com.polymath.fs.models.NetworkFile(
+                    com.polymath.fs.models.FileNode.NetworkFile(
                         name = obj.getString("name"),
                         path = obj.getString("path"),
                         isDirectory = obj.getBoolean("isDirectory"),
