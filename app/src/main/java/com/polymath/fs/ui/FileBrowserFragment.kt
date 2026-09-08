@@ -37,16 +37,19 @@ class FileBrowserFragment : Fragment() {
     private var isDropletRunning = false
     
     private fun toggleDropletService() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(requireContext())) {
+            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${requireContext().packageName}"))
+            startActivity(intent)
+            Toast.makeText(requireContext(), "Please grant Overlay Permission to use Droplet", Toast.LENGTH_LONG).show()
+            return
+        }
         val intent = Intent(requireContext(), com.polymath.fs.core.DropletService::class.java)
         if (isDropletRunning) {
             requireContext().stopService(intent)
             Toast.makeText(requireContext(), "Droplet Deactivated", Toast.LENGTH_SHORT).show()
         } else {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                requireContext().startForegroundService(intent)
-            } else {
-                requireContext().startService(intent)
-            }
+            // Start as normal service. Since app is in foreground when button is clicked, this is valid.
+            requireContext().startService(intent)
             Toast.makeText(requireContext(), "Droplet Activated 💧", Toast.LENGTH_SHORT).show()
         }
         isDropletRunning = !isDropletRunning
@@ -122,6 +125,26 @@ class FileBrowserFragment : Fragment() {
                     confirmDelete(paths) {
                         mode.finish()
                     }
+                    return true
+                }
+                com.polymath.fs.R.id.action_toggle_rift -> {
+                    paths.forEach { path ->
+                        val file = java.io.File(path)
+                        val newName = if (file.name.endsWith(".rift")) {
+                            file.name.removeSuffix(".rift")
+                        } else {
+                            file.name + ".rift"
+                        }
+                        viewModel.renameFile(path, newName)
+                    }
+                    mode.finish()
+                    return true
+                }
+                com.polymath.fs.R.id.action_start_synapse -> {
+                    val synapseEngine = com.polymath.fs.core.SynapseEngine(requireContext(), viewModel.fileSystemRepository)
+                    synapseEngine.startSynapse()
+                    Toast.makeText(requireContext(), "Synapse Broadcast Started on Port 8888", Toast.LENGTH_SHORT).show()
+                    mode.finish()
                     return true
                 }
                 com.polymath.fs.R.id.action_copy -> { viewModel.copyFiles(paths); mode.finish(); return true }

@@ -200,7 +200,17 @@ class FileListAdapter(
             }
             
             // Apply ViewOptions
-            binding.fileDetails.visibility = if (viewOptions.showDetails) View.VISIBLE else View.GONE
+            if (viewOptions.layout == com.polymath.fs.models.ViewLayout.SPATIAL) {
+                binding.root.translationX = file.spatialX
+                binding.root.translationY = file.spatialY
+                binding.root.rotation = (file.name.hashCode() % 10).toFloat() - 5f
+                binding.fileDetails.visibility = View.VISIBLE
+            } else {
+                binding.root.translationX = 0f
+                binding.root.translationY = 0f
+                binding.root.rotation = 0f
+                binding.fileDetails.visibility = if (viewOptions.showDetails) View.VISIBLE else View.GONE
+            }
             
             val scale = itemView.context.resources.displayMetrics.density
             val sizeDp = when (viewOptions.boxSize) {
