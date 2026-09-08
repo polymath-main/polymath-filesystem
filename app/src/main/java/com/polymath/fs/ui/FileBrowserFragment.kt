@@ -6,6 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import android.widget.EditText
+import android.widget.PopupWindow
+import android.widget.ArrayAdapter
+import android.widget.ListView
+import android.speech.SpeechRecognizer
+import android.speech.RecognizerIntent
+import android.speech.RecognitionListener
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -61,6 +68,16 @@ class FileBrowserFragment : Fragment() {
     private lateinit var adapter: FileListAdapter
     private lateinit var recentAdapter: FileListAdapter
     private var cabMode: androidx.appcompat.view.ActionMode? = null
+
+    private var speechRecognizer: SpeechRecognizer? = null
+    private val requestRecordAudioPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                startBrainTalkListening()
+            } else {
+                Toast.makeText(requireContext(), "Microphone permission required for Brain-Talk", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     private val cabCallback = object : androidx.appcompat.view.ActionMode.Callback {
         override fun onCreateActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean {
@@ -196,6 +213,8 @@ class FileBrowserFragment : Fragment() {
         setupToolbar()
         setupTabs()
         setupOmniTerminal()
+        setupBrainTalk()
+        setupIntelligentAutocomplete()
         
         binding.copyPathButton.setOnClickListener {
             val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: ""
@@ -236,6 +255,93 @@ class FileBrowserFragment : Fragment() {
             }
             false
         }
+    }
+    
+    private fun setupIntelligentAutocomplete() {
+        val input = _binding?.omniTerminalInput ?: return
+        
+        val suggestions = mutableListOf("clear", "rm -rf", "help", "list", "cast rift")
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, suggestions)
+        
+        val listView = ListView(requireContext())
+        listView.adapter = adapter
+        listView.setBackgroundColor(android.graphics.Color.parseColor("#1e293b"))
+        
+        val popupWindow = PopupWindow(listView, 500, ViewGroup.LayoutParams.WRAP_CONTENT, false)
+        popupWindow.isOutsideTouchable = true
+        
+        input.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s?.toString() ?: ""
+                if (query.isNotEmpty() && suggestions.any { it.startsWith(query) }) {
+                    adapter.filter.filter(query)
+                    if (!popupWindow.isShowing) {
+                        popupWindow.showAsDropDown(input, 0, -input.height - 200)
+                    }
+                } else {
+                    popupWindow.dismiss()
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+        
+        listView.setOnItemClickListener { _, _, position, _ ->
+            input.setText(adapter.getItem(position))
+            input.setSelection(input.text.length)
+            popupWindow.dismiss()
+        }
+    }
+    
+    private fun setupBrainTalk() {
+        if (SpeechRecognizer.isRecognitionAvailable(requireContext())) {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(requireContext())
+            speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: android.os.Bundle?) {
+                    _binding?.omniTerminalInput?.hint = "Listening to Brain-Talk..."
+                }
+                override fun onBeginningOfSpeech() {}
+                override fun onRmsChanged(rmsdB: Float) {}
+                override fun onBufferReceived(buffer: ByteArray?) {}
+                override fun onEndOfSpeech() {
+                    _binding?.omniTerminalInput?.hint = "Processing intent..."
+                }
+                override fun onError(error: Int) {
+                    _binding?.omniTerminalInput?.hint = "Type a JS command or action..."
+                    Toast.makeText(requireContext(), "Brain-Talk Error: $error", Toast.LENGTH_SHORT).show()
+                }
+                override fun onResults(results: android.os.Bundle?) {
+                    _binding?.omniTerminalInput?.hint = "Type a JS command or action..."
+                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    if (!matches.isNullOrEmpty()) {
+                        val command = matches[0]
+                        _binding?.omniTerminalInput?.setText(command)
+                        viewModel.logIntent("brain_talk", viewModel.uiState.value.activeTab?.currentPath ?: "", command)
+                        executeOmniCommand(command)
+                    }
+                }
+                override fun onPartialResults(partialResults: android.os.Bundle?) {}
+                override fun onEvent(eventType: Int, params: android.os.Bundle?) {}
+            })
+            
+            _binding?.btnBrainTalk?.setOnClickListener {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    startBrainTalkListening()
+                } else {
+                    requestRecordAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+                }
+            }
+        } else {
+            _binding?.btnBrainTalk?.visibility = android.view.View.GONE
+        }
+    }
+    
+    private fun startBrainTalkListening() {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+        }
+        speechRecognizer?.startListening(intent)
     }
 
     private fun executeOmniCommand(command: String) {
@@ -891,6 +997,8 @@ class FileBrowserFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        speechRecognizer?.destroy()
+        speechRecognizer = null
         _binding = null
     }
 }

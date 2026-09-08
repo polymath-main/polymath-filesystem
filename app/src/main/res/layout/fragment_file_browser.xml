@@ -258,6 +258,15 @@
                 android:inputType="textNoSuggestions"
                 android:imeOptions="actionSend"
                 android:fontFamily="monospace" />
+                
+            <ImageButton
+                android:id="@+id/btnBrainTalk"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@android:drawable/ic_btn_speak_now"
+                android:contentDescription="Brain-Talk Voice Command"
+                app:tint="#38bdf8" />
         </LinearLayout>
     </LinearLayout>
 
