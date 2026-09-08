@@ -15,9 +15,9 @@ data class Progress(
 
 class FileSystemRepository @Inject constructor(
     private val shellHolder: RootShellHolder
-) {
+) : IFileSystemRepository {
 
-    suspend fun listDir(path: String): List<FileNode> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun listDir(path: String): List<FileNode> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val safePath = path.replace("'", "'\\''")
         val script = "find '$safePath' -maxdepth 1 -mindepth 1 -print0 2>/dev/null | xargs -0 stat -c \"%A|%s|%Y|%n\" 2>/dev/null"
 
@@ -31,7 +31,7 @@ class FileSystemRepository @Inject constructor(
         }
     }
 
-    fun copy(src: List<String>, dest: String): Flow<Progress> = flow {
+    override fun copy(src: List<String>, dest: String): Flow<Progress> = flow {
         val total = src.size.toLong()
         emit(Progress(0, total))
         val safeDest = dest.replace("'", "'\\''")
@@ -45,7 +45,7 @@ class FileSystemRepository @Inject constructor(
         }
     }
 
-    fun move(src: List<String>, dest: String): Flow<Progress> = flow {
+    override fun move(src: List<String>, dest: String): Flow<Progress> = flow {
         val total = src.size.toLong()
         emit(Progress(0, total))
         val safeDest = dest.replace("'", "'\\''")
@@ -60,20 +60,20 @@ class FileSystemRepository @Inject constructor(
         }
     }
 
-    suspend fun delete(paths: List<String>): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun delete(paths: List<String>): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         if (paths.isEmpty()) return@withContext true
         val commandArgs = paths.joinToString(" ") { "'${it.replace("'", "'\\''")}'" }
         shellHolder.execute("rm -rf $commandArgs")
         return@withContext true
     }
 
-    suspend fun mkdir(path: String): Boolean {
+    override suspend fun mkdir(path: String): Boolean {
         val safePath = path.replace("'", "'\\''")
         val result = shellHolder.execute("mkdir -p '$safePath'")
         return result.isSuccess
     }
 
-    suspend fun rename(oldPath: String, newName: String): Boolean {
+    override suspend fun rename(oldPath: String, newName: String): Boolean {
         val safeOldPath = oldPath.replace("'", "'\\''")
         val parent = oldPath.substringBeforeLast('/')
         val newPath = "${if(parent.isEmpty()) "" else parent}/$newName"
@@ -82,13 +82,13 @@ class FileSystemRepository @Inject constructor(
         return result.isSuccess
     }
 
-    suspend fun chmod(path: String, mode: String): Boolean {
+    override suspend fun chmod(path: String, mode: String): Boolean {
         val safePath = path.replace("'", "'\\''")
         val result = shellHolder.execute("chmod $mode '$safePath'")
         return result.isSuccess
     }
 
-    suspend fun chown(path: String, owner: String): Boolean {
+    override suspend fun chown(path: String, owner: String): Boolean {
         val safePath = path.replace("'", "'\\''")
         val result = shellHolder.execute("chown $owner '$safePath'")
         return result.isSuccess

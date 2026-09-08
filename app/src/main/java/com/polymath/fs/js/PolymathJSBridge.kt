@@ -3,7 +3,7 @@ package com.polymath.fs.js
 import android.content.Context
 import android.widget.Toast
 import app.cash.quickjs.QuickJs
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.repository.IFileSystemRepository
 import com.polymath.fs.models.FileNode
 import com.polymath.fs.core.RootShellHolder
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +62,7 @@ class SecurityException(msg: String) : RuntimeException(msg)
 
 @Singleton
 class PolymathJSBridge @Inject constructor(
-    private val repository: FileSystemRepository,
+    private val repository: IFileSystemRepository,
     private val context: Context,
     private val shellHolder: RootShellHolder = RootShellHolder(),
     val jsRuntime: com.polymath.fs.js.runtime.PolymathJSRuntime = com.polymath.fs.js.runtime.PolymathJSRuntime(context, repository, shellHolder)
@@ -74,7 +74,8 @@ class PolymathJSBridge @Inject constructor(
         onAlert: ((String, String) -> Unit)? = null,
         onConsoleLog: ((String, String) -> Unit)? = null,
         selectedFiles: List<String>? = null,
-        actionId: String? = null
+        actionId: String? = null,
+        isDryRun: Boolean = false
     ): String {
         val manifest = try { ExtensionManifest.fromJson(manifestJson) } catch (e: Exception) { null }
         val scriptName = manifest?.name ?: "extension.js"
@@ -85,7 +86,8 @@ class PolymathJSBridge @Inject constructor(
             selectedFiles = selectedFiles,
             actionId = actionId,
             onAlert = onAlert,
-            onConsoleLog = onConsoleLog
+            onConsoleLog = onConsoleLog,
+            isDryRun = isDryRun
         )
     }
 
@@ -94,7 +96,8 @@ class PolymathJSBridge @Inject constructor(
         scriptName: String = "script.js",
         onAlert: ((String, String) -> Unit)? = null,
         onConsoleLog: ((String, String) -> Unit)? = null,
-        selectedFiles: List<String>? = null
+        selectedFiles: List<String>? = null,
+        isDryRun: Boolean = false
     ): String {
         return jsRuntime.execute(
             script = script,
@@ -102,7 +105,8 @@ class PolymathJSBridge @Inject constructor(
             workingDir = "/storage/emulated/0",
             selectedFiles = selectedFiles,
             onAlert = onAlert,
-            onConsoleLog = onConsoleLog
+            onConsoleLog = onConsoleLog,
+            isDryRun = isDryRun
         )
     }
 }

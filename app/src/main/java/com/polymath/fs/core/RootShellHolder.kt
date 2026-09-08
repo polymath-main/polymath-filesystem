@@ -19,6 +19,8 @@ data class ShellResult(
 @Singleton
 class RootShellHolder @Inject constructor() {
 
+    fun hasRootAccess(): Boolean = Shell.isAppGrantedRoot() == true
+
     suspend fun execute(cmd: String): ShellResult = withContext(Dispatchers.IO) {
         val result = Shell.cmd(cmd).exec()
         ShellResult(

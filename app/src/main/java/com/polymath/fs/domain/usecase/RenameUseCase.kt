@@ -1,10 +1,10 @@
 package com.polymath.fs.domain.usecase
 
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.repository.IFileSystemRepository
 import javax.inject.Inject
 
 class RenameUseCase @Inject constructor(
-    private val repository: FileSystemRepository
+    private val repository: IFileSystemRepository
 ) {
     suspend operator fun invoke(oldPath: String, newName: String): Result<Boolean> {
         return try {

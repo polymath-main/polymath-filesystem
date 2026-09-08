@@ -9,10 +9,15 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
 import android.view.View
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import android.animation.ArgbEvaluator
+import android.animation.ValueAnimator
+import com.google.android.material.snackbar.Snackbar
 import com.polymath.fs.core.BaseDynamicActivity
 import com.polymath.fs.databinding.ActivityMainBinding
 import com.polymath.fs.ui.FileBrowserFragment
@@ -61,7 +66,9 @@ class MainActivity : BaseDynamicActivity() {
         }
 
         setupBottomNavigation()
+        setupZoneANavigator()
         checkPermissions()
+        applyElevatedStateVisuals()
     }
 
     private fun setupBottomNavigation() {
@@ -85,6 +92,46 @@ class MainActivity : BaseDynamicActivity() {
                 }
                 else -> false
             }
+        }
+    }
+
+    private fun setupZoneANavigator() {
+        binding.zoneANavigator.setNavigationItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.nav_workspace_root -> {
+                    navigateToDirectory("/")
+                }
+                R.id.nav_workspace_sdcard -> {
+                    navigateToDirectory("/sdcard")
+                }
+                R.id.nav_smart_recent -> {
+                    Toast.makeText(this, "Loading Recent JS Scripts...", Toast.LENGTH_SHORT).show()
+                }
+            }
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
+    }
+    
+    private fun applyElevatedStateVisuals() {
+        val app = application as PolymathApp
+        if (app.shellHolder.hasRootAccess()) {
+            val crimson = android.graphics.Color.parseColor("#991b1b")
+            val defaultStatus = window.statusBarColor
+            
+            val animator = ValueAnimator.ofObject(ArgbEvaluator(), defaultStatus, crimson)
+            animator.duration = 1000
+            animator.addUpdateListener { anim ->
+                val color = anim.animatedValue as Int
+                window.statusBarColor = color
+                binding.bottomNavigation.setBackgroundColor(color)
+            }
+            animator.start()
+            
+            Snackbar.make(binding.root, "ROOT ACCESS ACTIVE", Snackbar.LENGTH_INDEFINITE)
+                .setBackgroundTint(crimson)
+                .setTextColor(android.graphics.Color.WHITE)
+                .show()
         }
     }
 

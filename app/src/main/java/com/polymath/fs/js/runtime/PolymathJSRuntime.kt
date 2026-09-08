@@ -7,7 +7,7 @@ import android.widget.Toast
 import app.cash.quickjs.QuickJs
 import com.polymath.fs.core.KernelEngineController
 import com.polymath.fs.core.RootShellHolder
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.repository.IFileSystemRepository
 import com.polymath.fs.js.*
 import com.polymath.fs.js.runtime.modules.*
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +30,7 @@ import javax.inject.Singleton
 @Singleton
 class PolymathJSRuntime @Inject constructor(
     private val context: Context,
-    private val repository: FileSystemRepository,
+    private val repository: IFileSystemRepository,
     private val shellHolder: RootShellHolder = RootShellHolder(),
     private val kernelController: KernelEngineController = KernelEngineController()
 ) {
@@ -56,10 +56,11 @@ class PolymathJSRuntime @Inject constructor(
         selectedFiles: List<String>? = null,
         actionId: String? = null,
         onAlert: ((title: String, message: String) -> Unit)? = null,
-        onConsoleLog: ((level: String, message: String) -> Unit)? = null
+        onConsoleLog: ((level: String, message: String) -> Unit)? = null,
+        isDryRun: Boolean = false
     ): String {
         QuickJs.create().use { quickJs ->
-            initializeEnvironment(quickJs, scriptName, workingDir, selectedFiles, actionId, onAlert, onConsoleLog)
+            initializeEnvironment(quickJs, scriptName, workingDir, selectedFiles, actionId, onAlert, onConsoleLog, isDryRun)
             val evaluated = quickJs.evaluate(script)
             return evaluated?.toString() ?: ""
         }
@@ -72,9 +73,12 @@ class PolymathJSRuntime @Inject constructor(
         selectedFiles: List<String>?,
         actionId: String?,
         onAlert: ((title: String, message: String) -> Unit)?,
-        onConsoleLog: ((level: String, message: String) -> Unit)?
+        onConsoleLog: ((level: String, message: String) -> Unit)?,
+        isDryRun: Boolean
     ) {
         processModule.setCwd(workingDir)
+        
+        val activeRepo = if (isDryRun) com.polymath.fs.data.repository.MockFileSystemRepository() else repository
 
         // 1. Bind low-level native modules
         quickJs.set("_posix", PolymathJSPOSIXInterface::class.java, fsModule)
@@ -86,12 +90,12 @@ class PolymathJSRuntime @Inject constructor(
         quickJs.set("_loader", PolymathModuleLoaderInterface::class.java, moduleLoader)
 
         // 2. Legacy Polymath bridges for backwards compatibility
-        val osNativeImpl = PolymathOSNativeImpl(context, repository, shellHolder, onAlert, onConsoleLog)
+        val osNativeImpl = PolymathOSNativeImpl(context, activeRepo, shellHolder, onAlert, onConsoleLog)
         quickJs.set("PolymathOSNative", PolymathOSNativeInterface::class.java, osNativeImpl)
 
         val fsInterface = object : PolymathFS {
             override fun listDir(path: String): String {
-                val nodes = runBlocking { repository.listDir(path) }
+                val nodes = runBlocking { activeRepo.listDir(path) }
                 val array = JSONArray()
                 nodes.forEach { node ->
                     val obj = JSONObject().apply {
@@ -109,29 +113,29 @@ class PolymathJSRuntime @Inject constructor(
             override fun copy(srcJson: String, dest: String): Boolean {
                 val arr = JSONArray(srcJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                runBlocking { repository.copy(list, dest).collect {} }
+                runBlocking { activeRepo.copy(list, dest).collect {} }
                 return true
             }
 
             override fun move(srcJson: String, dest: String): Boolean {
                 val arr = JSONArray(srcJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                runBlocking { repository.move(list, dest).collect {} }
+                runBlocking { activeRepo.move(list, dest).collect {} }
                 return true
             }
 
             override fun delete(pathsJson: String): Boolean {
                 val arr = JSONArray(pathsJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                return runBlocking { repository.delete(list) }
+                return runBlocking { activeRepo.delete(list) }
             }
 
             override fun mkdir(path: String): Boolean {
-                return runBlocking { repository.mkdir(path) }
+                return runBlocking { activeRepo.mkdir(path) }
             }
 
             override fun rename(oldPath: String, newName: String): Boolean {
-                return runBlocking { repository.rename(oldPath, newName) }
+                return runBlocking { activeRepo.rename(oldPath, newName) }
             }
         }
 

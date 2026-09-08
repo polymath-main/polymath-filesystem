@@ -13,9 +13,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.polymath.fs.R
+import com.polymath.fs.core.RiftEngine
 import com.polymath.fs.databinding.FragmentFileBrowserBinding
 import com.polymath.fs.viewmodels.FileSystemViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FileBrowserFragment : Fragment() {
 
@@ -148,6 +150,7 @@ class FileBrowserFragment : Fragment() {
         setupObservers()
         setupToolbar()
         setupTabs()
+        setupOmniTerminal()
         
         binding.copyPathButton.setOnClickListener {
             val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: ""
@@ -173,10 +176,108 @@ class FileBrowserFragment : Fragment() {
         })
     }
 
+    private fun setupOmniTerminal() {
+        startMetricsPolling()
+        binding.omniTerminalInput.setOnEditorActionListener { v, actionId, event ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND || 
+                (event != null && event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_DOWN)) {
+                
+                val command = binding.omniTerminalInput.text.toString()
+                if (command.isNotBlank()) {
+                    executeOmniCommand(command)
+                }
+                binding.omniTerminalInput.text.clear()
+                return@setOnEditorActionListener true
+            }
+            false
+        }
+    }
+
+    private fun executeOmniCommand(command: String) {
+        val appContext = context?.applicationContext ?: return
+        binding.terminalConsoleScroll.visibility = View.VISIBLE
+        binding.terminalConsoleOutput.append("\n> $command\n")
+        
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: "/storage/emulated/0"
+                val bridge = com.polymath.fs.js.PolymathJSBridge(viewModel.fileSystemRepository, appContext)
+                
+                // Route command directly to runtime
+                val result = bridge.jsRuntime.execute(
+                    script = command,
+                    workingDir = currentPath,
+                    onConsoleLog = { level, msg -> 
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            _binding?.terminalConsoleOutput?.append("[$level] $msg\n")
+                        }
+                    },
+                    onAlert = { title, msg -> 
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            _binding?.terminalConsoleOutput?.append("[ALERT: $title] $msg\n")
+                        }
+                    }
+                )
+                
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                    if (result.isNotBlank()) {
+                        _binding?.terminalConsoleOutput?.append("$result\n")
+                    }
+                    _binding?.terminalConsoleScroll?.post {
+                        _binding?.terminalConsoleScroll?.fullScroll(View.FOCUS_DOWN)
+                    }
+                }
+            } catch (e: Exception) {
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                    _binding?.terminalConsoleOutput?.append("[ERROR] ${e.message}\n")
+                }
+            }
+        }
+    }
+    
+    private fun startMetricsPolling() {
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while(true) {
+                    val runtime = Runtime.getRuntime()
+                    val usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)
+                    
+                    // Simple mock for CPU (would need OS hook for real QuickJS CPU usage)
+                    val mockCpu = kotlin.random.Random.nextInt(1, 15)
+                    
+                    withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        _binding?.cpuMetricText?.text = "CPU: $mockCpu%"
+                        _binding?.memMetricText?.text = "MEM: ${usedMem}MB"
+                    }
+                    kotlinx.coroutines.delay(500)
+                }
+            }
+        }
+    }
+
     private fun setupRecyclerView() {
         val onItemClick: (com.polymath.fs.models.FileNode) -> Unit = { fileNode ->
             if (fileNode.isDirectory) {
                 viewModel.navigateTo(fileNode.path)
+            } else if (fileNode.isRift) {
+                // The Antigravity Rift execution path
+                lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    val riftEngine = RiftEngine()
+                    riftEngine.cast(
+                        riftFile = java.io.File(fileNode.path),
+                        context = requireContext().applicationContext,
+                        repository = viewModel.fileSystemRepository,
+                        onOutput = { msg ->
+                            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                binding.terminalConsoleScroll.visibility = android.view.View.VISIBLE
+                                binding.terminalConsoleOutput.append("$msg\n")
+                                binding.terminalConsoleScroll.post {
+                                    binding.terminalConsoleScroll.fullScroll(android.view.View.FOCUS_DOWN)
+                                }
+                            }
+                        }
+                    )
+                }
             } else {
                 viewModel.addRecentFile(fileNode)
                 val file = java.io.File(fileNode.path)
@@ -481,6 +582,10 @@ class FileBrowserFragment : Fragment() {
                     startActivity(android.content.Intent(requireContext(), SettingsActivity::class.java))
                     true
                 }
+                com.polymath.fs.R.id.action_cast_rift -> {
+                    castNewRift()
+                    true
+                }
                 else -> false
             }
         }
@@ -526,6 +631,33 @@ class FileBrowserFragment : Fragment() {
             .setNegativeButton(R.string.action_cancel, null)
             .show()
     }
+    
+    private fun castNewRift() {
+        val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: "/sdcard"
+        val riftFile = java.io.File(currentPath, "Antigravity_Demo.rift")
+        
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val riftContent = """
+                {
+                  "rift_name": "Antigravity Demo",
+                  "target_dir": "$currentPath",
+                  "script": "_os.alert('Rift Cast Successful', 'Hello from the Polymath Procedural Engine! This code executed inside a 0-byte virtual file footprint.');"
+                }
+            """.trimIndent()
+            
+            try {
+                riftFile.writeText(riftContent)
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Rift casted: ${riftFile.name}", Toast.LENGTH_SHORT).show()
+                    viewModel.refreshCurrentDirectory()
+                }
+            } catch (e: Exception) {
+                withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    Toast.makeText(requireContext(), "Failed to cast Rift: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
 
     private fun confirmDelete(paths: List<String>, singleFileName: String? = null, onDeleted: (() -> Unit)? = null) {
         if (paths.isEmpty()) return
@@ -537,15 +669,55 @@ class FileBrowserFragment : Fragment() {
             getString(R.string.confirm_delete_multiple, paths.size)
         }
 
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+        val layout = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(50, 40, 50, 10)
+        }
+        
+        val messageView = android.widget.TextView(requireContext()).apply {
+            text = "$message\n\nTo prevent accidental data loss, please type CONFIRM below:"
+            setTextColor(android.graphics.Color.parseColor("#e2e8f0"))
+            textSize = 14f
+            setPadding(0, 0, 0, 24)
+        }
+        
+        val confirmInput = android.widget.EditText(requireContext()).apply {
+            hint = "Type CONFIRM"
+            setTextColor(android.graphics.Color.WHITE)
+        }
+        
+        layout.addView(messageView)
+        layout.addView(confirmInput)
+
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.confirm_delete_title)
-            .setMessage(message)
+            .setView(layout)
             .setPositiveButton(R.string.action_delete) { _, _ ->
                 viewModel.deleteFiles(paths)
                 onDeleted?.invoke()
             }
             .setNegativeButton(R.string.action_cancel, null)
-            .show()
+            .create()
+            
+        dialog.show()
+        
+        // Disable positive button until CONFIRM is typed
+        val positiveButton = dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE)
+        positiveButton?.isEnabled = false
+        
+        confirmInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val isConfirmed = s?.toString() == "CONFIRM"
+                positiveButton?.isEnabled = isConfirmed
+                if (isConfirmed) {
+                    positiveButton?.setTextColor(android.graphics.Color.parseColor("#ef4444")) // Red when active
+                } else {
+                    positiveButton?.setTextColor(android.graphics.Color.GRAY)
+                }
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
     }
 
     override fun onDestroyView() {

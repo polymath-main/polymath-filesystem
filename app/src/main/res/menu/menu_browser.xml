@@ -26,6 +26,10 @@
         android:title="Go to Root (/)"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_cast_rift"
+        android:title="Cast Rift 🌌"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_terminal"
         android:title="Open Terminal"
         app:showAsAction="never" />

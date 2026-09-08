@@ -19,7 +19,7 @@ import com.topjohnwu.superuser.Shell
 class PolymathApp : Application() {
 
     val shellHolder by lazy { RootShellHolder() }
-    val fileSystemRepository by lazy { FileSystemRepository(shellHolder) }
+    val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository by lazy { FileSystemRepository(shellHolder) }
     val jsBridge by lazy { PolymathJSBridge(fileSystemRepository, this, shellHolder) }
     val jsRuntime by lazy { jsBridge.jsRuntime }
     val listDirUseCase by lazy { ListDirUseCase(fileSystemRepository) }

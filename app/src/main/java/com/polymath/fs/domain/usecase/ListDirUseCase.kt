@@ -1,11 +1,11 @@
 package com.polymath.fs.domain.usecase
 
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.repository.IFileSystemRepository
 import com.polymath.fs.models.FileNode
 import javax.inject.Inject
 
 class ListDirUseCase @Inject constructor(
-    private val repository: FileSystemRepository
+    private val repository: IFileSystemRepository
 ) {
     suspend operator fun invoke(path: String): Result<List<FileNode>> {
         return try {

@@ -101,7 +101,13 @@ class FileListAdapter(
             val isSelected = selectedItems.contains(file.path)
             binding.root.setCardBackgroundColor(if (isSelected) android.graphics.Color.parseColor("#3338bdf8") else android.graphics.Color.parseColor("#1e293b"))
             
-            binding.fileName.text = file.name
+            if (file.isRift) {
+                binding.fileName.text = "${file.name} 🌌"
+                binding.fileName.setTextColor(android.graphics.Color.parseColor("#a855f7")) // Glowing purple
+            } else {
+                binding.fileName.text = file.name
+                binding.fileName.setTextColor(android.graphics.Color.parseColor("#f8fafc")) // Standard text
+            }
             
             val iconPackPrefix = when (viewOptions.iconPack) {
                 com.polymath.fs.models.IconPack.FLUENT -> "ic_fluent"

@@ -6,6 +6,7 @@ sealed class FileNode {
     abstract val size: Long
     abstract val lastModified: Long
     abstract val isDirectory: Boolean
+    open val isRift: Boolean get() = name.lowercase().endsWith(".rift")
 
     data class LocalFile(
         override val name: String,

@@ -6,7 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import com.polymath.fs.core.RootShellHolder
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.repository.IFileSystemRepository
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.io.File
@@ -37,7 +37,7 @@ interface PolymathOSNativeInterface {
 
 class PolymathOSNativeImpl(
     private val context: Context,
-    private val repository: FileSystemRepository,
+    private val repository: IFileSystemRepository,
     private val shellHolder: RootShellHolder,
     private val onAlert: ((title: String, message: String) -> Unit)? = null,
     private val onConsoleLog: ((level: String, message: String) -> Unit)? = null

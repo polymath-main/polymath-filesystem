@@ -27,7 +27,7 @@ class FileSystemViewModel @Inject constructor(
     private val renameUseCase: RenameUseCase,
     private val copyFilesUseCase: CopyFilesUseCase,
     private val moveFilesUseCase: MoveFilesUseCase,
-    val fileSystemRepository: com.polymath.fs.data.repository.FileSystemRepository
+    val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
@@ -143,6 +143,11 @@ class FileSystemViewModel @Inject constructor(
             val resolvedParent = if (parentPath.isEmpty()) "/" else parentPath
             navigateTo(resolvedParent)
         }
+    }
+
+    fun refreshCurrentDirectory() {
+        val activeTab = _uiState.value.activeTab ?: return
+        navigateTo(activeTab.currentPath)
     }
 
     fun deleteFiles(paths: List<String>) {
