@@ -42,6 +42,10 @@
         android:title="@string/action_script_manager"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_dashboard"
+        android:title="Web-Tech Dashboard 📊"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_new_tab"
         android:title="New Tab"
         app:showAsAction="never" />

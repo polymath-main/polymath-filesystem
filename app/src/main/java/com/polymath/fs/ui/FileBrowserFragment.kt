@@ -690,6 +690,10 @@ class FileBrowserFragment : Fragment() {
                     startActivity(android.content.Intent(requireContext(), ScriptManagerActivity::class.java))
                     true
                 }
+                com.polymath.fs.R.id.action_dashboard -> {
+                    startActivity(android.content.Intent(requireContext(), JsDashboardActivity::class.java))
+                    true
+                }
                 com.polymath.fs.R.id.action_new_tab -> {
                     viewModel.newTab()
                     true
