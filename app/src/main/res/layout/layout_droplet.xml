@@ -15,12 +15,14 @@
         app:strokeColor="#a855f7"
         app:strokeWidth="2dp">
 
-        <TextView
+        <ImageView
+            android:id="@+id/droplet_icon"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="💧"
-            android:textSize="24sp" />
+            android:layout_gravity="center"
+            android:padding="12dp"
+            android:src="@android:drawable/ic_menu_save"
+            app:tint="#38bdf8" />
 
     </com.google.android.material.card.MaterialCardView>
 

@@ -129,10 +129,18 @@ class FileSystemViewModel @Inject constructor(
     }
 
     fun switchTab(tabId: String) {
+        _uiState.update { it.copy(activeTabId = tabId) }
+    }
+    
+    fun updateTabState(tabId: String, scrollPosition: Int, terminalText: String) {
         _uiState.update { state ->
-            state.copy(activeTabId = tabId)
+            val updatedTabs = state.tabs.map {
+                if (it.id == tabId) {
+                    it.copy(scrollPosition = scrollPosition, terminalHistory = terminalText)
+                } else it
+            }
+            state.copy(tabs = updatedTabs)
         }
-        persistFlowState()
     }
 
     fun navigateTo(path: String, tabId: String? = null) {

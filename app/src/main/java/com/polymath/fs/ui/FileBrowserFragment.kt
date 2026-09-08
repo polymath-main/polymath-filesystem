@@ -604,6 +604,14 @@ class FileBrowserFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     val activeTab = state.activeTab
+                    // Restore scroll and terminal state (The Rahman Flow)
+                    if (activeTab != null) {
+                        (_binding?.recyclerView?.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)?.scrollToPositionWithOffset(activeTab.scrollPosition, 0)
+                        if (activeTab.terminalHistory.isNotEmpty() && _binding?.omniTerminalInput?.text?.toString()?.isEmpty() == true) {
+                            _binding?.omniTerminalInput?.setText(activeTab.terminalHistory)
+                        }
+                    }
+                    
                     binding.pathText.text = activeTab?.currentPath ?: ""
                     binding.progressBar.visibility = if (activeTab?.isLoading == true) View.VISIBLE else View.GONE
                     
@@ -738,10 +746,17 @@ class FileBrowserFragment : Fragment() {
     private fun setupTabs() {
         binding.tabLayout.addOnTabSelectedListener(object : com.google.android.material.tabs.TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: com.google.android.material.tabs.TabLayout.Tab?) {
-                val tabId = tab?.tag as? String
-                if (tabId != null && tabId != viewModel.uiState.value.activeTabId) {
-                    viewModel.switchTab(tabId)
+                val tabId = tab?.tag as? String ?: return
+                
+                // Save current state before switching
+                val currentTabId = viewModel.uiState.value.activeTab?.id
+                if (currentTabId != null && currentTabId != tabId) {
+                    val currentScroll = (_binding?.recyclerView?.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)?.findFirstVisibleItemPosition() ?: 0
+                    val currentTerminalText = _binding?.omniTerminalInput?.text?.toString() ?: ""
+                    viewModel.updateTabState(currentTabId, currentScroll, currentTerminalText)
                 }
+                
+                viewModel.switchTab(tabId)
             }
             override fun onTabUnselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
             override fun onTabReselected(tab: com.google.android.material.tabs.TabLayout.Tab?) {}
