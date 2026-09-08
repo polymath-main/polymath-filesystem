@@ -617,6 +617,23 @@ class FileBrowserFragment : Fragment() {
                     
                     val pasteItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_paste)
                     pasteItem?.isVisible = state.clipboard != null
+                    if (state.clipboard != null) {
+                        binding.pasteButton.visibility = View.VISIBLE
+                    } else {
+                        binding.pasteButton.visibility = View.GONE
+                    }
+                    
+                    adapter.setViewOptions(state.viewOptions)
+                    val currentLayoutManager = binding.recyclerView.layoutManager
+                    if (state.viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
+                        if (currentLayoutManager !is androidx.recyclerview.widget.GridLayoutManager) {
+                            binding.recyclerView.layoutManager = androidx.recyclerview.widget.GridLayoutManager(requireContext(), 3)
+                        }
+                    } else {
+                        if (currentLayoutManager !is androidx.recyclerview.widget.LinearLayoutManager || currentLayoutManager is androidx.recyclerview.widget.GridLayoutManager) {
+                            binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext())
+                        }
+                    }
                     
                     if (activeTab != null && !activeTab.isLoading) {
                         // The Architect's Workbench Logic (Context Morphing)
