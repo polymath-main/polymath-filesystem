@@ -22,11 +22,17 @@ class RiftEngine @Inject constructor() {
     ) = withContext(Dispatchers.IO) {
         try {
             val content = riftFile.readText()
-            val json = JSONObject(content)
-            
-            val script = json.optString("script", "")
-            val targetDir = json.optString("target_dir", "/sdcard")
-            val riftName = json.optString("rift_name", riftFile.nameWithoutExtension)
+            val (script, targetDir, riftName) = try {
+                val json = JSONObject(content)
+                Triple(
+                    json.optString("script", ""),
+                    json.optString("target_dir", "/sdcard"),
+                    json.optString("rift_name", riftFile.nameWithoutExtension)
+                )
+            } catch (e: Exception) {
+                // If it's not JSON, assume it's just raw JavaScript or a generic file
+                Triple(content, "/sdcard", riftFile.nameWithoutExtension)
+            }
             
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, "Casting Rift: $riftName 🌌", Toast.LENGTH_SHORT).show()

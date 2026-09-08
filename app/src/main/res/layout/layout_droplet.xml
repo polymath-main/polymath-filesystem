@@ -15,12 +15,12 @@
         app:strokeColor="#a855f7"
         app:strokeWidth="2dp">
 
-        <ImageView
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_gravity="center"
-            android:src="@android:drawable/ic_menu_upload"
-            app:tint="#a855f7" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="💧"
+            android:textSize="24sp" />
 
     </com.google.android.material.card.MaterialCardView>
 
