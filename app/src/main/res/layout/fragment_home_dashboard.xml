@@ -52,7 +52,6 @@
                     app:iconifiedByDefault="false"
                     app:queryHint="Ask Polymath... (e.g. 'modified yesterday')"
                     app:searchIcon="@drawable/ic_fluent_code"
-                    app:iconifiedByDefault="false"
                     app:queryBackground="@android:color/transparent"
                     android:theme="@style/Theme.PolymathFileSystem" />
             </androidx.cardview.widget.CardView>

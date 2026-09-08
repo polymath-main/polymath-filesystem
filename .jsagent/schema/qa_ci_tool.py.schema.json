@@ -1,0 +1,8 @@
+{
+  "file": "qa_ci_tool.py",
+  "extension": ".py",
+  "pointers": {
+    "py_function_run_command": "5d8740069783aaee51b0bb676791f35fdc5e63b0",
+    "__skeleton__": "cfa8a665345a4e6fc6189c8f95817001a764d031"
+  }
+}

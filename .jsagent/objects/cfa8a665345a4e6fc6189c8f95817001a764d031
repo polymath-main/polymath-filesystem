@@ -1,0 +1,80 @@
+import subprocess
+import time
+import json
+import sys
+import re
+
+/* __JAGE_REF_py_function_run_command__ */
+
+def main():
+    print("Starting Cloud CI QA Tool...")
+    
+    # Ensure there are changes to test
+    stdout, _, _ = run_command("git status --porcelain")
+    if not stdout.strip():
+        print("No changes to QA test.")
+        return
+
+    print("Stashing changes and moving to a temporary QA branch...")
+    run_command("git checkout -b qa-test-branch")
+    run_command("git add .")
+    run_command("git commit -m 'QA Test Build'")
+    
+    print("Pushing to GitHub to trigger CI...")
+    _, stderr, code = run_command("git push -f origin qa-test-branch")
+    if code != 0:
+        print(f"Failed to push branch: {stderr}")
+        return
+        
+    print("Waiting for GitHub Actions to register the run...")
+    time.sleep(5)
+    
+    # Get the latest run ID for the qa-test-branch
+    stdout, _, _ = run_command("gh run list --branch qa-test-branch --limit 1 --json databaseId")
+    try:
+        run_id = json.loads(stdout)[0]["databaseId"]
+    except Exception as e:
+        print("Could not find the GitHub Actions run.")
+        return
+        
+    print(f"Monitoring Run ID: {run_id}...")
+    
+    # Poll for completion
+    while True:
+        stdout, _, _ = run_command(f"gh run view {run_id} --json status,conclusion")
+        data = json.loads(stdout)
+        status = data.get("status")
+        conclusion = data.get("conclusion")
+        
+        if status == "completed":
+            if conclusion == "success":
+                print("\n✅ QA PASS: The codebase compiled perfectly on the cloud!")
+            else:
+                print("\n❌ QA FAIL: The cloud compiler found errors.")
+                print("Extracting compiler logs...")
+                log_out, _, _ = run_command(f"gh run view {run_id} --log-failed")
+                
+                # Extract specific Kotlin compiler errors
+                errors = re.findall(r'e: (.*)', log_out)
+                if errors:
+                    print("\n--- COMPILER ERRORS ---")
+                    for err in errors:
+                        print(f"e: {err}")
+                    print("-----------------------")
+                else:
+                    print("Could not parse specific errors. View full logs with: gh run view {run_id} --log-failed")
+            break
+        else:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+            time.sleep(10)
+
+    print("\nCleaning up local branch...")
+    run_command("git reset HEAD~1")
+    run_command("git checkout main")
+    run_command("git branch -D qa-test-branch")
+    run_command("git push origin --delete qa-test-branch")
+    print("Done! You can now fix the errors and commit to main safely.")
+
+if __name__ == "__main__":
+    main()
