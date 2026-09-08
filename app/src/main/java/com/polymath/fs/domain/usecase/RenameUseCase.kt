@@ -9,7 +9,16 @@ class RenameUseCase @Inject constructor(
     suspend operator fun invoke(oldPath: String, newName: String): Result<Boolean> {
         return try {
             val success = repository.rename(oldPath, newName)
-            if (success) Result.success(true) else Result.failure(Exception("Rename failed"))
+            if (success) {
+                // Sync companion rift wrapper rename if it exists
+                val oldRift = java.io.File("$oldPath.rift")
+                if (oldRift.exists()) {
+                    repository.rename(oldRift.absolutePath, "$newName.rift")
+                }
+                Result.success(true)
+            } else {
+                Result.failure(Exception("Rename failed"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
