@@ -78,7 +78,7 @@ class PolymathJSRuntime @Inject constructor(
     ) {
         processModule.setCwd(workingDir)
         
-        val activeRepo = if (isDryRun) com.polymath.fs.data.repository.MockFileSystemRepository() else repository
+        val activeRepo = if (isDryRun) com.polymath.fs.data.repository.MockFileSystemRepository(repository) else repository
 
         // 1. Bind low-level native modules
         quickJs.set("_posix", PolymathJSPOSIXInterface::class.java, fsModule)

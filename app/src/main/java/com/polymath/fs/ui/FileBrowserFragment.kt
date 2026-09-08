@@ -129,26 +129,7 @@ class FileBrowserFragment : Fragment() {
                 }
                 com.polymath.fs.R.id.action_toggle_rift -> {
                     paths.forEach { path ->
-                        val file = java.io.File(path)
-                        if (file.name.endsWith(".rift")) {
-                            // If it's already a rift, maybe we 'toggle' by deleting it?
-                            // Or just ignore. Let's delete the rift wrapper to untoggle.
-                            viewModel.deleteFiles(listOf(path))
-                        } else {
-                            // Create a new .rift wrapper file next to the original file
-                            val riftFile = java.io.File(file.parentFile, "${file.name}.rift")
-                            try {
-                                val json = org.json.JSONObject().apply {
-                                    put("rift_name", "Rift: ${file.name}")
-                                    put("target_dir", file.parent)
-                                    put("script", "console.log('Rift activated for ${file.name}!');")
-                                }
-                                riftFile.writeText(json.toString(4))
-                                viewModel.refreshCurrentDirectory()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
+                        viewModel.toggleRiftState(path)
                     }
                     mode.finish()
                     return true

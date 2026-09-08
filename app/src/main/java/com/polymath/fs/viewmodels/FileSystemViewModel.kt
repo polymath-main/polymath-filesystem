@@ -39,6 +39,9 @@ class FileSystemViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
     val uiState: StateFlow<FileBrowserUiState> = _uiState.asStateFlow()
+    
+    // In-memory zero-storage Rift tracking
+    private val activeRiftPaths = mutableSetOf<String>()
 
     private val prefs: SharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
@@ -153,7 +156,10 @@ class FileSystemViewModel @Inject constructor(
                 }
                 
                 val currentConfig = _uiState.value.sortConfig
-                val sortedFiles = sortFileList(files, currentConfig)
+                val sortedFiles = sortFileList(files, currentConfig).map { file ->
+                    // Apply the zero-storage in-memory Rift state dynamically
+                    file.apply { isRift = activeRiftPaths.contains(this.path) }
+                }
                 
                 _uiState.update { state ->
                     val updatedTabs = state.tabs.map { 
@@ -213,6 +219,16 @@ class FileSystemViewModel @Inject constructor(
     fun refreshCurrentDirectory() {
         val activeTab = _uiState.value.activeTab ?: return
         navigateTo(activeTab.currentPath)
+    }
+
+    fun toggleRiftState(path: String) {
+        if (activeRiftPaths.contains(path)) {
+            activeRiftPaths.remove(path)
+        } else {
+            activeRiftPaths.add(path)
+        }
+        val activeTab = _uiState.value.activeTab
+        if (activeTab != null) navigateTo(activeTab.currentPath)
     }
 
     fun deleteFiles(paths: List<String>) {

@@ -21,38 +21,38 @@ class RiftEngine @Inject constructor() {
         onOutput: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         try {
-            val content = riftFile.readText()
-            val (script, targetDir, riftName) = try {
-                val json = JSONObject(content)
-                Triple(
-                    json.optString("script", ""),
-                    json.optString("target_dir", "/sdcard"),
-                    json.optString("rift_name", riftFile.nameWithoutExtension)
-                )
-            } catch (e: Exception) {
-                // If it's not JSON, assume it's just raw JavaScript or a generic file
-                Triple(content, "/sdcard", riftFile.nameWithoutExtension)
-            }
+            val targetDir = riftFile.parent ?: "/sdcard"
+            val riftName = riftFile.name
             
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Casting Rift: $riftName 🌌", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Engaging Rift Sandbox: $riftName 🌌", Toast.LENGTH_SHORT).show()
             }
             
             val bridge = PolymathJSBridge(repository, context)
+            
+            // Execute in true Zero-Storage Sandbox mode (isDryRun = true)
+            // The script simply initializes the sandbox context for the user to interact via Terminal
+            val sandboxScript = """
+                console.log('🌌 Zero-Storage Sandbox Engaged');
+                console.log('Target: $riftName');
+                console.log('Any file operations performed here will run against the Virtual File System overlay.');
+            """.trimIndent()
+            
             val result = bridge.jsRuntime.execute(
-                script = script,
-                scriptName = riftFile.name,
+                script = sandboxScript,
+                scriptName = "RiftInit",
                 workingDir = targetDir,
                 onConsoleLog = { level, msg -> 
                     onOutput("[$level] $msg")
                 },
                 onAlert = { title, msg -> 
                     onOutput("[ALERT: $title] $msg")
-                }
+                },
+                isDryRun = true
             )
             
             if (result.isNotBlank()) {
-                onOutput("Rift Result: $result")
+                onOutput("Sandbox Result: $result")
             }
         } catch (e: Exception) {
             onOutput("[Rift Engine Error]: ${e.message}")

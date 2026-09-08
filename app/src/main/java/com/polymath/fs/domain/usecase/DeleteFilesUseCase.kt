@@ -8,15 +8,7 @@ class DeleteFilesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(paths: List<String>): Result<Boolean> {
         return try {
-            val allPathsToDelete = paths.toMutableList()
-            // Auto-cleanup any associated semantic wrappers
-            paths.forEach { path ->
-                val riftPath = "$path.rift"
-                if (java.io.File(riftPath).exists()) {
-                    allPathsToDelete.add(riftPath)
-                }
-            }
-            val success = repository.delete(allPathsToDelete)
+            val success = repository.delete(paths)
             if (success) Result.success(true) else Result.failure(Exception("Delete failed"))
         } catch (e: Exception) {
             Result.failure(e)

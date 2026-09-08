@@ -8,7 +8,7 @@ sealed class FileNode {
     abstract val isDirectory: Boolean
     open var spatialX: Float = 0f
     open var spatialY: Float = 0f
-    open val isRift: Boolean get() = name.lowercase().endsWith(".rift")
+    open var isRift: Boolean = false
 
     data class LocalFile(
         override val name: String,
