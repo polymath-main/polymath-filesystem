@@ -27,7 +27,9 @@ data class TabState(
     val currentPath: String = "",
     val files: List<FileNode> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val scrollPosition: Int = 0,
+    val terminalHistory: String = ""
 )
 
 data class FileBrowserUiState(
@@ -38,7 +40,8 @@ data class FileBrowserUiState(
     val viewOptions: ViewOptions = ViewOptions(),
     val sortConfig: SortConfig = SortConfig(),
     val recentFiles: List<FileNode> = emptyList(),
-    val searchQuery: String = ""
+    val searchQuery: String = "",
+    val intentResults: List<String> = emptyList()
 ) {
     val activeTab: TabState?
         get() = tabs.find { it.id == activeTabId }

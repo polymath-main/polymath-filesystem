@@ -197,6 +197,7 @@ class FileBrowserFragment : Fragment() {
         val appContext = context?.applicationContext ?: return
         binding.terminalConsoleScroll.visibility = View.VISIBLE
         binding.terminalConsoleOutput.append("\n> $command\n")
+        viewModel.updateTabState(terminalHistory = binding.terminalConsoleOutput.text.toString())
         
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
@@ -209,12 +210,26 @@ class FileBrowserFragment : Fragment() {
                     workingDir = currentPath,
                     onConsoleLog = { level, msg -> 
                         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            _binding?.terminalConsoleScroll?.visibility = android.view.View.VISIBLE
                             _binding?.terminalConsoleOutput?.append("[$level] $msg\n")
+                            _binding?.terminalConsoleOutput?.text?.toString()?.let {
+                                viewModel.updateTabState(terminalHistory = it)
+                            }
+                            _binding?.terminalConsoleScroll?.post {
+                                _binding?.terminalConsoleScroll?.fullScroll(android.view.View.FOCUS_DOWN)
+                            }
                         }
                     },
                     onAlert = { title, msg -> 
                         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            _binding?.terminalConsoleScroll?.visibility = android.view.View.VISIBLE
                             _binding?.terminalConsoleOutput?.append("[ALERT: $title] $msg\n")
+                            _binding?.terminalConsoleOutput?.text?.toString()?.let {
+                                viewModel.updateTabState(terminalHistory = it)
+                            }
+                            _binding?.terminalConsoleScroll?.post {
+                                _binding?.terminalConsoleScroll?.fullScroll(android.view.View.FOCUS_DOWN)
+                            }
                         }
                     }
                 )
@@ -223,6 +238,9 @@ class FileBrowserFragment : Fragment() {
                     if (result.isNotBlank()) {
                         _binding?.terminalConsoleOutput?.append("$result\n")
                     }
+                    _binding?.terminalConsoleOutput?.text?.toString()?.let {
+                        viewModel.updateTabState(terminalHistory = it)
+                    }
                     _binding?.terminalConsoleScroll?.post {
                         _binding?.terminalConsoleScroll?.fullScroll(View.FOCUS_DOWN)
                     }
@@ -230,6 +248,9 @@ class FileBrowserFragment : Fragment() {
             } catch (e: Exception) {
                 lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
                     _binding?.terminalConsoleOutput?.append("[ERROR] ${e.message}\n")
+                    _binding?.terminalConsoleOutput?.text?.toString()?.let { 
+                        viewModel.updateTabState(terminalHistory = it) 
+                    }
                 }
             }
         }
@@ -260,6 +281,7 @@ class FileBrowserFragment : Fragment() {
             if (fileNode.isDirectory) {
                 viewModel.navigateTo(fileNode.path)
             } else if (fileNode.isRift) {
+                viewModel.logIntent("casted_rift", fileNode.path, "rift execute")
                 // The Antigravity Rift execution path
                 lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
                     val riftEngine = RiftEngine()
@@ -269,16 +291,20 @@ class FileBrowserFragment : Fragment() {
                         repository = viewModel.fileSystemRepository,
                         onOutput = { msg ->
                             lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
-                                binding.terminalConsoleScroll.visibility = android.view.View.VISIBLE
-                                binding.terminalConsoleOutput.append("$msg\n")
-                                binding.terminalConsoleScroll.post {
-                                    binding.terminalConsoleScroll.fullScroll(android.view.View.FOCUS_DOWN)
+                                _binding?.terminalConsoleScroll?.visibility = android.view.View.VISIBLE
+                                _binding?.terminalConsoleOutput?.append("$msg\n")
+                                _binding?.terminalConsoleOutput?.text?.toString()?.let {
+                                    viewModel.updateTabState(terminalHistory = it)
+                                }
+                                _binding?.terminalConsoleScroll?.post {
+                                    _binding?.terminalConsoleScroll?.fullScroll(android.view.View.FOCUS_DOWN)
                                 }
                             }
                         }
                     )
                 }
             } else {
+                viewModel.logIntent("opened", fileNode.path, "file open")
                 viewModel.addRecentFile(fileNode)
                 val file = java.io.File(fileNode.path)
                 val ext = file.extension.lowercase()
@@ -388,6 +414,18 @@ class FileBrowserFragment : Fragment() {
                 cabMode?.finish()
             }
         }
+        
+        binding.recyclerView.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: androidx.recyclerview.widget.RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = recyclerView.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager
+                    val firstVisiblePosition = layoutManager?.findFirstVisibleItemPosition() ?: 0
+                    viewModel.updateTabState(scrollPosition = firstVisiblePosition)
+                }
+            }
+        })
+        
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
         
@@ -409,7 +447,6 @@ class FileBrowserFragment : Fragment() {
                     
                     val pasteItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_paste)
                     pasteItem?.isVisible = state.clipboard != null
-
                     
                     if (activeTab != null && !activeTab.isLoading) {
                         val query = state.searchQuery.trim()
@@ -418,7 +455,11 @@ class FileBrowserFragment : Fragment() {
                         } else {
                             activeTab.files.filter { it.name.contains(query, ignoreCase = true) }
                         }
-                        adapter.submitList(displayedFiles)
+                        adapter.submitList(displayedFiles) {
+                            if (activeTab.scrollPosition > 0 && binding.recyclerView.scrollState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE) {
+                                (binding.recyclerView.layoutManager as? androidx.recyclerview.widget.LinearLayoutManager)?.scrollToPositionWithOffset(activeTab.scrollPosition, 0)
+                            }
+                        }
                         
                         if (displayedFiles.isEmpty()) {
                             binding.emptyText.text = if (query.isEmpty()) "Folder is empty" else "No matching files found"
@@ -430,7 +471,15 @@ class FileBrowserFragment : Fragment() {
                         binding.recentFilesPanel.visibility = if (activeTab.id == "general" && query.isEmpty()) View.VISIBLE else View.GONE
                     }
                     
+                    if (activeTab != null) {
+                        if (binding.terminalConsoleOutput.text.toString() != activeTab.terminalHistory) {
+                            binding.terminalConsoleOutput.text = activeTab.terminalHistory
+                            binding.terminalConsoleScroll.visibility = if (activeTab.terminalHistory.isNotEmpty()) View.VISIBLE else View.GONE
+                        }
+                    }
+                    
                     adapter.setViewOptions(state.viewOptions)
+                    adapter.setIntentResults(state.intentResults)
                     recentAdapter.setViewOptions(state.viewOptions.copy(
                         layout = com.polymath.fs.models.ViewLayout.LIST, 
                         isVertical = false, 

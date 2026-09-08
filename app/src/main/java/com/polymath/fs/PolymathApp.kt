@@ -30,6 +30,8 @@ class PolymathApp : Application() {
     val mkdirUseCase by lazy { MkdirUseCase(fileSystemRepository) }
     val volumeManager by lazy { VolumeManager(this) }
     val directoryWatcher by lazy { DirectoryWatcher() }
+    val flowStateManager by lazy { com.polymath.fs.core.FlowStateManager(this) }
+    val intentEngine by lazy { com.polymath.fs.core.IntentEngine(this) }
 
     override fun onCreate() {
         super.onCreate()

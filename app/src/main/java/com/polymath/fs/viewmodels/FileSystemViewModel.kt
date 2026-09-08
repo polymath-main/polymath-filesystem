@@ -5,6 +5,9 @@ import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.polymath.fs.core.FlowStateManager
+import com.polymath.fs.core.RahmanFlowState
+import com.polymath.fs.core.TabFlowState
 import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
@@ -13,6 +16,7 @@ import com.polymath.fs.domain.usecase.MoveFilesUseCase
 import com.polymath.fs.models.Clipboard
 import com.polymath.fs.models.FileBrowserUiState
 import com.polymath.fs.models.TabState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +31,8 @@ class FileSystemViewModel @Inject constructor(
     private val renameUseCase: RenameUseCase,
     private val copyFilesUseCase: CopyFilesUseCase,
     private val moveFilesUseCase: MoveFilesUseCase,
+    private val flowStateManager: FlowStateManager,
+    private val intentEngine: com.polymath.fs.core.IntentEngine,
     val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
 ) : ViewModel() {
 
@@ -48,12 +54,31 @@ class FileSystemViewModel @Inject constructor(
     init {
         syncPrefsToUiState()
         prefs.registerOnSharedPreferenceChangeListener(prefListener)
-        val generalTab = TabState(id = "general", currentPath = "/")
-        _uiState.update { state ->
-            state.copy(tabs = listOf(generalTab), activeTabId = "general")
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            val savedFlow = flowStateManager.loadState()
+            if (savedFlow != null && savedFlow.tabs.isNotEmpty()) {
+                val reconstructedTabs = savedFlow.tabs.map { tabFlow ->
+                    TabState(
+                        id = tabFlow.id,
+                        currentPath = tabFlow.path,
+                        scrollPosition = tabFlow.scrollPosition,
+                        terminalHistory = tabFlow.terminalHistory
+                    )
+                }
+                _uiState.update { it.copy(tabs = reconstructedTabs, activeTabId = savedFlow.activeTabId) }
+                // Load files for active tab
+                val active = reconstructedTabs.find { it.id == savedFlow.activeTabId } ?: reconstructedTabs.first()
+                navigateTo(active.currentPath, active.id)
+            } else {
+                val generalTab = TabState(id = "general", currentPath = "/")
+                _uiState.update { state ->
+                    state.copy(tabs = listOf(generalTab), activeTabId = "general")
+                }
+                navigateTo("/", "general")
+                newTab("/storage/emulated/0")
+            }
         }
-        navigateTo("/", "general")
-        newTab("/storage/emulated/0")
     }
 
     private fun syncPrefsToUiState() {
@@ -77,6 +102,7 @@ class FileSystemViewModel @Inject constructor(
             )
         }
         navigateTo(path, newTab.id)
+        persistFlowState()
     }
 
     fun closeTab(tabId: String) {
@@ -93,17 +119,20 @@ class FileSystemViewModel @Inject constructor(
         if (newState.tabs.isEmpty()) {
             newTab()
         }
+        persistFlowState()
     }
 
     fun switchTab(tabId: String) {
         _uiState.update { state ->
             state.copy(activeTabId = tabId)
         }
+        persistFlowState()
     }
 
     fun navigateTo(path: String, tabId: String? = null) {
         val targetTabId = tabId ?: _uiState.value.activeTabId
         if (targetTabId.isEmpty()) return
+        logIntent("navigated", path, "directory open")
 
         viewModelScope.launch {
             _uiState.update { state ->
@@ -141,8 +170,36 @@ class FileSystemViewModel @Inject constructor(
         if (currentPath.length > 1) {
             val parentPath = currentPath.substringBeforeLast('/')
             val resolvedParent = if (parentPath.isEmpty()) "/" else parentPath
+            logIntent("navigated", resolvedParent, "directory open")
             navigateTo(resolvedParent)
         }
+        persistFlowState()
+    }
+    
+    private fun persistFlowState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val state = _uiState.value
+            val flowTabs = state.tabs.map { 
+                TabFlowState(it.id, it.currentPath, it.scrollPosition, it.terminalHistory) 
+            }
+            flowStateManager.saveState(RahmanFlowState(flowTabs, state.activeTabId))
+        }
+    }
+    
+    fun updateTabState(scrollPosition: Int? = null, terminalHistory: String? = null) {
+        val activeId = _uiState.value.activeTabId
+        _uiState.update { state ->
+            val updatedTabs = state.tabs.map { tab ->
+                if (tab.id == activeId) {
+                    tab.copy(
+                        scrollPosition = scrollPosition ?: tab.scrollPosition,
+                        terminalHistory = terminalHistory ?: tab.terminalHistory
+                    )
+                } else tab
+            }
+            state.copy(tabs = updatedTabs)
+        }
+        persistFlowState()
     }
 
     fun refreshCurrentDirectory() {
@@ -154,6 +211,7 @@ class FileSystemViewModel @Inject constructor(
         viewModelScope.launch {
             val result = deleteFilesUseCase(paths)
             if (result.isSuccess) {
+                paths.forEach { logIntent("deleted", it, "file delete") }
                 val activeTab = _uiState.value.activeTab
                 if (activeTab != null) navigateTo(activeTab.currentPath)
             } else {
@@ -166,6 +224,7 @@ class FileSystemViewModel @Inject constructor(
         viewModelScope.launch {
             val result = renameUseCase(oldPath, newName)
             if (result.isSuccess) {
+                logIntent("renamed", "$oldPath -> $newName", "file rename")
                 val activeTab = _uiState.value.activeTab
                 if (activeTab != null) navigateTo(activeTab.currentPath)
             } else {
@@ -241,36 +300,49 @@ class FileSystemViewModel @Inject constructor(
 
     private var searchJob: kotlinx.coroutines.Job? = null
 
+    fun logIntent(action: String, path: String, context: String = "") {
+        viewModelScope.launch(Dispatchers.IO) {
+            intentEngine.logIntent(action, path, context)
+        }
+    }
+
     fun setSearchQuery(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
         searchJob?.cancel()
-        if (query.isBlank()) {
+        
+        if (query.trim().isNotEmpty()) {
+            searchJob = viewModelScope.launch(Dispatchers.IO) {
+                val intentPaths = intentEngine.resolveIntent(query)
+                _uiState.update { it.copy(intentResults = intentPaths) }
+
+                val activeTab = _uiState.value.activeTab ?: return@launch
+                val startDir = if (activeTab.currentPath.isNotBlank() && activeTab.currentPath != "/") activeTab.currentPath else "/storage/emulated/0"
+                val accumulatedResults = mutableListOf<com.polymath.fs.models.FileNode>()
+                com.polymath.fs.core.DeepSearchEngine.search(
+                    com.polymath.fs.core.DeepSearchEngine.SearchQuery(
+                        keyword = query,
+                        rootPath = startDir
+                    )
+                ).collect { matchedNodes ->
+                    accumulatedResults.addAll(matchedNodes)
+                    val snapshot = accumulatedResults.toList()
+                    _uiState.update { state ->
+                        val updatedTabs = state.tabs.map { tab ->
+                            if (tab.id == state.activeTabId) {
+                                tab.copy(files = snapshot)
+                            } else {
+                                tab
+                            }
+                        }
+                        state.copy(tabs = updatedTabs)
+                    }
+                }
+            }
+        } else {
+            _uiState.update { it.copy(intentResults = emptyList()) }
             val activeTab = _uiState.value.activeTab
             if (activeTab != null) {
                 navigateTo(activeTab.currentPath)
-            }
-            return
-        }
-
-        val activeTab = _uiState.value.activeTab ?: return
-        searchJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val startDir = if (activeTab.currentPath.isNotBlank() && activeTab.currentPath != "/") activeTab.currentPath else "/storage/emulated/0"
-            com.polymath.fs.core.DeepSearchEngine.search(
-                com.polymath.fs.core.DeepSearchEngine.SearchQuery(
-                    keyword = query,
-                    rootPath = startDir
-                )
-            ).collect { matchedNodes ->
-                _uiState.update { state ->
-                    val updatedTabs = state.tabs.map { tab ->
-                        if (tab.id == state.activeTabId) {
-                            tab.copy(files = matchedNodes)
-                        } else {
-                            tab
-                        }
-                    }
-                    state.copy(tabs = updatedTabs)
-                }
             }
         }
     }
@@ -324,6 +396,8 @@ class FileSystemViewModel @Inject constructor(
                         app.renameUseCase,
                         app.copyFilesUseCase,
                         app.moveFilesUseCase,
+                        app.flowStateManager,
+                        app.intentEngine,
                         app.fileSystemRepository
                     ) as T
                 }

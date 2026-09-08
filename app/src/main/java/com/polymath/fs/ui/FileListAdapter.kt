@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -13,13 +14,14 @@ import coil.size.Scale
 import com.polymath.fs.R
 import com.polymath.fs.databinding.ItemFileBinding
 import com.polymath.fs.models.FileNode
+import com.polymath.fs.models.ViewOptions
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class FileListAdapter(
-    private var viewOptions: com.polymath.fs.models.ViewOptions = com.polymath.fs.models.ViewOptions(),
+    private var viewOptions: ViewOptions = ViewOptions(),
     private val onItemClick: (FileNode) -> Unit,
     private val onMenuClick: (FileNode, View) -> Unit
 ) : ListAdapter<FileNode, FileListAdapter.FileViewHolder>(FileDiffCallback()) {
@@ -27,6 +29,7 @@ class FileListAdapter(
     var isSelectionMode = false
     val selectedItems = mutableSetOf<String>()
     var onSelectionChange: ((Int) -> Unit)? = null
+    private var intentResults: List<String> = emptyList()
 
     fun toggleSelection(path: String) {
         if (selectedItems.contains(path)) {
@@ -48,9 +51,16 @@ class FileListAdapter(
         notifyDataSetChanged()
     }
 
-    fun setViewOptions(options: com.polymath.fs.models.ViewOptions) {
+    fun setViewOptions(options: ViewOptions) {
         this.viewOptions = options
         notifyDataSetChanged()
+    }
+
+    fun setIntentResults(results: List<String>) {
+        if (intentResults != results) {
+            intentResults = results
+            notifyDataSetChanged()
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
@@ -99,14 +109,25 @@ class FileListAdapter(
 
         fun bind(file: FileNode) {
             val isSelected = selectedItems.contains(file.path)
-            binding.root.setCardBackgroundColor(if (isSelected) android.graphics.Color.parseColor("#3338bdf8") else android.graphics.Color.parseColor("#1e293b"))
+            val isIntentMatch = intentResults.contains(file.path)
+
+            val cardBg = when {
+                isSelected -> android.graphics.Color.parseColor("#3338bdf8")
+                isIntentMatch -> android.graphics.Color.parseColor("#1A00FF00") // Subtle green highlight for intent matches
+                else -> android.graphics.Color.parseColor("#1e293b")
+            }
+            binding.root.setCardBackgroundColor(cardBg)
             
             if (file.isRift) {
                 binding.fileName.text = "${file.name} 🌌"
                 binding.fileName.setTextColor(android.graphics.Color.parseColor("#a855f7")) // Glowing purple
             } else {
                 binding.fileName.text = file.name
-                binding.fileName.setTextColor(android.graphics.Color.parseColor("#f8fafc")) // Standard text
+                if (isIntentMatch) {
+                    binding.fileName.setTextColor(android.graphics.Color.parseColor("#00FF00")) // Green text for semantic hits
+                } else {
+                    binding.fileName.setTextColor(ContextCompat.getColor(binding.root.context, android.R.color.white))
+                }
             }
             
             val iconPackPrefix = when (viewOptions.iconPack) {
