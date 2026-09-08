@@ -55,10 +55,7 @@ class RiftEngine @Inject constructor() {
                 onOutput("Rift Result: $result")
             }
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Rift Collapse: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-            onOutput("Rift Collapse: ${e.message}")
+            onOutput("[Rift Engine Error]: ${e.message}")
         }
     }
 }
