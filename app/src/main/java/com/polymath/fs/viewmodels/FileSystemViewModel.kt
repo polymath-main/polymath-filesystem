@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.polymath.fs.core.FlowStateManager
 import com.polymath.fs.core.RahmanFlowState
 import com.polymath.fs.core.TabFlowState
+import com.polymath.fs.core.SmartFolderManager
 import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
@@ -32,6 +33,7 @@ class FileSystemViewModel @Inject constructor(
     private val copyFilesUseCase: CopyFilesUseCase,
     private val moveFilesUseCase: MoveFilesUseCase,
     private val flowStateManager: FlowStateManager,
+    private val smartFolderManager: SmartFolderManager,
     private val intentEngine: com.polymath.fs.core.IntentEngine,
     val synapseEngine: com.polymath.fs.core.SynapseEngine,
     val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
@@ -161,11 +163,13 @@ class FileSystemViewModel @Inject constructor(
                     file.apply { isRift = activeRiftPaths.contains(this.path) }
                 }
                 
-                _uiState.update { state ->
-                    val updatedTabs = state.tabs.map { 
-                        if (it.id == targetTabId) it.copy(isLoading = false, files = sortedFiles, currentPath = path) else it 
+                smartFolderManager.categorizeFiles(sortedFiles).collect { categorized ->
+                    _uiState.update { state ->
+                        val updatedTabs = state.tabs.map { 
+                            if (it.id == targetTabId) it.copy(isLoading = false, files = sortedFiles, smartFolders = categorized, currentPath = path) else it 
+                        }
+                        state.copy(tabs = updatedTabs)
                     }
-                    state.copy(tabs = updatedTabs)
                 }
             } catch (e: Exception) {
                 _uiState.update { state ->

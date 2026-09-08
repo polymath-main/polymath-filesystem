@@ -24,9 +24,12 @@ data class Clipboard(val files: List<String>, val isCut: Boolean)
 
 data class TabState(
     val id: String = java.util.UUID.randomUUID().toString(),
+    val name: String = "",
     val currentPath: String = "",
-    val files: List<FileNode> = emptyList(),
     val isLoading: Boolean = false,
+    val files: List<FileNode> = emptyList(),
+    val smartFolders: Map<String, List<FileNode>> = emptyMap(),
+    val isSystemFolder: Boolean = false,
     val error: String? = null,
     val scrollPosition: Int = 0,
     val terminalHistory: String = ""
