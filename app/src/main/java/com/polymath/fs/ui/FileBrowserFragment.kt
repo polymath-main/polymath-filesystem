@@ -726,7 +726,7 @@ class FileBrowserFragment : Fragment() {
                     true
                 }
                 com.polymath.fs.R.id.action_cast_rift -> {
-                    castNewRift()
+                    showRiftManager()
                     true
                 }
                 else -> false
@@ -775,6 +775,38 @@ class FileBrowserFragment : Fragment() {
             .show()
     }
     
+    private fun showRiftManager() {
+        val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: "/sdcard"
+        val dir = java.io.File(currentPath)
+        val rifts = dir.listFiles { file -> file.isFile && file.extension == "rift" }?.toList() ?: emptyList()
+        
+        val bottomSheet = RiftManagerBottomSheet()
+        bottomSheet.setRiftFiles(rifts)
+        bottomSheet.onRiftCast = { riftFile ->
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val riftEngine = RiftEngine()
+                riftEngine.cast(
+                    riftFile = riftFile,
+                    context = requireContext().applicationContext,
+                    repository = viewModel.fileSystemRepository,
+                    onOutput = { msg ->
+                        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                            _binding?.terminalConsoleScroll?.visibility = android.view.View.VISIBLE
+                            _binding?.terminalConsoleOutput?.append("$msg\n")
+                            _binding?.terminalConsoleOutput?.text?.toString()?.let {
+                                viewModel.updateTabState(terminalHistory = it)
+                            }
+                            _binding?.terminalConsoleScroll?.post {
+                                _binding?.terminalConsoleScroll?.fullScroll(android.view.View.FOCUS_DOWN)
+                            }
+                        }
+                    }
+                )
+            }
+        }
+        bottomSheet.show(parentFragmentManager, "RiftManagerBottomSheet")
+    }
+
     private fun castNewRift() {
         val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: "/sdcard"
         val riftFile = java.io.File(currentPath, "Antigravity_Demo.rift")

@@ -116,6 +116,24 @@ class HomeDashboardFragment : Fragment() {
         btnScheduleNewScript.setOnClickListener {
             startActivity(Intent(requireContext(), ScriptManagerActivity::class.java))
         }
+
+        val searchView = view.findViewById<androidx.appcompat.widget.SearchView>(R.id.omniSearchBar)
+        searchView?.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                if (!query.isNullOrBlank()) {
+                    val viewModel: com.polymath.fs.viewmodels.FileSystemViewModel by androidx.fragment.app.activityViewModels {
+                        com.polymath.fs.viewmodels.FileSystemViewModel.provideFactory(requireActivity().application as PolymathApp)
+                    }
+                    viewModel.setSearchQuery(query)
+                    (activity as? MainActivity)?.navigateToDirectory("/storage/emulated/0")
+                }
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                return false
+            }
+        })
     }
 
     private fun loadStorageTelemetry() {

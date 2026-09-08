@@ -29,7 +29,7 @@ class FileListAdapter(
     var isSelectionMode = false
     val selectedItems = mutableSetOf<String>()
     var onSelectionChange: ((Int) -> Unit)? = null
-    private var intentResults: List<String> = emptyList()
+    private var intentResults: Map<String, List<String>> = emptyMap()
 
     fun toggleSelection(path: String) {
         if (selectedItems.contains(path)) {
@@ -56,7 +56,7 @@ class FileListAdapter(
         notifyDataSetChanged()
     }
 
-    fun setIntentResults(results: List<String>) {
+    fun setIntentResults(results: Map<String, List<String>>) {
         if (intentResults != results) {
             intentResults = results
             notifyDataSetChanged()
@@ -109,7 +109,8 @@ class FileListAdapter(
 
         fun bind(file: FileNode) {
             val isSelected = selectedItems.contains(file.path)
-            val isIntentMatch = intentResults.contains(file.path)
+            val intentReasons = intentResults[file.path]
+            val isIntentMatch = intentReasons != null
 
             val cardBg = when {
                 isSelected -> android.graphics.Color.parseColor("#3338bdf8")
@@ -231,6 +232,37 @@ class FileListAdapter(
                 android.widget.LinearLayout.VERTICAL
             } else {
                 android.widget.LinearLayout.HORIZONTAL
+            }
+            
+            // Add Context Badges
+            val badgeContainer = binding.root.findViewById<android.widget.LinearLayout>(R.id.badgeContainer)
+            badgeContainer?.removeAllViews()
+            if (isIntentMatch && intentReasons != null && intentReasons.isNotEmpty()) {
+                badgeContainer?.visibility = View.VISIBLE
+                intentReasons.forEach { reason ->
+                    val badge = TextView(itemView.context).apply {
+                        text = reason
+                        textSize = 10f
+                        setTextColor(android.graphics.Color.BLACK)
+                        setBackgroundColor(android.graphics.Color.parseColor("#00FF00"))
+                        setPadding(8, 4, 8, 4)
+                        
+                        val params = android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                        )
+                        params.marginEnd = 8
+                        layoutParams = params
+                        
+                        val drawable = android.graphics.drawable.GradientDrawable()
+                        drawable.setColor(android.graphics.Color.parseColor("#00FF00"))
+                        drawable.cornerRadius = 16f
+                        background = drawable
+                    }
+                    badgeContainer?.addView(badge)
+                }
+            } else {
+                badgeContainer?.visibility = View.GONE
             }
         }
     }

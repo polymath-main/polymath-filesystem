@@ -34,6 +34,27 @@
             android:paddingTop="16dp"
             android:paddingBottom="80dp">
 
+            <!-- 0. OMNIBAR INTENT SEARCH -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#0f172a"
+                app:cardCornerRadius="24dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#3338bdf8"
+                app:cardElevation="4dp">
+                
+                <androidx.appcompat.widget.SearchView
+                    android:id="@+id/omniSearchBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:iconifiedByDefault="false"
+                    app:queryHint="Ask Polymath... (e.g. 'modified yesterday')"
+                    app:searchIcon="@drawable/ic_fluent_code"
+                    app:theme="@style/Theme.PolymathFS" />
+            </androidx.cardview.widget.CardView>
+
             <!-- 1. STORAGE HERO CARD -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"

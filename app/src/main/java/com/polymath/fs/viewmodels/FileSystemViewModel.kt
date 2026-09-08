@@ -320,8 +320,8 @@ class FileSystemViewModel @Inject constructor(
         
         if (query.trim().isNotEmpty()) {
             searchJob = viewModelScope.launch(Dispatchers.IO) {
-                val intentPaths = intentEngine.resolveIntent(query)
-                _uiState.update { it.copy(intentResults = intentPaths) }
+                val intentMap = intentEngine.resolveIntent(query)
+                _uiState.update { it.copy(intentResults = intentMap) }
 
                 val activeTab = _uiState.value.activeTab ?: return@launch
                 val startDir = if (activeTab.currentPath.isNotBlank() && activeTab.currentPath != "/") activeTab.currentPath else "/storage/emulated/0"
@@ -347,7 +347,7 @@ class FileSystemViewModel @Inject constructor(
                 }
             }
         } else {
-            _uiState.update { it.copy(intentResults = emptyList()) }
+            _uiState.update { it.copy(intentResults = emptyMap()) }
             val activeTab = _uiState.value.activeTab
             if (activeTab != null) {
                 navigateTo(activeTab.currentPath)

@@ -82,9 +82,9 @@ class IntentEngine @Inject constructor(private val context: Context) {
 
     /**
      * Parses a human intent query (e.g. "modified tuesday", "antigravity project")
-     * and returns a list of matching file paths ordered by relevance.
+     * and returns a map of matching file paths to their context reasons ordered by relevance.
      */
-    fun resolveIntent(query: String): List<String> {
+    fun resolveIntent(query: String): Map<String, List<String>> {
         val q = query.lowercase()
         val terms = q.split(Regex("\\s+")).filter { it.isNotBlank() }
         
@@ -111,30 +111,45 @@ class IntentEngine @Inject constructor(private val context: Context) {
         }
 
         val scoredPaths = mutableMapOf<String, Int>()
+        val pathReasons = mutableMapOf<String, MutableList<String>>()
 
         for (log in logs) {
             var score = 0
+            val reasons = mutableListOf<String>()
             
             // Temporal match
             if (targetTimeRange != null && log.timestamp in targetTimeRange) {
                 score += 50
+                if (q.contains("today")) reasons.add("Temporal: Today")
+                else if (q.contains("yesterday")) reasons.add("Temporal: Yesterday")
+                else if (q.contains("tuesday")) reasons.add("Temporal: Tuesday")
+                else reasons.add("Temporal: Match")
             }
             
             // Contextual Tag match
-            val tagMatchCount = terms.count { term -> log.contextTags.any { tag -> tag.contains(term) } || log.filePath.lowercase().contains(term) }
-            score += (tagMatchCount * 10)
+            val matchingTags = terms.filter { term -> log.contextTags.any { tag -> tag.contains(term) } || log.filePath.lowercase().contains(term) }
+            val tagMatchCount = matchingTags.size
+            if (tagMatchCount > 0) {
+                score += (tagMatchCount * 10)
+                reasons.add("Tag: ${matchingTags.first()}")
+            }
             
             // Action match
-            if (terms.any { log.action.contains(it) }) {
+            val matchingActions = terms.filter { log.action.contains(it) }
+            if (matchingActions.isNotEmpty()) {
                 score += 20
+                reasons.add("Action: ${log.action}")
             }
 
             if (score > 0) {
                 val existing = scoredPaths[log.filePath] ?: 0
                 scoredPaths[log.filePath] = existing + score
+                val existingReasons = pathReasons.getOrPut(log.filePath) { mutableListOf() }
+                reasons.forEach { if (!existingReasons.contains(it)) existingReasons.add(it) }
             }
         }
 
-        return scoredPaths.entries.sortedByDescending { it.value }.map { it.key }
+        return scoredPaths.entries.sortedByDescending { it.value }
+            .associate { it.key to (pathReasons[it.key] ?: emptyList()) }
     }
 }

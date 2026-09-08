@@ -41,7 +41,7 @@ data class FileBrowserUiState(
     val sortConfig: SortConfig = SortConfig(),
     val recentFiles: List<FileNode> = emptyList(),
     val searchQuery: String = "",
-    val intentResults: List<String> = emptyList()
+    val intentResults: Map<String, List<String>> = emptyMap()
 ) {
     val activeTab: TabState?
         get() = tabs.find { it.id == activeTabId }
