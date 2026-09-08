@@ -82,6 +82,17 @@ class FileBrowserFragment : Fragment() {
     private val cabCallback = object : androidx.appcompat.view.ActionMode.Callback {
         override fun onCreateActionMode(mode: androidx.appcompat.view.ActionMode, menu: android.view.Menu): Boolean {
             mode.menuInflater.inflate(com.polymath.fs.R.menu.menu_file_context, menu)
+            
+            // Dynamic Extension Nexus Injection
+            val selectedFiles = adapter.selectedItems.toList()
+            
+            // Example dynamic hook logic
+            if (selectedFiles.isNotEmpty()) {
+                val sampleExtensionId = 1001
+                val sampleExtensionName = "JS: Clean Media 🧹"
+                menu.add(android.view.Menu.NONE, sampleExtensionId, android.view.Menu.NONE, sampleExtensionName)
+            }
+            
             menu.findItem(com.polymath.fs.R.id.action_info)?.isVisible = false
             menu.findItem(com.polymath.fs.R.id.action_rename)?.isVisible = false
             return true
