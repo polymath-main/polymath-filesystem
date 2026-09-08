@@ -252,7 +252,7 @@ class FileListAdapter(
                             android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
                         )
                         params.marginEnd = 8
-                        layoutParams = params
+                        setLayoutParams(params)
                         
                         val drawable = android.graphics.drawable.GradientDrawable()
                         drawable.setColor(android.graphics.Color.parseColor("#00FF00"))

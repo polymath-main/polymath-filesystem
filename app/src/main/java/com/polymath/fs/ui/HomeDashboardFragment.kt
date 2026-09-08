@@ -121,9 +121,10 @@ class HomeDashboardFragment : Fragment() {
         searchView?.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 if (!query.isNullOrBlank()) {
-                    val viewModel: com.polymath.fs.viewmodels.FileSystemViewModel by androidx.fragment.app.activityViewModels {
-                        com.polymath.fs.viewmodels.FileSystemViewModel.provideFactory(requireActivity().application as PolymathApp)
-                    }
+                    val viewModel = androidx.lifecycle.ViewModelProvider(
+                        requireActivity(),
+                        com.polymath.fs.viewmodels.FileSystemViewModel.provideFactory(requireActivity().application as com.polymath.fs.PolymathApp)
+                    )[com.polymath.fs.viewmodels.FileSystemViewModel::class.java]
                     viewModel.setSearchQuery(query)
                     (activity as? MainActivity)?.navigateToDirectory("/storage/emulated/0")
                 }
