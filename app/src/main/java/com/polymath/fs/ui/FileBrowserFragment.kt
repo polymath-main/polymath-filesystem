@@ -133,7 +133,7 @@ class FileBrowserFragment : Fragment() {
                         if (file.name.endsWith(".rift")) {
                             // If it's already a rift, maybe we 'toggle' by deleting it?
                             // Or just ignore. Let's delete the rift wrapper to untoggle.
-                            viewModel.deleteFile(path)
+                            viewModel.deleteFiles(listOf(path))
                         } else {
                             // Create a new .rift wrapper file next to the original file
                             val riftFile = java.io.File(file.parentFile, "${file.name}.rift")
