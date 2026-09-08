@@ -21,27 +21,13 @@ class DirectoryWatcher @Inject constructor() {
         // inotifywait -m -r -e create,delete,modify,move path
         val cmd = "inotifywait -m -r -e create,delete,modify,move \"$path\""
         
-        // To read continuously from a shell command in libsu, we can create a shell process,
-        // but for libsu Shell, we can't easily stream stdout continuously through the standard API unless we use custom Output streams.
-        val shell = Shell.getShell()
-        
-        // We can execute a background task using sh
-        val process = Runtime.getRuntime().exec(arrayOf("su", "-c", cmd))
-        
-        val reader = BufferedReader(InputStreamReader(process.inputStream))
-        
-        var line: String?
-        while (true) {
-            line = reader.readLine()
-            if (line == null) break
-            trySend(line)
+// Using libsu for persistent shell
+        val job = Shell.cmd(cmd).submit { result ->
+            result.out.forEach { trySend(it) }
         }
         
-        process.waitFor()
-        close()
-        
         awaitClose {
-            process.destroy()
+            // libsu doesn't have a direct cancel for jobs, but the shell lifecycle handles it.
         }
     }.flowOn(Dispatchers.IO)
 }

@@ -93,25 +93,22 @@ class TerminalActivity : BaseDynamicActivity() {
     private fun startShell() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Using standard process for interactive shell
-                val p = Runtime.getRuntime().exec("su")
-                process = p
-                writer = PrintWriter(OutputStreamWriter(p.outputStream), true)
-                
-                val reader = BufferedReader(InputStreamReader(p.inputStream))
-                val errReader = BufferedReader(InputStreamReader(p.errorStream))
-                
-                launch(Dispatchers.IO) {
-                    while (true) {
-                        val line = reader.readLine() ?: break
-                        appendOutput(line)
-                    }
-                }
-                launch(Dispatchers.IO) {
-                    while (true) {
-                        val line = errReader.readLine() ?: break
-                        appendOutput("ERROR: $line")
-                    }
+                // Using libsu for interactive shell task
+                Shell.getShell { shell ->
+                    val task = shell.newJob().add("sh").to(object : com.topjohnwu.superuser.CallbackList<String>() {
+                        override fun onAddElement(line: String?) {
+                            if (line != null) {
+                                lifecycleScope.launch { appendOutput(line) }
+                            }
+                        }
+                    }, object : com.topjohnwu.superuser.CallbackList<String>() {
+                        override fun onAddElement(line: String?) {
+                            if (line != null) {
+                                lifecycleScope.launch { appendOutput("ERROR: $line") }
+                            }
+                        }
+                    })
+                    task.submit()
                 }
             } catch (e: Exception) {
                 appendOutput("Failed to start shell: ${e.message}")
@@ -142,8 +139,14 @@ class TerminalActivity : BaseDynamicActivity() {
                 withContext(Dispatchers.Main) { btnAlt.setTextColor(Color.WHITE) }
             }
             
-            writer?.println(finalCmd)
-            writer?.flush()
+            Shell.cmd(finalCmd).submit { result ->
+                result.out.forEach { line ->
+                    lifecycleScope.launch { appendOutput(line) }
+                }
+                result.err.forEach { line ->
+                    lifecycleScope.launch { appendOutput("ERROR: $line") }
+                }
+            }
         }
     }
 
@@ -158,7 +161,6 @@ class TerminalActivity : BaseDynamicActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        writer?.close()
-        process?.destroy()
+        // libsu manages shell lifecycle implicitly
     }
 }
