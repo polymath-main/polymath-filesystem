@@ -62,7 +62,7 @@ class SynapseEngine @Inject constructor(
                 val path = requestLine.substringAfter("path=").substringBefore(" ")
                 val decodedPath = java.net.URLDecoder.decode(path, "UTF-8")
                 
-                val files = repository.listFiles(decodedPath).getOrNull() ?: emptyList()
+                val files = kotlinx.coroutines.runBlocking { repository.listDir(decodedPath) }
                 val jsonArray = JSONArray()
                 files.forEach { fileNode ->
                     val obj = JSONObject()
@@ -124,7 +124,7 @@ class SynapseEngine @Inject constructor(
                         isDirectory = obj.getBoolean("isDirectory"),
                         size = obj.getLong("size"),
                         lastModified = obj.getLong("lastModified"),
-                        remoteUrl = "synapse://$ip${obj.getString("path")}"
+                        url = "synapse://$ip${obj.getString("path")}"
                     )
                 )
             }
