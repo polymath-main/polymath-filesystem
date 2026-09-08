@@ -1,11 +1,13 @@
 package com.polymath.fs.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -23,6 +25,32 @@ class FileBrowserFragment : Fragment() {
 
     private var _binding: FragmentFileBrowserBinding? = null
     private val binding get() = _binding!!
+    
+    private val overlayPermissionLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (android.provider.Settings.canDrawOverlays(requireContext())) {
+            toggleDropletService()
+        } else {
+            Toast.makeText(requireContext(), "Overlay permission is required for The Droplet", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private var isDropletRunning = false
+    
+    private fun toggleDropletService() {
+        val intent = Intent(requireContext(), com.polymath.fs.core.DropletService::class.java)
+        if (isDropletRunning) {
+            requireContext().stopService(intent)
+            Toast.makeText(requireContext(), "Droplet Deactivated", Toast.LENGTH_SHORT).show()
+        } else {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                requireContext().startForegroundService(intent)
+            } else {
+                requireContext().startService(intent)
+            }
+            Toast.makeText(requireContext(), "Droplet Activated 💧", Toast.LENGTH_SHORT).show()
+        }
+        isDropletRunning = !isDropletRunning
+    }
 
     private val viewModel: FileSystemViewModel by activityViewModels {
         FileSystemViewModel.provideFactory(requireActivity().application as com.polymath.fs.PolymathApp)
@@ -620,6 +648,18 @@ class FileBrowserFragment : Fragment() {
                     val activeTabId = viewModel.uiState.value.activeTabId
                     if (activeTabId.isNotEmpty()) {
                         viewModel.closeTab(activeTabId)
+                    }
+                    true
+                }
+                com.polymath.fs.R.id.action_toggle_droplet -> {
+                    if (!android.provider.Settings.canDrawOverlays(requireContext())) {
+                        val intent = Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            android.net.Uri.parse("package:${requireContext().packageName}")
+                        )
+                        overlayPermissionLauncher.launch(intent)
+                    } else {
+                        toggleDropletService()
                     }
                     true
                 }

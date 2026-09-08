@@ -33,6 +33,7 @@ class FileSystemViewModel @Inject constructor(
     private val moveFilesUseCase: MoveFilesUseCase,
     private val flowStateManager: FlowStateManager,
     private val intentEngine: com.polymath.fs.core.IntentEngine,
+    val synapseEngine: com.polymath.fs.core.SynapseEngine,
     val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
 ) : ViewModel() {
 
@@ -136,16 +137,23 @@ class FileSystemViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { state ->
-                val updatedTabs = state.tabs.map { 
-                    if (it.id == targetTabId) it.copy(isLoading = true, currentPath = path, error = null) else it 
+                val updatedTabs = state.tabs.map { tab ->
+                    if (tab.id == targetTabId) tab.copy(isLoading = true, error = null, currentPath = path) else tab
                 }
                 state.copy(tabs = updatedTabs)
             }
-            
-            val result = listDirUseCase(path)
-            
-            result.onSuccess { files ->
-                val sortedFiles = sortFileList(files, _uiState.value.sortConfig)
+
+            try {
+                val files = if (path.startsWith("synapse://")) {
+                    val ip = path.substringAfter("synapse://").substringBefore("/")
+                    val remotePath = "/" + path.substringAfter("synapse://").substringAfter("/")
+                    synapseEngine.fetchRemoteDirectory(ip, remotePath)
+                } else {
+                    listDirUseCase(path).getOrThrow()
+                }
+                
+                val currentConfig = _uiState.value.sortConfig
+                val sortedFiles = sortFileList(files, currentConfig)
                 
                 _uiState.update { state ->
                     val updatedTabs = state.tabs.map { 
@@ -153,7 +161,7 @@ class FileSystemViewModel @Inject constructor(
                     }
                     state.copy(tabs = updatedTabs)
                 }
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 _uiState.update { state ->
                     val updatedTabs = state.tabs.map { 
                         if (it.id == targetTabId) it.copy(isLoading = false, error = e.message ?: "Unknown error") else it 
@@ -398,6 +406,7 @@ class FileSystemViewModel @Inject constructor(
                         app.moveFilesUseCase,
                         app.flowStateManager,
                         app.intentEngine,
+                        app.synapseEngine,
                         app.fileSystemRepository
                     ) as T
                 }

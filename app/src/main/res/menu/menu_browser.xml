@@ -30,6 +30,10 @@
         android:title="Cast Rift 🌌"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_toggle_droplet"
+        android:title="Toggle Droplet 💧"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_terminal"
         android:title="Open Terminal"
         app:showAsAction="never" />

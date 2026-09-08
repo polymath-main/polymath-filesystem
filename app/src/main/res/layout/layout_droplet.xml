@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/droplet_card"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_margin="8dp"
+        app:cardCornerRadius="28dp"
+        app:cardBackgroundColor="#CC0f172a"
+        app:cardElevation="8dp"
+        app:strokeColor="#a855f7"
+        app:strokeWidth="2dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:src="@android:drawable/ic_menu_upload"
+            app:tint="#a855f7" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>
