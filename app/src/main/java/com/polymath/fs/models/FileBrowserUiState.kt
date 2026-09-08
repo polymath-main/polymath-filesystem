@@ -2,7 +2,7 @@ package com.polymath.fs.models
 
 enum class SortOption { NAME, TYPE, TIME, SIZE, MOSTLY_USED }
 enum class SortDirection { ASCENDING, DESCENDING }
-enum class ViewLayout { LIST, GRID, HORIZONTAL }
+enum class ViewLayout { LIST, GRID, HORIZONTAL, SPATIAL }
 enum class BoxSize { SMALL, MEDIUM, LARGE, EXTRA_LARGE }
 enum class IconPack { FLUENT, OUTLINE, SOLID, MACOS }
 

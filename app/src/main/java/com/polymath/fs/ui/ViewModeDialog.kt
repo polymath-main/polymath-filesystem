@@ -33,6 +33,7 @@ object ViewModeDialog {
             ViewLayout.LIST -> view.findViewById<RadioButton>(R.id.rb_layout_list)?.isChecked = true
             ViewLayout.GRID -> view.findViewById<RadioButton>(R.id.rb_layout_grid)?.isChecked = true
             ViewLayout.HORIZONTAL -> view.findViewById<RadioButton>(R.id.rb_layout_horizontal)?.isChecked = true
+            ViewLayout.SPATIAL -> view.findViewById<RadioButton>(R.id.rb_layout_spatial)?.isChecked = true
         }
 
         // Pre-select columns
@@ -66,6 +67,7 @@ object ViewModeDialog {
                 val chosenLayout = when (rgLayout.checkedRadioButtonId) {
                     R.id.rb_layout_grid -> ViewLayout.GRID
                     R.id.rb_layout_horizontal -> ViewLayout.HORIZONTAL
+                    R.id.rb_layout_spatial -> ViewLayout.SPATIAL
                     else -> ViewLayout.LIST
                 }
 

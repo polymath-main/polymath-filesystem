@@ -102,6 +102,34 @@
             android:paddingBottom="16dp" />
     </LinearLayout>
 
+    <!-- The Architect's Workbench Pane -->
+    <FrameLayout
+        android:id="@+id/workbench_container"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_margin="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/recentFilesPanel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="#1e293b"
+            app:strokeColor="#38bdf8"
+            app:strokeWidth="1dp">
+
+            <WebView
+                android:id="@+id/workbench_webview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+                
+        </com.google.android.material.card.MaterialCardView>
+    </FrameLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="0dp"
@@ -112,7 +140,7 @@
         app:layout_constraintBottom_toTopOf="@+id/omniTerminalContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/recentFilesPanel"
+        app:layout_constraintTop_toBottomOf="@id/workbench_container"
         tools:listitem="@layout/item_file" />
 
     <ProgressBar

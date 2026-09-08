@@ -477,6 +477,26 @@ class FileBrowserFragment : Fragment() {
                     pasteItem?.isVisible = state.clipboard != null
                     
                     if (activeTab != null && !activeTab.isLoading) {
+                        // The Architect's Workbench Logic (Context Morphing)
+                        val indexHtmlFile = activeTab.files.find { it.name.lowercase() == "index.html" }
+                        if (indexHtmlFile != null) {
+                            binding.workbenchContainer.visibility = View.VISIBLE
+                            binding.workbenchWebview.visibility = View.VISIBLE
+                            binding.workbenchWebview.settings.javaScriptEnabled = true
+                            binding.workbenchWebview.settings.domStorageEnabled = true
+                            binding.workbenchWebview.settings.allowFileAccess = true
+                            binding.workbenchWebview.settings.allowContentAccess = true
+                            // Only load if it's not already loaded to prevent continuous refreshing
+                            val fileUrl = "file://${indexHtmlFile.path}"
+                            if (binding.workbenchWebview.url != fileUrl) {
+                                binding.workbenchWebview.loadUrl(fileUrl)
+                            }
+                        } else {
+                            binding.workbenchContainer.visibility = View.GONE
+                            binding.workbenchWebview.visibility = View.GONE
+                            binding.workbenchWebview.loadUrl("about:blank")
+                        }
+
                         val query = state.searchQuery.trim()
                         val displayedFiles = if (query.isEmpty()) {
                             activeTab.files
@@ -528,6 +548,13 @@ class FileBrowserFragment : Fragment() {
                             val lm = binding.recyclerView.layoutManager
                             if (lm !is androidx.recyclerview.widget.LinearLayoutManager || lm is androidx.recyclerview.widget.GridLayoutManager || lm.orientation != androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL) {
                                 binding.recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(requireContext(), androidx.recyclerview.widget.LinearLayoutManager.HORIZONTAL, false)
+                                binding.recyclerView.adapter = adapter
+                            }
+                        }
+                        com.polymath.fs.models.ViewLayout.SPATIAL -> {
+                            val lm = binding.recyclerView.layoutManager
+                            if (lm !is androidx.recyclerview.widget.StaggeredGridLayoutManager) {
+                                binding.recyclerView.layoutManager = androidx.recyclerview.widget.StaggeredGridLayoutManager(3, androidx.recyclerview.widget.StaggeredGridLayoutManager.VERTICAL)
                                 binding.recyclerView.adapter = adapter
                             }
                         }

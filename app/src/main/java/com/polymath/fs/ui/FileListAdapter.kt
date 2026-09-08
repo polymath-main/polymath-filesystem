@@ -217,7 +217,7 @@ class FileListAdapter(
             layoutParams.height = sizePx
             iconContainer.layoutParams = layoutParams
             
-            binding.itemContainer.orientation = if (viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
+            binding.itemContainer.orientation = if (viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID || viewOptions.layout == com.polymath.fs.models.ViewLayout.SPATIAL) {
                 android.widget.LinearLayout.VERTICAL
             } else {
                 android.widget.LinearLayout.HORIZONTAL
