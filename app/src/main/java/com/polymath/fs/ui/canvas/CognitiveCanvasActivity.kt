@@ -81,6 +81,17 @@ class CognitiveCanvasActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeManager.applyTheme(this)
         super.onCreate(savedInstanceState)
+        
+        // Unlock 120Hz/90Hz refresh rate dynamically for fluid physics
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.supportedModes.maxByOrNull { it.refreshRate }?.let { maxMode ->
+                val layoutParams = window.attributes
+                layoutParams.preferredDisplayModeId = maxMode.modeId
+                window.attributes = layoutParams
+            }
+        }
+        
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         binding = ActivityCognitiveCanvasBinding.inflate(layoutInflater)
