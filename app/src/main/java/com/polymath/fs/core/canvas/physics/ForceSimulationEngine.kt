@@ -158,18 +158,19 @@ class ForceSimulationEngine(
         val count = nodes.size
         if (count == 0) return
 
-        val radiusStep = 180f
-        val angleStep = (2 * Math.PI / min(count, 12)).toFloat()
+        val goldenAngle = 2.39996323f
+        val spacing = 160f
 
         for (i in 0 until count) {
-            val layer = (i / 12) + 1
-            val angle = (i % 12) * angleStep
-            val distance = layer * radiusStep
-
-            nodes[i].x = originX + (kotlin.math.cos(angle.toDouble()) * distance).toFloat()
-            nodes[i].y = originY + (kotlin.math.sin(angle.toDouble()) * distance).toFloat()
-            nodes[i].vx = 0f
-            nodes[i].vy = 0f
+            val node = nodes[i]
+            if (!node.isPinned) {
+                val r = spacing * sqrt(i.toFloat() + 0.5f)
+                val theta = i * goldenAngle
+                node.x = originX + (kotlin.math.cos(theta.toDouble()) * r).toFloat()
+                node.y = originY + (kotlin.math.sin(theta.toDouble()) * r).toFloat()
+                node.vx = 0f
+                node.vy = 0f
+            }
         }
     }
 
@@ -200,25 +201,34 @@ class ForceSimulationEngine(
 
         val clusterList = clusters.entries.toList()
         val numClusters = clusterList.size
-        val clusterRadius = max(320f, numClusters * 95f)
+        if (numClusters == 0) return
+
+        val spacing = 160f
+        val goldenAngle = 2.39996323f
+
+        // Dynamically calculate ring radius to prevent overlap of large clusters
+        var totalCircumference = 0f
+        clusterList.forEach { entry ->
+            val clusterRadius = spacing * sqrt(entry.value.size.toFloat())
+            totalCircumference += (2 * clusterRadius + 300f) // Add padding between clusters
+        }
+
+        val minRadius = max(320f, numClusters * 95f)
+        val calculatedRadius = (totalCircumference / (2 * Math.PI)).toFloat()
+        val clusterRingRadius = max(minRadius, calculatedRadius)
 
         clusterList.forEachIndexed { clusterIndex, entry ->
             val clusterAngle = (clusterIndex * (2 * Math.PI / numClusters)).toFloat()
-            val clusterCenterX = originX + (kotlin.math.cos(clusterAngle.toDouble()) * clusterRadius).toFloat()
-            val clusterCenterY = originY + (kotlin.math.sin(clusterAngle.toDouble()) * clusterRadius).toFloat()
+            val clusterCenterX = originX + (kotlin.math.cos(clusterAngle.toDouble()) * clusterRingRadius).toFloat()
+            val clusterCenterY = originY + (kotlin.math.sin(clusterAngle.toDouble()) * clusterRingRadius).toFloat()
 
             val memberNodes = entry.value
-            val localRadiusStep = 90f
-
             memberNodes.forEachIndexed { memberIndex, node ->
                 if (!node.isPinned) {
-                    val localAngle = (memberIndex * 0.9f)
-                    val localDist = ((memberIndex / 6) + 1) * localRadiusStep
-                    val targetX = clusterCenterX + (kotlin.math.cos(localAngle.toDouble()) * localDist).toFloat()
-                    val targetY = clusterCenterY + (kotlin.math.sin(localAngle.toDouble()) * localDist).toFloat()
-
-                    node.x = targetX
-                    node.y = targetY
+                    val r = spacing * sqrt(memberIndex.toFloat() + 0.5f)
+                    val theta = memberIndex * goldenAngle
+                    node.x = clusterCenterX + (kotlin.math.cos(theta.toDouble()) * r).toFloat()
+                    node.y = clusterCenterY + (kotlin.math.sin(theta.toDouble()) * r).toFloat()
                     node.vx = 0f
                     node.vy = 0f
                 }
