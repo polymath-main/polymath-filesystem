@@ -1,69 +1,130 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp"
     android:background="@drawable/bg_coachmark_card">
 
-    <TextView
-        android:id="@+id/tvOpen"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="Open File"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        android:orientation="vertical"
+        android:paddingTop="24dp"
+        android:paddingBottom="24dp">
+        
+        <!-- HEADER ROW: FILE ACTIONS -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FILE ACTIONS"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="8dp" />
 
-    <TextView
-        android:id="@+id/tvColor"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="🎨 Set Theme Color"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        <TextView
+            android:id="@+id/tvOpen"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="Open File"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
 
-    <TextView
-        android:id="@+id/tvRename"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="Rename"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        <TextView
+            android:id="@+id/tvRename"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="Rename"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
 
-    <TextView
-        android:id="@+id/tvMove"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="Move"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        <TextView
+            android:id="@+id/tvMove"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="Move"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
 
-    <TextView
-        android:id="@+id/tvPin"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="Pin Position"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        <!-- DIVIDER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1AFFFFFF"
+            android:layout_marginVertical="12dp"
+            android:layout_marginHorizontal="24dp" />
 
-    <TextView
-        android:id="@+id/tvDelete"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingVertical="12dp"
-        android:text="Delete"
-        android:textColor="#F43F5E"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground" />
+        <!-- HEADER ROW: APPEARANCE -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="APPEARANCE"
+            android:textColor="#888888"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="8dp" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/tvColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="🎨 Set Theme Color"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
+
+        <TextView
+            android:id="@+id/tvPin"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="Pin Position"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
+
+        <!-- DIVIDER -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#1AFFFFFF"
+            android:layout_marginVertical="12dp"
+            android:layout_marginHorizontal="24dp" />
+
+        <!-- HEADER ROW: DANGER ZONE -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="DANGER ZONE"
+            android:textColor="#F43F5E"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:id="@+id/tvDelete"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingVertical="14dp"
+            android:paddingHorizontal="24dp"
+            android:text="Delete"
+            android:textColor="#F43F5E"
+            android:textSize="16sp"
+            android:background="?attr/selectableItemBackground" />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

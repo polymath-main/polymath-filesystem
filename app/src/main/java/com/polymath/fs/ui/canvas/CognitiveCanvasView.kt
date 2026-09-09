@@ -402,10 +402,9 @@ class CognitiveCanvasView @JvmOverloads constructor(
 
         if (autoArrange) {
             physicsEngine.initializePositions(nodes, 0f, 0f)
-            startPhysicsSimulation()
-        } else {
-            invalidate()
         }
+        startPhysicsSimulation()
+        invalidate()
     }
 
     fun startPhysicsSimulation() {
