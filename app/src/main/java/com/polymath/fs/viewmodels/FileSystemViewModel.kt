@@ -77,12 +77,12 @@ class FileSystemViewModel @Inject constructor(
                 val active = reconstructedTabs.find { it.id == savedFlow.activeTabId } ?: reconstructedTabs.first()
                 navigateTo(active.currentPath, active.id)
             } else {
-                val generalTab = TabState(id = "general", currentPath = "/")
+                val initialPath = android.os.Environment.getExternalStorageDirectory().absolutePath
+                val generalTab = TabState(id = "general", currentPath = initialPath)
                 _uiState.update { state ->
                     state.copy(tabs = listOf(generalTab), activeTabId = "general")
                 }
-                navigateTo("/", "general")
-                newTab("/storage/emulated/0")
+                navigateTo(initialPath, "general")
             }
         }
     }

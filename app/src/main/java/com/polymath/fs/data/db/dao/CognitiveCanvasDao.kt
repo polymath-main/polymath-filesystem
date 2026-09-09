@@ -50,6 +50,9 @@ interface CognitiveCanvasDao {
     @Query("DELETE FROM canvas_edges WHERE id = :id")
     suspend fun deleteEdge(id: String)
 
+    @Query("DELETE FROM canvas_edges WHERE id IN (:ids)")
+    suspend fun deleteEdgesByIds(ids: List<String>)
+
     @Query("DELETE FROM canvas_edges WHERE canvasId = :canvasId")
     suspend fun clearEdgesForCanvas(canvasId: String)
 

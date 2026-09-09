@@ -85,8 +85,10 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         // Dynamically adjust status bar contrast for header component
         SystemBarHelper.adjustSystemBarContrastForHeader(this, binding.headerCard)
 
-        // Ensure top panel contents never go below status bar - keeping status bar area strictly reserved for status bar contents!
-        val baseHeaderMarginTop = (binding.headerCard.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: 0
+        // Ensure top panel contents render below status bar using WindowInsetsCompat while maintaining layout visual transparency
+        val baseHeaderMarginTop = (binding.headerCard.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin
+            ?.takeIf { it > 0 } ?: (12 * resources.displayMetrics.density).toInt()
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val statusBarInsets = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
@@ -106,6 +108,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             )
             insets
         }
+        ViewCompat.requestApplyInsets(binding.root)
 
         currentDirectoryPath = intent.getStringExtra(EXTRA_DIRECTORY_PATH)
             ?: Environment.getExternalStorageDirectory().absolutePath

@@ -172,6 +172,29 @@ class CognitiveCanvasView @JvmOverloads constructor(
         textAlign = Paint.Align.CENTER
     }
 
+    // Dynamic Shadow & Depth Elevation Paints for Glassmorphic Contrast
+    private val ambientShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        style = Paint.Style.FILL
+    }
+    private val keyShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK
+        style = Paint.Style.FILL
+    }
+    private val specularRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 2.0f
+        color = Color.argb(95, 255, 255, 255)
+    }
+    private val nodeContrastRimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 3.5f
+        color = Color.argb(180, 5, 10, 20)
+    }
+    private val nodeLiftHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+
     // Mini-Map Paints
     private val miniMapBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.argb(130, 15, 23, 42) // Transparent frosted dark
@@ -199,34 +222,112 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private val edgePath = Path()
     private val tempBounds = RectF()
     private val miniMapBounds = RectF()
+    private val specularArcBounds = RectF()
 
-    // Gestures
+    // Fluid Gestures & Navigation Engine
     private val gestureDetector: GestureDetector
     private val scaleGestureDetector: ScaleGestureDetector
+    private var prevScaleFocusX = 0f
+    private var prevScaleFocusY = 0f
+    private var flingAnimator: ValueAnimator? = null
 
     init {
         scaleGestureDetector = ScaleGestureDetector(context, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScaleBegin(detector: ScaleGestureDetector): Boolean {
+                prevScaleFocusX = detector.focusX
+                prevScaleFocusY = detector.focusY
+                // Two-finger gesture detected: release any dragged node so pinch-to-zoom & two-finger panning take full precedence
+                if (isDraggingNode) {
+                    activeDraggedNode?.isPinned = false
+                    activeDraggedNode = null
+                    isDraggingNode = false
+                    hasMovedNode = false
+                }
+                return true
+            }
+
             override fun onScale(detector: ScaleGestureDetector): Boolean {
                 val scaleFactor = detector.scaleFactor
                 val focusX = detector.focusX
                 val focusY = detector.focusY
+                val deltaFocusX = focusX - prevScaleFocusX
+                val deltaFocusY = focusY - prevScaleFocusY
 
                 val oldScale = viewport.scale
                 viewport.scale *= scaleFactor
-                viewport.clampScale(0.20f, 4.0f)
+                viewport.clampScale(0.20f, 4.5f)
                 val newScale = viewport.scale
 
                 val scaleDelta = newScale / oldScale
-                viewport.translationX = focusX - (focusX - viewport.translationX) * scaleDelta
-                viewport.translationY = focusY - (focusY - viewport.translationY) * scaleDelta
+                // Zoom anchored around focal point and translate smoothly with two-finger panning
+                viewport.translationX = focusX - (focusX - viewport.translationX) * scaleDelta + deltaFocusX
+                viewport.translationY = focusY - (focusY - viewport.translationY) * scaleDelta + deltaFocusY
+
+                prevScaleFocusX = focusX
+                prevScaleFocusY = focusY
 
                 onScaleChangedListener?.invoke(newScale)
                 invalidate()
                 return true
             }
+
+            override fun onScaleEnd(detector: ScaleGestureDetector) {
+                invalidate()
+            }
         })
 
         gestureDetector = GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(e: MotionEvent): Boolean {
+                flingAnimator?.cancel()
+                return true
+            }
+
+            override fun onScroll(e1: MotionEvent?, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                // If dragging a single node with one finger or in link creation mode, do not pan canvas
+                if (isDraggingNode && activeDraggedNode != null) {
+                    return false
+                }
+                if (isLinkModeActive && linkStartNode != null) {
+                    return false
+                }
+                // When pinch-to-zoom scale gesture is in progress, scale detector handles two-finger pan/zoom
+                if (scaleGestureDetector.isInProgress) {
+                    return false
+                }
+
+                // Fluid two-finger panning or canvas background drag
+                viewport.translationX -= distanceX
+                viewport.translationY -= distanceY
+                invalidate()
+                return true
+            }
+
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (isDraggingNode || (isLinkModeActive && linkStartNode != null) || scaleGestureDetector.isInProgress) {
+                    return false
+                }
+                flingAnimator?.cancel()
+                val velX = velocityX * 0.32f
+                val velY = velocityY * 0.32f
+
+                flingAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 420
+                    interpolator = DecelerateInterpolator()
+                    var prevProgress = 0f
+                    addUpdateListener { anim ->
+                        val progress = anim.animatedFraction
+                        val dProgress = progress - prevProgress
+                        prevProgress = progress
+                        val remainingDamp = 1f - progress
+                        viewport.translationX += velX * dProgress * remainingDamp
+                        viewport.translationY += velY * dProgress * remainingDamp
+                        invalidate()
+                    }
+                    start()
+                }
+                return true
+            }
+
             override fun onLongPress(e: MotionEvent) {
                 val worldX = viewport.toWorldX(e.x)
                 val worldY = viewport.toWorldY(e.y)
@@ -459,6 +560,15 @@ class CognitiveCanvasView @JvmOverloads constructor(
     fun getAllNodes(): List<CanvasNode> = nodes
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        // When 2 or more fingers touch the canvas, cancel single-node dragging so two-finger pan/zoom is 100% fluid
+        if (event.pointerCount >= 2 && isDraggingNode) {
+            activeDraggedNode?.isPinned = false
+            activeDraggedNode = null
+            isDraggingNode = false
+            hasMovedNode = false
+        }
+
+        // Delegate to ScaleGestureDetector and GestureDetector
         scaleGestureDetector.onTouchEvent(event)
         gestureDetector.onTouchEvent(event)
 
@@ -493,15 +603,22 @@ class CognitiveCanvasView @JvmOverloads constructor(
                 }
             }
 
-            MotionEvent.ACTION_MOVE -> {
-                val dx = event.x - lastTouchX
-                val dy = event.y - lastTouchY
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                // Secondary touch detected: guarantee node drag release for fluid pinch & two-finger panning
+                if (isDraggingNode) {
+                    activeDraggedNode?.isPinned = false
+                    activeDraggedNode = null
+                    isDraggingNode = false
+                    hasMovedNode = false
+                }
+            }
 
+            MotionEvent.ACTION_MOVE -> {
                 if (isLinkModeActive && linkStartNode != null) {
                     linkCurrentWorldX = worldX
                     linkCurrentWorldY = worldY
                     invalidate()
-                } else if (isDraggingNode && activeDraggedNode != null) {
+                } else if (isDraggingNode && activeDraggedNode != null && event.pointerCount == 1) {
                     hasMovedNode = true
                     activeDraggedNode?.let { node ->
                         var targetX = worldX
@@ -525,10 +642,6 @@ class CognitiveCanvasView @JvmOverloads constructor(
                         physicsEngine.applyDragSpring(node, targetX, targetY)
                     }
                     startPhysicsSimulation()
-                } else if (!scaleGestureDetector.isInProgress) {
-                    viewport.translationX += dx
-                    viewport.translationY += dy
-                    invalidate()
                 }
 
                 lastTouchX = event.x
@@ -698,22 +811,82 @@ class CognitiveCanvasView @JvmOverloads constructor(
         }
 
         for (node in nodes) {
-            val radius = node.radius
+            val isDragged = (node == activeDraggedNode)
             val isMatch = node.isHighlighted
+
+            // Base elevation hierarchy based on node type
+            val baseElevation = if (node.nodeType == CanvasNodeType.DIRECTORY) 10f else 7f
+            // Dynamic elevation scaling: lifted higher when actively dragged, elevated when selected or highlighted
+            val elevation = when {
+                isDragged -> baseElevation + 20f
+                node.isSelected -> baseElevation + 10f
+                isMatch -> baseElevation + 12f
+                else -> baseElevation
+            }
+
+            // Visual scale expansion when elevated
+            val renderRadius = if (isDragged) node.radius + 3.5f else node.radius
 
             // If search active, dim non-matching nodes for clear visual pop
             val alphaMultiplier = if (!isSearchActive || isMatch) 1.0f else 0.22f
+
+            // Dynamic Ambient Shadow (omnidirectional ambient light occlusion)
+            ambientShadowPaint.alpha = (48 * alphaMultiplier).toInt()
+            canvas.drawCircle(
+                node.x,
+                node.y + elevation * 0.18f,
+                renderRadius + elevation * 0.35f,
+                ambientShadowPaint
+            )
+
+            // Dynamic Key Light Shadow (Directional light source from upper-left, angle ~65deg)
+            val keyOffsetX = elevation * 0.22f
+            val keyOffsetY = elevation * 0.72f
+
+            // Soft penumbra shadow
+            keyShadowPaint.alpha = (58 * alphaMultiplier).toInt()
+            canvas.drawCircle(
+                node.x + keyOffsetX * 1.25f,
+                node.y + keyOffsetY * 1.25f,
+                renderRadius + elevation * 0.42f,
+                keyShadowPaint
+            )
+
+            // Crisp umbra core shadow
+            keyShadowPaint.alpha = (130 * alphaMultiplier).toInt()
+            canvas.drawCircle(
+                node.x + keyOffsetX,
+                node.y + keyOffsetY,
+                renderRadius + elevation * 0.10f,
+                keyShadowPaint
+            )
+
+            // Elevated Lift Floor Halo (colored light bounce on glass floor when lifted or selected)
+            if (isDragged || node.isSelected) {
+                nodeLiftHaloPaint.color = node.color
+                nodeLiftHaloPaint.alpha = if (isDragged) 85 else (45 * alphaMultiplier).toInt()
+                canvas.drawCircle(
+                    node.x,
+                    node.y + elevation * 0.40f,
+                    renderRadius + 8f,
+                    nodeLiftHaloPaint
+                )
+            }
+
+            // Depth Occlusion Contrast Rim: crisp dark perimeter against translucent glass background
+            nodeContrastRimPaint.alpha = (185 * alphaMultiplier).toInt()
+            canvas.drawCircle(node.x, node.y, renderRadius + 2f, nodeContrastRimPaint)
 
             // Activity Heatmap Thermal Halo Layer
             if (isHeatmapVisible) {
                 val heat = heatScores[node.id] ?: 0.1f
                 val heatColor = CanvasHeatmapEvaluator.getHeatColor(heat, alpha = (140 * alphaMultiplier).toInt())
                 heatmapGlowPaint.color = heatColor
-                val heatRadius = radius + 18f + (heat * 24f)
+                val heatRadius = renderRadius + 18f + (heat * 24f)
                 canvas.drawCircle(node.x, node.y, heatRadius, heatmapGlowPaint)
 
                 if (heat >= 0.70f) {
-                    canvas.drawText("🔥", node.x, node.y - radius - 10f, heatFlamePaint)
+                    canvas.drawText("🔥", node.x, node.y - renderRadius - 10f, heatFlamePaint)
                 }
             }
 
@@ -721,11 +894,11 @@ class CognitiveCanvasView @JvmOverloads constructor(
             if (isMatch) {
                 nodeGlowPaint.color = Color.parseColor("#F59E0B") // Amber glow for search
                 nodeGlowPaint.alpha = (230 * alphaMultiplier).toInt()
-                canvas.drawCircle(node.x, node.y, radius + 14f, nodeGlowPaint)
+                canvas.drawCircle(node.x, node.y, renderRadius + 14f, nodeGlowPaint)
             } else if (node.isSelected) {
                 nodeGlowPaint.color = Color.parseColor("#8038BDF8")
                 nodeGlowPaint.alpha = (180 * alphaMultiplier).toInt()
-                canvas.drawCircle(node.x, node.y, radius + 8f, nodeGlowPaint)
+                canvas.drawCircle(node.x, node.y, renderRadius + 8f, nodeGlowPaint)
             }
 
             // Outer ring
@@ -737,19 +910,29 @@ class CognitiveCanvasView @JvmOverloads constructor(
             }
             nodeStrokePaint.color = ringColor
             nodeStrokePaint.alpha = (255 * alphaMultiplier).toInt()
-            canvas.drawCircle(node.x, node.y, radius, nodeStrokePaint)
+            canvas.drawCircle(node.x, node.y, renderRadius, nodeStrokePaint)
 
             // Inner fill
             nodeBodyPaint.color = node.color
             nodeBodyPaint.alpha = ((if (isMatch) 245 else 210) * alphaMultiplier).toInt()
-            canvas.drawCircle(node.x, node.y, radius - 3f, nodeBodyPaint)
+            canvas.drawCircle(node.x, node.y, renderRadius - 3f, nodeBodyPaint)
+
+            // Volumetric Specular Crescent (Top-lit 3D glassmorphic sheen)
+            specularRimPaint.alpha = (85 * alphaMultiplier).toInt()
+            specularArcBounds.set(
+                node.x - renderRadius + 5f,
+                node.y - renderRadius + 2.5f,
+                node.x + renderRadius - 5f,
+                node.y + renderRadius * 0.35f
+            )
+            canvas.drawArc(specularArcBounds, 205f, 130f, false, specularRimPaint)
 
             // Directory indicator ring
             if (node.nodeType == CanvasNodeType.DIRECTORY) {
                 nodeStrokePaint.color = Color.WHITE
                 nodeStrokePaint.strokeWidth = 2f
                 nodeStrokePaint.alpha = (255 * alphaMultiplier).toInt()
-                canvas.drawCircle(node.x, node.y, radius * 0.45f, nodeStrokePaint)
+                canvas.drawCircle(node.x, node.y, renderRadius * 0.45f, nodeStrokePaint)
                 nodeStrokePaint.strokeWidth = 3f
             }
 
@@ -757,9 +940,9 @@ class CognitiveCanvasView @JvmOverloads constructor(
             if (node.themeColor != null) {
                 themeBadgePaint.color = Color.WHITE
                 themeBadgePaint.alpha = (255 * alphaMultiplier).toInt()
-                canvas.drawCircle(node.x + radius * 0.65f, node.y - radius * 0.65f, 7f, themeBadgePaint)
+                canvas.drawCircle(node.x + renderRadius * 0.65f, node.y - renderRadius * 0.65f, 7f, themeBadgePaint)
                 themeBadgePaint.color = node.themeColor!!
-                canvas.drawCircle(node.x + radius * 0.65f, node.y - radius * 0.65f, 5.5f, themeBadgePaint)
+                canvas.drawCircle(node.x + renderRadius * 0.65f, node.y - renderRadius * 0.65f, 5.5f, themeBadgePaint)
             }
 
             // Node Text Label
@@ -769,12 +952,12 @@ class CognitiveCanvasView @JvmOverloads constructor(
                 node.fileNode.name
             }
             textPaint.alpha = (255 * alphaMultiplier).toInt()
-            canvas.drawText(displayName, node.x, node.y + radius + 28f, textPaint)
+            canvas.drawText(displayName, node.x, node.y + renderRadius + 28f, textPaint)
 
             // Subtext (Size or Category)
             val subText = if (node.nodeType == CanvasNodeType.DIRECTORY) "DIR" else node.fileNode.formattedSize
             subTextPaint.alpha = (200 * alphaMultiplier).toInt()
-            canvas.drawText(subText, node.x, node.y + radius + 50f, subTextPaint)
+            canvas.drawText(subText, node.x, node.y + renderRadius + 50f, subTextPaint)
         }
     }
 

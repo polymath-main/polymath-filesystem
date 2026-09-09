@@ -887,4 +887,63 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
             }
         }
     }
+
+    /**
+     * Purges orphaned relationship links from the Room database and the in-memory CognitiveCanvas
+     * that no longer have valid source or target file node IDs.
+     */
+    fun purgeOrphanedRelationships(onComplete: ((purgedCount: Int) -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentCanvas = _uiState.value.canvas
+            val canvasId = _uiState.value.currentPath
+
+            // Build set of valid node IDs and file paths in the current CognitiveCanvas
+            val validNodeIds = currentCanvas.nodes.flatMap { node ->
+                listOf(node.id, node.fileNode.path)
+            }.filter { it.isNotEmpty() }.toSet()
+
+            // Fetch stored relationship edges from the Room database
+            val storedEdges = repository.getEdgesOnce(canvasId)
+            val orphanedDbEdgeIds = storedEdges.filter { edge ->
+                edge.sourcePath !in validNodeIds || edge.targetPath !in validNodeIds
+            }.map { it.id }
+
+            // Delete orphaned relationship records from Room
+            if (orphanedDbEdgeIds.isNotEmpty()) {
+                repository.deleteEdgesByIds(orphanedDbEdgeIds)
+            }
+
+            // Also purge orphaned edges from in-memory canvas
+            val removedInMemoryCount = synchronized(currentCanvas.edges) {
+                var count = 0
+                val iterator = currentCanvas.edges.iterator()
+                while (iterator.hasNext()) {
+                    val edge = iterator.next()
+                    val isOrphaned = edge.id in orphanedDbEdgeIds ||
+                            edge.sourceNodeId !in validNodeIds ||
+                            edge.targetNodeId !in validNodeIds
+                    if (isOrphaned) {
+                        iterator.remove()
+                        count++
+                    }
+                }
+                count
+            }
+
+            val totalPurged = kotlin.math.max(orphanedDbEdgeIds.size, removedInMemoryCount)
+
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(
+                    edgeCount = currentCanvas.edges.size
+                )
+                onComplete?.invoke(totalPurged)
+            }
+        }
+    }
+
+    /**
+     * Convenient alias for [purgeOrphanedRelationships].
+     */
+    fun purgeOrphanedLinks(onComplete: ((purgedCount: Int) -> Unit)? = null) =
+        purgeOrphanedRelationships(onComplete)
 }

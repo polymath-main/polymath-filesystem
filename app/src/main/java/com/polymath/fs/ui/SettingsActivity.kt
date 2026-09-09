@@ -176,7 +176,7 @@ class SettingsActivity : BaseDynamicActivity() {
             tvStatus.setTextColor(android.graphics.Color.parseColor("#94A3B8"))
         } else {
             val isRooted = try {
-                Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot
+                Shell.isAppGrantedRoot() == true || Shell.getCachedShell()?.isRoot == true
             } catch (e: Exception) {
                 false
             }

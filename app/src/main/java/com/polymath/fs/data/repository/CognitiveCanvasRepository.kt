@@ -56,6 +56,12 @@ class CognitiveCanvasRepository(
     suspend fun deleteEdge(id: String) =
         canvasDao.deleteEdge(id)
 
+    suspend fun deleteEdgesByIds(ids: List<String>) {
+        if (ids.isNotEmpty()) {
+            canvasDao.deleteEdgesByIds(ids)
+        }
+    }
+
     suspend fun clearCanvas(canvasId: String) {
         canvasDao.clearNodesForCanvas(canvasId)
         canvasDao.clearEdgesForCanvas(canvasId)
