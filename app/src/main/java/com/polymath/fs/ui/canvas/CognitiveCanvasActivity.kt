@@ -639,33 +639,14 @@ class CognitiveCanvasActivity : AppCompatActivity() {
     }
 
     private fun showNodeContextMenu(node: CanvasNode) {
-        val file = File(node.fileNode.path)
-        val isDir = file.isDirectory
-        val title = (if (isDir) "📁 " else "📄 ") + file.name
-
-        val actions = arrayOf(
-            if (isDir) "Open Directory" else "Open File",
-            "🎨 Set Theme Color",
-            "Rename",
-            "Move",
-            if (node.isPinned) "Unpin Position" else "Pin Position",
-            "Delete"
-        )
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setItems(actions) { _, which ->
-                when (which) {
-                    0 -> openFileOrDirectory(node)
-                    1 -> showThemeColorPicker(node)
-                    2 -> promptRenameFile(node)
-                    3 -> promptMoveFile(node)
-                    4 -> togglePinNode(node)
-                    5 -> confirmDeleteFile(node)
-                }
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        val bottomSheet = NodeContextMenuBottomSheet.newInstance(node)
+        bottomSheet.onOpenClick = { openFileOrDirectory(node) }
+        bottomSheet.onColorClick = { showThemeColorPicker(node) }
+        bottomSheet.onRenameClick = { promptRenameFile(node) }
+        bottomSheet.onMoveClick = { promptMoveFile(node) }
+        bottomSheet.onPinClick = { togglePinNode(node) }
+        bottomSheet.onDeleteClick = { confirmDeleteFile(node) }
+        bottomSheet.show(supportFragmentManager, "NodeContextMenuBottomSheet")
     }
 
     private fun showThemeColorPicker(node: CanvasNode) {
