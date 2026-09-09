@@ -14,6 +14,8 @@ abstract class BaseDynamicActivity : AppCompatActivity() {
         currentThemeResId = ThemeManager.getThemeResId(this)
         setTheme(currentThemeResId)
         super.onCreate(savedInstanceState)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        SystemBarHelper.updateSystemBarAppearance(this)
         
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {

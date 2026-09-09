@@ -36,6 +36,7 @@
         <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.ExtensionStoreActivity" android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity android:name=".ui.ScriptManagerActivity" />
+        <activity android:name=".ui.canvas.CognitiveCanvasActivity" android:windowSoftInputMode="adjustResize" />
         <service android:name=".core.SearchService" android:exported="false" />
 
         <provider

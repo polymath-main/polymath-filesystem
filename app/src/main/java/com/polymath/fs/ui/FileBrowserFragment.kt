@@ -230,6 +230,7 @@ class FileBrowserFragment : Fragment() {
         setupOmniTerminal()
         setupBrainTalk()
         setupIntelligentAutocomplete()
+        applyLiquidHeaderAnimation()
         
         binding.copyPathButton.setOnClickListener {
             val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: ""
@@ -874,6 +875,47 @@ class FileBrowserFragment : Fragment() {
                 else -> false
             }
         }
+    }
+
+    private fun applyLiquidHeaderAnimation() {
+        // Fluid liquid-style entrance on the "Polymath Files" header element
+        binding.toolbar.alpha = 0f
+        binding.toolbar.translationY = -35f
+        binding.toolbar.scaleX = 0.94f
+        binding.toolbar.scaleY = 0.94f
+
+        binding.toolbar.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(450)
+            .setInterpolator(android.view.animation.OvershootInterpolator(1.25f))
+            .start()
+
+        // Cascading fluid motion for the glass address bar
+        binding.addressBarContainerCard.alpha = 0f
+        binding.addressBarContainerCard.translationY = -20f
+        binding.addressBarContainerCard.scaleX = 0.96f
+        binding.addressBarContainerCard.scaleY = 0.96f
+
+        binding.addressBarContainerCard.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setStartDelay(80)
+            .setDuration(400)
+            .setInterpolator(android.view.animation.OvershootInterpolator(1.15f))
+            .start()
+
+        // Soft fade for the multitasking tabs
+        binding.tabLayout.alpha = 0f
+        binding.tabLayout.animate()
+            .alpha(1f)
+            .setStartDelay(50)
+            .setDuration(350)
+            .start()
     }
 
     private fun showSortingDialog() {

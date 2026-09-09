@@ -7,6 +7,7 @@
     android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/dashboardAppBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorSurfaceVariant">
@@ -55,6 +56,82 @@
                     app:queryBackground="@android:color/transparent"
                     android:theme="@style/Theme.PolymathFileSystem" />
             </androidx.cardview.widget.CardView>
+
+            <!-- COGNITIVE CANVAS INTERACTIVE SPATIAL EXPLORER -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_cognitive_canvas"
+                android:layout_width="match_parent"
+                android:layout_height="260dp"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#1A1E293B"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeColor="#3538BDF8"
+                app:strokeWidth="1dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Embedded Gesture-enabled Cognitive Canvas (Panning, Pinch-to-zoom, Snap-to-grid) -->
+                    <com.polymath.fs.ui.canvas.CognitiveCanvasView
+                        android:id="@+id/dashboardCanvasView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                    <!-- Top Glassmorphic Badge -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="12dp"
+                        android:background="#660F172A">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@android:drawable/ic_menu_compass"
+                            app:tint="#38BDF8"
+                            android:contentDescription="Cognitive Canvas" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Cognitive Canvas • Spatial Graph"
+                            android:textColor="#FFFFFF"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvExpandCanvas"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="4dp"
+                            android:background="@drawable/bg_canvas_btn_active"
+                            android:text="Expand ↗"
+                            android:textColor="#38BDF8"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Gesture Hint Badge -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|start"
+                        android:layout_margin="10dp"
+                        android:background="#80000000"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:text="Touch to Pan • Pinch to Zoom • Tap Node"
+                        android:textColor="#94A3B8"
+                        android:textSize="10sp" />
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- 1. STORAGE HERO CARD -->
             <androidx.cardview.widget.CardView

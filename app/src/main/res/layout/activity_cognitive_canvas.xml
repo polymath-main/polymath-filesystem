@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0F1D">
+
+    <!-- Primary Interactive Cognitive Canvas Surface -->
+    <com.polymath.fs.ui.canvas.CognitiveCanvasView
+        android:id="@+id/cognitiveCanvasView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Glassmorphic Header Card with System Bar Padding -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        app:cardBackgroundColor="#CC0F172A"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:strokeColor="#3338BDF8"
+        app:strokeWidth="1dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Back"
+                android:src="@android:drawable/ic_menu_revert"
+                app:tint="#FFFFFF" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvCanvasTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cognitive Canvas"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvCanvasSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:text="Spatial File Relationship Engine"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- Snap to Grid Toggle -->
+            <ImageButton
+                android:id="@+id/btnSnapToGrid"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_canvas_btn_active"
+                android:contentDescription="Toggle Snap to Grid"
+                android:src="@android:drawable/ic_menu_sort_by_size"
+                app:tint="#38BDF8" />
+
+            <!-- Link Mode Toggle -->
+            <ImageButton
+                android:id="@+id/btnLinkMode"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Draw Link"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="#94A3B8" />
+
+            <!-- Reset Camera / Center -->
+            <ImageButton
+                android:id="@+id/btnResetView"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Center View"
+                android:src="@android:drawable/ic_menu_compass"
+                app:tint="#94A3B8" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Bottom Status Pill -->
+    <LinearLayout
+        android:id="@+id/bottomStatusPill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="#CC0F172A"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/tvStatusHelp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💡 Long-press any file for Quick Actions (Open, Rename, Move, Delete)"
+            android:textColor="#E2E8F0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

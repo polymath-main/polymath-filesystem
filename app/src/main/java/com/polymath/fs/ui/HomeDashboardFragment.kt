@@ -13,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,18 +23,22 @@ import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.polymath.fs.MainActivity
 import com.polymath.fs.PolymathApp
 import com.polymath.fs.R
-import com.polymath.fs.core.BuiltInScriptManager
-import com.polymath.fs.core.ScriptScheduleItem
-import com.polymath.fs.core.ScriptScheduleManager
-import com.polymath.fs.core.StorageTelemetryManager
+import com.polymath.fs.core.*
+import com.polymath.fs.ui.canvas.CognitiveCanvasActivity
+import com.polymath.fs.ui.canvas.CognitiveCanvasView
 import com.polymath.fs.viewers.EditorActivity
+import com.polymath.fs.viewmodels.CognitiveCanvasViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 class HomeDashboardFragment : Fragment() {
 
+    private val canvasViewModel: CognitiveCanvasViewModel by viewModels()
+
+    private var dashboardCanvasView: CognitiveCanvasView? = null
     private lateinit var progressStorage: LinearProgressIndicator
     private lateinit var tvStoragePercent: TextView
     private lateinit var tvStorageUsed: TextView
@@ -68,7 +73,9 @@ class HomeDashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupDynamicStatusBar(view)
         initViews(view)
+        setupCognitiveCanvasWidget(view)
         loadStorageTelemetry()
         loadKernelTelemetry()
         setupDirectoryShortcuts(view)
@@ -79,10 +86,86 @@ class HomeDashboardFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        activity?.let { SystemBarHelper.updateSystemBarAppearance(it) }
         loadStorageTelemetry()
         loadKernelTelemetry()
         loadJsEngineOverview()
         loadScheduledAutomations()
+    }
+
+    private fun setupDynamicStatusBar(view: View) {
+        val appBar = view.findViewById<View>(R.id.dashboardAppBarLayout)
+        if (appBar != null) {
+            SystemBarHelper.applyDynamicStatusBarInsets(appBar)
+            activity?.let { act ->
+                SystemBarHelper.adjustSystemBarContrastForHeader(act, appBar)
+            }
+        }
+
+        // Dynamically adapt statusbar when selected UI theme colors change
+        viewLifecycleOwner.lifecycleScope.launch {
+            ThemeManager.themeChangeEvents.collect {
+                activity?.let { act ->
+                    SystemBarHelper.updateSystemBarAppearance(act)
+                }
+            }
+        }
+    }
+
+    private fun setupCognitiveCanvasWidget(view: View) {
+        val canvasView = view.findViewById<CognitiveCanvasView>(R.id.dashboardCanvasView)
+        dashboardCanvasView = canvasView
+
+        if (canvasView != null) {
+            // Prevent ScrollView from intercepting pan and zoom touch gestures
+            canvasView.setOnTouchListener { v, _ ->
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                false
+            }
+
+            // Save node position to Room when user drags in widget
+            canvasView.onNodeMovedListener = { node ->
+                canvasViewModel.persistNodePosition(node, Environment.getExternalStorageDirectory().absolutePath)
+            }
+
+            // Double tap node to open
+            canvasView.onNodeDoubleClickListener = { node ->
+                val file = File(node.fileNode.path)
+                if (file.isDirectory) {
+                    CognitiveCanvasActivity.start(requireContext(), file.absolutePath)
+                } else {
+                    val intent = Intent(requireContext(), EditorActivity::class.java).apply {
+                        putExtra("path", file.absolutePath)
+                        putExtra("filePath", file.absolutePath)
+                    }
+                    startActivity(intent)
+                }
+            }
+
+            // Expand to full CognitiveCanvasActivity
+            view.findViewById<View>(R.id.tvExpandCanvas)?.setOnClickListener {
+                CognitiveCanvasActivity.start(requireContext(), Environment.getExternalStorageDirectory().absolutePath)
+            }
+            view.findViewById<View>(R.id.card_cognitive_canvas)?.setOnClickListener {
+                CognitiveCanvasActivity.start(requireContext(), Environment.getExternalStorageDirectory().absolutePath)
+            }
+
+            // Observe canvas state
+            viewLifecycleOwner.lifecycleScope.launch {
+                canvasViewModel.uiState.collectLatest { state ->
+                    if (state.canvas.nodes.isNotEmpty()) {
+                        canvasView.setGraphData(
+                            state.canvas.nodes,
+                            state.canvas.edges,
+                            autoArrange = false
+                        )
+                    }
+                }
+            }
+
+            // Load initial files for canvas preview
+            canvasViewModel.loadPath(Environment.getExternalStorageDirectory().absolutePath)
+        }
     }
 
     private fun initViews(view: View) {

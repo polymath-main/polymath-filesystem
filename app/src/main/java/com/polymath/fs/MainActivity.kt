@@ -56,10 +56,15 @@ class MainActivity : BaseDynamicActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        com.polymath.fs.core.SystemBarHelper.updateSystemBarAppearance(this)
+        com.polymath.fs.core.SystemBarHelper.applyDynamicNavigationBarInsets(binding.bottomNavigation)
 
         binding.btnGrantPermission.setOnClickListener {
             requestStoragePermission()

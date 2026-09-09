@@ -7,149 +7,160 @@
     android:background="?attr/colorSurface">
 
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurface"
+        android:background="@drawable/bg_glass_header"
         app:elevation="0dp">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
+        <!-- Screen Header Toolbar with Responsive Material 3 Typography -->
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Polymath Files"
+            app:titleTextAppearance="@style/TextAppearance.Polymath.HeaderTitle"
+            app:titleTextColor="?android:attr/textColorPrimary"
+            app:navigationIcon="@android:drawable/ic_menu_revert"
+            app:navigationIconTint="?attr/colorOnSurface"
+            app:elevation="0dp" />
+
+        <!-- Multitasking Tabs -->
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_scrollFlags="scroll|enterAlways|snap">
+            android:background="@android:color/transparent"
+            app:tabTextColor="?android:attr/textColorSecondary"
+            app:tabSelectedTextColor="?attr/colorPrimary"
+            app:tabIndicatorColor="?attr/colorPrimary"
+            app:tabMode="scrollable" />
 
+        <!-- Glassmorphism Address Bar Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/addressBarContainerCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="#241e293b"
+            app:strokeColor="#3538bdf8"
+            app:strokeWidth="1dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:id="@+id/addressBarContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="3dp">
+
+                <ImageView
+                    android:id="@+id/pathFolderIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="2dp"
+                    android:contentDescription="Folder Icon"
+                    android:src="@drawable/ic_fluent_folder"
+                    app:tint="?attr/colorPrimary" />
+
+                <TextView
+                    android:id="@+id/pathText"
+                    style="@style/TextAppearance.Material3.BodyMedium"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="10dp"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    tools:text="/storage/emulated/0/Download/SomeFolder" />
+
+                <ImageButton
+                    android:id="@+id/copyPathButton"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="4dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Copy Path"
+                    android:src="@android:drawable/ic_menu_edit"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Recents Panel -->
+        <LinearLayout
+            android:id="@+id/recentFilesPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:paddingTop="8dp">
+            
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="?attr/actionBarSize">
-                
-                <com.google.android.material.tabs.TabLayout
-                    android:id="@+id/tabLayout"
-                    android:layout_width="match_parent"
+                android:orientation="horizontal"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="8dp"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:background="?attr/colorSurface"
-                    app:tabTextColor="?android:attr/textColorSecondary"
-                    app:tabSelectedTextColor="?attr/colorPrimary"
-                    app:tabIndicatorColor="?attr/colorPrimary"
-                    app:tabMode="scrollable" />
-
-                <com.google.android.material.card.MaterialCardView
-                    android:id="@+id/addressBarContainerCard"
-                    android:layout_width="match_parent"
+                    android:text="Recent Files"
+                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/btnViewMoreRecents"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="16dp"
-                    android:layout_marginVertical="8dp"
-                    app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="0dp">
-
-                    <LinearLayout
-                        android:id="@+id/addressBarContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="4dp">
-
-                        <TextView
-                            android:id="@+id/pathText"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:padding="12dp"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="14sp"
-                            android:ellipsize="middle"
-                            android:singleLine="true"
-                            tools:text="/storage/emulated/0/Download/SomeFolder" />
-
-                        <ImageButton
-                            android:id="@+id/copyPathButton"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_marginEnd="4dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="Copy Path"
-                            android:src="@android:drawable/ic_menu_edit"
-                            app:tint="?attr/colorOnSurfaceVariant" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-
-                <LinearLayout
-                    android:id="@+id/recentFilesPanel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    android:paddingTop="8dp">
-                    
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="20dp"
-                        android:paddingVertical="8dp"
-                        android:gravity="center_vertical">
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="wrap_content"
-                            android:text="Recent Files"
-                            android:textColor="?android:attr/textColorPrimary"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                        <TextView
-                            android:id="@+id/btnViewMoreRecents"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="View more"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="14sp"
-                            android:background="?attr/selectableItemBackground" />
-                    </LinearLayout>
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/recentRecyclerView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:paddingHorizontal="12dp"
-                        android:paddingBottom="8dp" />
-                </LinearLayout>
-
-                <!-- The Architect's Workbench Pane -->
-                <FrameLayout
-                    android:id="@+id/workbench_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp"
-                    android:layout_marginHorizontal="16dp"
-                    android:layout_marginBottom="8dp"
-                    android:visibility="gone">
-
-                    <com.google.android.material.card.MaterialCardView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        app:cardCornerRadius="16dp"
-                        app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                        app:strokeColor="?attr/colorPrimary"
-                        app:strokeWidth="1dp">
-
-                        <WebView
-                            android:id="@+id/workbench_webview"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:visibility="gone" />
-                            
-                    </com.google.android.material.card.MaterialCardView>
-                </FrameLayout>
+                    android:text="View more"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="14sp"
+                    android:background="?attr/selectableItemBackground" />
             </LinearLayout>
-
-            <androidx.appcompat.widget.Toolbar
-                android:id="@+id/toolbar"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recentRecyclerView"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                app:layout_collapseMode="pin"
-                app:titleTextColor="?android:attr/textColorPrimary" />
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingHorizontal="12dp"
+                android:paddingBottom="8dp" />
+        </LinearLayout>
+
+        <!-- The Architect's Workbench Pane -->
+        <FrameLayout
+            android:id="@+id/workbench_container"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone">
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                app:strokeColor="?attr/colorPrimary"
+                app:strokeWidth="1dp">
+
+                <WebView
+                    android:id="@+id/workbench_webview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:visibility="gone" />
+                    
+            </com.google.android.material.card.MaterialCardView>
+        </FrameLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
