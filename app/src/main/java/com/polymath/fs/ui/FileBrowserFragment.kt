@@ -45,9 +45,13 @@ class FileBrowserFragment : Fragment() {
     
     private fun toggleDropletService() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(requireContext())) {
-            val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${requireContext().packageName}"))
-            startActivity(intent)
-            Toast.makeText(requireContext(), "Please grant Overlay Permission to use Droplet", Toast.LENGTH_LONG).show()
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${requireContext().packageName}"))
+                overlayPermissionLauncher.launch(intent)
+                Toast.makeText(requireContext(), "Please grant Overlay Permission to use Droplet", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Unable to open Overlay Settings. Please grant it manually.", Toast.LENGTH_LONG).show()
+            }
             return
         }
         val intent = Intent(requireContext(), com.polymath.fs.core.DropletService::class.java)
