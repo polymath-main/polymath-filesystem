@@ -18,7 +18,6 @@ class JSTesterReceiver : BroadcastReceiver() {
             val outputPath = intent.getStringExtra("outputPath") ?: return
             val selectedFilesStr = intent.getStringExtra("selectedFiles") ?: "[]"
 
-            val isDryRun = intent.getBooleanExtra("isDryRun", false)
 
             val shellHolder = com.polymath.fs.core.RootShellHolder()
             val repo = FileSystemRepository(shellHolder)
@@ -51,8 +50,7 @@ class JSTesterReceiver : BroadcastReceiver() {
                         selectedFiles = selectedFilesList,
                         actionId = "test_run",
                         onConsoleLog = { level, message -> logBuilder.append("[$level] $message\n") },
-                        onAlert = { title, message -> logBuilder.append("[ALERT: $title] $message\n") },
-                        isDryRun = isDryRun
+                        onAlert = { title, message -> logBuilder.append("[ALERT: $title] $message\n") }
                     )
                     
                     logBuilder.append("\n=== EXECUTION RESULT ===\n").append(result)
