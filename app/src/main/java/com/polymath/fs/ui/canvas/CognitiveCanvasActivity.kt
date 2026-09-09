@@ -41,6 +41,7 @@ import com.polymath.fs.databinding.LayoutDialogWorkspaceSnapshotsBinding
 import com.polymath.fs.domain.canvas.models.CanvasAction
 import com.polymath.fs.domain.canvas.models.CanvasNode
 import com.polymath.fs.domain.canvas.models.CanvasNodeType
+import com.polymath.fs.domain.canvas.models.extension
 import com.polymath.fs.domain.canvas.models.CanvasRelationType
 import com.polymath.fs.domain.canvas.models.WorkspaceSnapshot
 import com.polymath.fs.ui.canvas.adapters.CanvasPresetAdapter
@@ -812,7 +813,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         ivPeek?.visibility = View.VISIBLE
 
         if (isImage && file.exists()) {
-            ivPeek?.load(file) { crossfade(true); scale(Scale.CENTER_CROP) }
+            ivPeek?.load(file) { crossfade(true) }
         } else if (isTextOrCode && file.exists()) {
             ivPeek?.visibility = View.GONE
             tvSnippet?.visibility = View.VISIBLE
