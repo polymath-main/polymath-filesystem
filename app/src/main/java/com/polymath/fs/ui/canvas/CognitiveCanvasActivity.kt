@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -16,6 +18,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.polymath.fs.R
@@ -35,6 +38,8 @@ class CognitiveCanvasActivity : AppCompatActivity() {
     private lateinit var binding: ActivityCognitiveCanvasBinding
     private val viewModel: CognitiveCanvasViewModel by viewModels()
     private var currentDirectoryPath: String = ""
+    private val PREF_NAME = "cognitive_canvas_prefs"
+    private val PREF_KEY_COACH_MARK_SHOWN = "coach_mark_shown_v1"
 
     companion object {
         const val EXTRA_DIRECTORY_PATH = "extra_directory_path"
@@ -69,6 +74,8 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             ?: Environment.getExternalStorageDirectory().absolutePath
 
         setupUI()
+        setupSearchBar()
+        setupCoachMark()
         observeViewModel()
         viewModel.loadPath(currentDirectoryPath)
     }
@@ -90,9 +97,18 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             )
             Toast.makeText(
                 this,
-                if (isEnabled) "Snap to Grid Enabled" else "Snap to Grid Disabled",
+                if (isEnabled) "Snap-to-Grid Enabled (Magnetic Precision)" else "Snap-to-Grid Disabled",
                 Toast.LENGTH_SHORT
             ).show()
+        }
+
+        // Smart Arrange force-directed clustering button
+        binding.btnSmartArrange.setOnClickListener {
+            Toast.makeText(this, "Smart Arranging files by metadata & directory clusters...", Toast.LENGTH_SHORT).show()
+            binding.cognitiveCanvasView.smartArrange {
+                viewModel.persistAllNodePositions()
+                Toast.makeText(this, "Spatial arrangement organized and saved", Toast.LENGTH_SHORT).show()
+            }
         }
 
         // Link mode toggle
@@ -108,13 +124,18 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             binding.tvStatusHelp.text = if (isLinkActive) {
                 "🔗 Link Mode: Drag from one file to another to create a relationship"
             } else {
-                "💡 Long-press any file for Quick Actions (Open, Rename, Move, Delete)"
+                "💡 Long-press any file for Quick Actions (Color-Code, Rename, Move, Delete)"
             }
         }
 
         // Reset camera / center
         binding.btnResetView.setOnClickListener {
             binding.cognitiveCanvasView.resetViewAnimated()
+        }
+
+        // Help button opens coach mark guide
+        binding.btnHelp.setOnClickListener {
+            showCoachMark()
         }
 
         // Handle user manual node move -> persist to Room
@@ -139,6 +160,105 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupSearchBar() {
+        // Toggle search bar visibility
+        binding.btnSearchToggle.setOnClickListener {
+            val isVisible = binding.layoutSearchBar.visibility == View.VISIBLE
+            if (isVisible) {
+                binding.layoutSearchBar.visibility = View.GONE
+                binding.etCanvasSearch.setText("")
+                hideKeyboard(binding.etCanvasSearch)
+                binding.btnSearchToggle.setColorFilter(Color.parseColor("#94A3B8"))
+            } else {
+                binding.layoutSearchBar.visibility = View.VISIBLE
+                binding.btnSearchToggle.setColorFilter(Color.parseColor("#38BDF8"))
+                binding.etCanvasSearch.requestFocus()
+                showKeyboard(binding.etCanvasSearch)
+            }
+        }
+
+        binding.etCanvasSearch.addTextChangedListener { text ->
+            val query = text?.toString() ?: ""
+            binding.btnClearSearch.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+            binding.cognitiveCanvasView.searchAndHighlight(query)
+        }
+
+        binding.cognitiveCanvasView.onSearchResultsChanged = { query, count, currentIndex ->
+            if (query.isEmpty() || count == 0) {
+                binding.tvSearchResultCount.visibility = if (query.isNotEmpty()) View.VISIBLE else View.GONE
+                binding.tvSearchResultCount.text = if (query.isNotEmpty()) "0 found" else ""
+                binding.btnSearchPrev.visibility = View.GONE
+                binding.btnSearchNext.visibility = View.GONE
+            } else {
+                binding.tvSearchResultCount.visibility = View.VISIBLE
+                binding.tvSearchResultCount.text = "${currentIndex + 1}/$count"
+                binding.btnSearchPrev.visibility = if (count > 1) View.VISIBLE else View.GONE
+                binding.btnSearchNext.visibility = if (count > 1) View.VISIBLE else View.GONE
+            }
+        }
+
+        binding.btnSearchNext.setOnClickListener {
+            binding.cognitiveCanvasView.focusNextSearchResult()
+        }
+
+        binding.btnSearchPrev.setOnClickListener {
+            binding.cognitiveCanvasView.focusPreviousSearchResult()
+        }
+
+        binding.btnClearSearch.setOnClickListener {
+            binding.etCanvasSearch.setText("")
+        }
+    }
+
+    private fun setupCoachMark() {
+        val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        val hasShown = prefs.getBoolean(PREF_KEY_COACH_MARK_SHOWN, false)
+
+        if (!hasShown) {
+            showCoachMark()
+        }
+
+        binding.btnDismissCoachMark.setOnClickListener {
+            dismissCoachMark()
+        }
+
+        binding.coachMarkOverlay.setOnClickListener {
+            dismissCoachMark()
+        }
+    }
+
+    private fun showCoachMark() {
+        binding.coachMarkOverlay.alpha = 0f
+        binding.coachMarkOverlay.visibility = View.VISIBLE
+        binding.coachMarkOverlay.animate()
+            .alpha(1f)
+            .setDuration(280)
+            .start()
+    }
+
+    private fun dismissCoachMark() {
+        val prefs = getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+        prefs.edit().putBoolean(PREF_KEY_COACH_MARK_SHOWN, true).apply()
+
+        binding.coachMarkOverlay.animate()
+            .alpha(0f)
+            .setDuration(220)
+            .withEndAction {
+                binding.coachMarkOverlay.visibility = View.GONE
+            }
+            .start()
+    }
+
+    private fun showKeyboard(view: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun hideKeyboard(view: View) {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(view.windowToken, 0)
+    }
+
     private fun observeViewModel() {
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
@@ -160,6 +280,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
 
         val actions = arrayOf(
             if (isDir) "Open Directory" else "Open File",
+            "🎨 Set Theme Color",
             "Rename",
             "Move",
             if (node.isPinned) "Unpin Position" else "Pin Position",
@@ -171,11 +292,50 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             .setItems(actions) { _, which ->
                 when (which) {
                     0 -> openFileOrDirectory(node)
-                    1 -> promptRenameFile(node)
-                    2 -> promptMoveFile(node)
-                    3 -> togglePinNode(node)
-                    4 -> confirmDeleteFile(node)
+                    1 -> showThemeColorPicker(node)
+                    2 -> promptRenameFile(node)
+                    3 -> promptMoveFile(node)
+                    4 -> togglePinNode(node)
+                    5 -> confirmDeleteFile(node)
                 }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showThemeColorPicker(node: CanvasNode) {
+        val colorOptions = arrayOf(
+            "Default (Reset Color)",
+            "Sky Blue (#38BDF8)",
+            "Emerald Green (#10B981)",
+            "Violet Purple (#A855F7)",
+            "Amber Gold (#F59E0B)",
+            "Rose Crimson (#F43F5E)",
+            "Indigo (#6366F1)",
+            "Cyan (#06B6D4)",
+            "Slate (#64748B)"
+        )
+
+        val colorValues: Array<Int?> = arrayOf(
+            null,
+            Color.parseColor("#38BDF8"),
+            Color.parseColor("#10B981"),
+            Color.parseColor("#A855F7"),
+            Color.parseColor("#F59E0B"),
+            Color.parseColor("#F43F5E"),
+            Color.parseColor("#6366F1"),
+            Color.parseColor("#06B6D4"),
+            Color.parseColor("#64748B")
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Theme Color for '${node.fileNode.name}'")
+            .setItems(colorOptions) { _, which ->
+                val selectedColor = colorValues[which]
+                viewModel.updateNodeThemeColor(node, selectedColor, currentDirectoryPath)
+                binding.cognitiveCanvasView.invalidate()
+                val colorName = colorOptions[which]
+                Toast.makeText(this, "Theme color updated: $colorName", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancel", null)
             .show()

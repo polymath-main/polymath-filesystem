@@ -43,13 +43,17 @@ data class CanvasNode(
     var vx: Float = 0f,
     var vy: Float = 0f,
     val nodeType: CanvasNodeType = if (fileNode.isDirectory) CanvasNodeType.DIRECTORY else CanvasNodeType.FILE,
-    val color: Int = getNodeColorForFile(fileNode),
+    var themeColor: Int? = null,
     var radius: Float = calculateNodeRadius(fileNode),
     var isSelected: Boolean = false,
     var isPinned: Boolean = false,
     var isExpanded: Boolean = false,
+    var isHighlighted: Boolean = false,
     val clusterTag: String = if (fileNode.isDirectory) "folder" else fileNode.extension.ifEmpty { "other" }
 ) {
+    val color: Int
+        get() = themeColor ?: getNodeColorForFile(fileNode)
+
     companion object {
         fun calculateNodeRadius(file: FileNode): Float {
             if (file.isDirectory) return 56f

@@ -33,9 +33,18 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private val physicsEngine = ForceSimulationEngine()
     private var isPhysicsRunning = false
 
-    // Snap to grid
+    // Snap to grid movement system
     var isSnapToGridEnabled: Boolean = true
-    var snapGridSize: Float = 60f
+    var snapGridSize: Float = 75f
+    private var lastSnappedGridX = 0f
+    private var lastSnappedGridY = 0f
+    private var isGridSnappingActive = false
+
+    // Search state & navigation
+    private var currentSearchQuery: String = ""
+    private val searchResults = mutableListOf<CanvasNode>()
+    private var currentSearchIndex: Int = -1
+    var onSearchResultsChanged: ((query: String, count: Int, currentIndex: Int) -> Unit)? = null
 
     // Interactive Link Mode
     var isLinkModeActive: Boolean = false
@@ -61,6 +70,20 @@ class CognitiveCanvasView @JvmOverloads constructor(
     // Rendering Paints
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#2E38BDF8")
+        style = Paint.Style.FILL
+    }
+    private val snapTargetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 2.5f
+        color = Color.parseColor("#8038BDF8")
+        pathEffect = DashPathEffect(floatArrayOf(10f, 6f), 0f)
+    }
+    private val snapLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1.5f
+        color = Color.parseColor("#4D38BDF8")
+    }
+    private val themeBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
     private val edgeParentChildPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -272,6 +295,113 @@ class CognitiveCanvasView @JvmOverloads constructor(
         }
     }
 
+    fun focusOnNode(node: CanvasNode, targetScale: Float = 1.3f) {
+        val startX = viewport.translationX
+        val startY = viewport.translationY
+        val startScale = viewport.scale
+
+        val targetX = width / 2f - node.x * targetScale
+        val targetY = height / 2f - node.y * targetScale
+
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 420
+            interpolator = DecelerateInterpolator()
+            addUpdateListener { animator ->
+                val fraction = animator.animatedFraction
+                viewport.translationX = startX + (targetX - startX) * fraction
+                viewport.translationY = startY + (targetY - startY) * fraction
+                viewport.scale = startScale + (targetScale - startScale) * fraction
+                invalidate()
+            }
+            start()
+        }
+    }
+
+    fun searchAndHighlight(query: String): Int {
+        currentSearchQuery = query.trim()
+        searchResults.clear()
+        currentSearchIndex = -1
+
+        if (currentSearchQuery.isEmpty()) {
+            nodes.forEach { it.isHighlighted = false }
+            onSearchResultsChanged?.invoke("", 0, -1)
+            invalidate()
+            return 0
+        }
+
+        val lower = currentSearchQuery.lowercase()
+        for (node in nodes) {
+            val matchesName = node.fileNode.name.lowercase().contains(lower)
+            val matchesExt = node.fileNode.extension.lowercase().contains(lower)
+            val matchesCluster = node.clusterTag.lowercase().contains(lower)
+            node.isHighlighted = matchesName || matchesExt || matchesCluster
+            if (node.isHighlighted) {
+                searchResults.add(node)
+            }
+        }
+
+        if (searchResults.isNotEmpty()) {
+            currentSearchIndex = 0
+            focusOnNode(searchResults[0])
+        }
+
+        onSearchResultsChanged?.invoke(currentSearchQuery, searchResults.size, currentSearchIndex)
+        invalidate()
+        return searchResults.size
+    }
+
+    fun focusNextSearchResult(): CanvasNode? {
+        if (searchResults.isEmpty()) return null
+        currentSearchIndex = (currentSearchIndex + 1) % searchResults.size
+        val node = searchResults[currentSearchIndex]
+        focusOnNode(node)
+        onSearchResultsChanged?.invoke(currentSearchQuery, searchResults.size, currentSearchIndex)
+        return node
+    }
+
+    fun focusPreviousSearchResult(): CanvasNode? {
+        if (searchResults.isEmpty()) return null
+        currentSearchIndex = if (currentSearchIndex <= 0) searchResults.size - 1 else currentSearchIndex - 1
+        val node = searchResults[currentSearchIndex]
+        focusOnNode(node)
+        onSearchResultsChanged?.invoke(currentSearchQuery, searchResults.size, currentSearchIndex)
+        return node
+    }
+
+    fun smartArrange(onFinished: (() -> Unit)? = null) {
+        if (nodes.isEmpty()) {
+            onFinished?.invoke()
+            return
+        }
+
+        // Apply metadata and directory clustered force-directed layout
+        physicsEngine.arrangeByClusteredMetadata(nodes, 0f, 0f)
+
+        // Make sure directory anchors stay pinned, files animate
+        for (node in nodes) {
+            if (node.id.startsWith("root_")) {
+                node.isPinned = true
+            }
+        }
+
+        startPhysicsSimulation()
+        resetViewAnimated()
+
+        // After simulation settling, align to coordinate grid if snap is enabled
+        postDelayed({
+            if (isSnapToGridEnabled) {
+                for (node in nodes) {
+                    node.x = (node.x / snapGridSize).roundToInt() * snapGridSize
+                    node.y = (node.y / snapGridSize).roundToInt() * snapGridSize
+                    node.vx = 0f
+                    node.vy = 0f
+                }
+                invalidate()
+            }
+            onFinished?.invoke()
+        }, 850)
+    }
+
     fun getSelectedNodes(): List<CanvasNode> = nodes.filter { it.isSelected }
 
     fun getAllNodes(): List<CanvasNode> = nodes
@@ -299,6 +429,8 @@ class CognitiveCanvasView @JvmOverloads constructor(
                         activeDraggedNode = hitNode
                         isDraggingNode = true
                         hitNode.isPinned = true
+                        lastSnappedGridX = (hitNode.x / snapGridSize).roundToInt() * snapGridSize
+                        lastSnappedGridY = (hitNode.y / snapGridSize).roundToInt() * snapGridSize
                         startPhysicsSimulation()
                     }
                 } else {
@@ -317,19 +449,28 @@ class CognitiveCanvasView @JvmOverloads constructor(
                     invalidate()
                 } else if (isDraggingNode && activeDraggedNode != null) {
                     hasMovedNode = true
-                    activeDraggedNode?.let {
+                    activeDraggedNode?.let { node ->
                         var targetX = worldX
                         var targetY = worldY
 
                         if (isSnapToGridEnabled) {
-                            targetX = (targetX / snapGridSize).roundToInt() * snapGridSize
-                            targetY = (targetY / snapGridSize).roundToInt() * snapGridSize
+                            val snappedX = (targetX / snapGridSize).roundToInt() * snapGridSize
+                            val snappedY = (targetY / snapGridSize).roundToInt() * snapGridSize
+
+                            if (snappedX != lastSnappedGridX || snappedY != lastSnappedGridY) {
+                                lastSnappedGridX = snappedX
+                                lastSnappedGridY = snappedY
+                                performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                            }
+                            targetX = snappedX
+                            targetY = snappedY
+                            isGridSnappingActive = true
                         }
 
-                        it.x = targetX
-                        it.y = targetY
-                        it.vx = 0f
-                        it.vy = 0f
+                        node.x = targetX
+                        node.y = targetY
+                        node.vx = 0f
+                        node.vy = 0f
                     }
                     startPhysicsSimulation()
                 } else if (!scaleGestureDetector.isInProgress) {
@@ -360,6 +501,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
                         node.x = (node.x / snapGridSize).roundToInt() * snapGridSize
                         node.y = (node.y / snapGridSize).roundToInt() * snapGridSize
                     }
+                    isGridSnappingActive = false
                     if (hasMovedNode) {
                         onNodeMovedListener?.invoke(node)
                     }
@@ -396,6 +538,14 @@ class CognitiveCanvasView @JvmOverloads constructor(
 
         // 2. Draw Connections / Relationship Edges
         drawEdges(canvas)
+
+        // Draw magnetic snap-to-grid movement alignment crosshair & target bounds
+        if (isDraggingNode && isSnapToGridEnabled && activeDraggedNode != null) {
+            val nodeR = activeDraggedNode!!.radius
+            canvas.drawCircle(lastSnappedGridX, lastSnappedGridY, nodeR + 10f, snapTargetPaint)
+            canvas.drawLine(lastSnappedGridX - nodeR * 2.2f, lastSnappedGridY, lastSnappedGridX + nodeR * 2.2f, lastSnappedGridY, snapLinePaint)
+            canvas.drawLine(lastSnappedGridX, lastSnappedGridY - nodeR * 2.2f, lastSnappedGridX, lastSnappedGridY + nodeR * 2.2f, snapLinePaint)
+        }
 
         // 3. Draw Active Interactive Link Creation Line
         if (isLinkModeActive && linkStartNode != null) {
@@ -466,30 +616,58 @@ class CognitiveCanvasView @JvmOverloads constructor(
     }
 
     private fun drawNodes(canvas: Canvas) {
+        val isSearchActive = currentSearchQuery.isNotEmpty()
+
         for (node in nodes) {
             val radius = node.radius
+            val isMatch = node.isHighlighted
 
-            // Glow if selected
-            if (node.isSelected) {
+            // If search active, dim non-matching nodes for clear visual pop
+            val alphaMultiplier = if (!isSearchActive || isMatch) 1.0f else 0.22f
+
+            // Glow if search match or selected
+            if (isMatch) {
+                nodeGlowPaint.color = Color.parseColor("#F59E0B") // Amber glow for search
+                nodeGlowPaint.alpha = (230 * alphaMultiplier).toInt()
+                canvas.drawCircle(node.x, node.y, radius + 14f, nodeGlowPaint)
+            } else if (node.isSelected) {
                 nodeGlowPaint.color = Color.parseColor("#8038BDF8")
+                nodeGlowPaint.alpha = (180 * alphaMultiplier).toInt()
                 canvas.drawCircle(node.x, node.y, radius + 8f, nodeGlowPaint)
             }
 
             // Outer ring
-            nodeStrokePaint.color = if (node.isSelected) Color.parseColor("#38BDF8") else Color.parseColor("#334155")
+            val ringColor = when {
+                isMatch -> Color.parseColor("#FBBF24")
+                node.isSelected -> Color.parseColor("#38BDF8")
+                node.themeColor != null -> node.color
+                else -> Color.parseColor("#334155")
+            }
+            nodeStrokePaint.color = ringColor
+            nodeStrokePaint.alpha = (255 * alphaMultiplier).toInt()
             canvas.drawCircle(node.x, node.y, radius, nodeStrokePaint)
 
             // Inner fill
             nodeBodyPaint.color = node.color
-            nodeBodyPaint.alpha = 210
+            nodeBodyPaint.alpha = ((if (isMatch) 245 else 210) * alphaMultiplier).toInt()
             canvas.drawCircle(node.x, node.y, radius - 3f, nodeBodyPaint)
 
             // Directory indicator ring
             if (node.nodeType == CanvasNodeType.DIRECTORY) {
                 nodeStrokePaint.color = Color.WHITE
                 nodeStrokePaint.strokeWidth = 2f
+                nodeStrokePaint.alpha = (255 * alphaMultiplier).toInt()
                 canvas.drawCircle(node.x, node.y, radius * 0.45f, nodeStrokePaint)
                 nodeStrokePaint.strokeWidth = 3f
+            }
+
+            // Custom theme color badge dot indicator
+            if (node.themeColor != null) {
+                themeBadgePaint.color = Color.WHITE
+                themeBadgePaint.alpha = (255 * alphaMultiplier).toInt()
+                canvas.drawCircle(node.x + radius * 0.65f, node.y - radius * 0.65f, 7f, themeBadgePaint)
+                themeBadgePaint.color = node.themeColor!!
+                canvas.drawCircle(node.x + radius * 0.65f, node.y - radius * 0.65f, 5.5f, themeBadgePaint)
             }
 
             // Node Text Label
@@ -498,10 +676,12 @@ class CognitiveCanvasView @JvmOverloads constructor(
             } else {
                 node.fileNode.name
             }
+            textPaint.alpha = (255 * alphaMultiplier).toInt()
             canvas.drawText(displayName, node.x, node.y + radius + 28f, textPaint)
 
             // Subtext (Size or Category)
             val subText = if (node.nodeType == CanvasNodeType.DIRECTORY) "DIR" else node.fileNode.formattedSize
+            subTextPaint.alpha = (200 * alphaMultiplier).toInt()
             canvas.drawText(subText, node.x, node.y + radius + 50f, subTextPaint)
         }
     }

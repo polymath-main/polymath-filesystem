@@ -26,6 +26,9 @@ class CognitiveCanvasRepository(
     suspend fun updateCoordinates(filePath: String, x: Float, y: Float) =
         canvasDao.updateNodeCoordinates(filePath, x, y)
 
+    suspend fun updateThemeColor(filePath: String, themeColor: Int?) =
+        canvasDao.updateNodeThemeColor(filePath, themeColor)
+
     suspend fun deleteNode(filePath: String) {
         canvasDao.deleteNode(filePath)
         canvasDao.deleteEdgesForNode(filePath)

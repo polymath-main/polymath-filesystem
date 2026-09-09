@@ -10,6 +10,6 @@ data class CanvasNodeEntity(
     val x: Float,
     val y: Float,
     val isPinned: Boolean = false,
-    val customColor: Int? = null,
+    val themeColor: Int? = null,
     val updatedAt: Long = System.currentTimeMillis()
 )

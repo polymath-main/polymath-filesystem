@@ -26,6 +26,9 @@ interface CognitiveCanvasDao {
     @Query("UPDATE canvas_nodes SET x = :x, y = :y, updatedAt = :updatedAt WHERE filePath = :filePath")
     suspend fun updateNodeCoordinates(filePath: String, x: Float, y: Float, updatedAt: Long = System.currentTimeMillis())
 
+    @Query("UPDATE canvas_nodes SET themeColor = :themeColor, updatedAt = :updatedAt WHERE filePath = :filePath")
+    suspend fun updateNodeThemeColor(filePath: String, themeColor: Int?, updatedAt: Long = System.currentTimeMillis())
+
     @Query("DELETE FROM canvas_nodes WHERE filePath = :filePath")
     suspend fun deleteNode(filePath: String)
 

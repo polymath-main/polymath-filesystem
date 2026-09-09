@@ -75,7 +75,8 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                 x = rootSaved?.x ?: 0f,
                 y = rootSaved?.y ?: 0f,
                 nodeType = CanvasNodeType.DIRECTORY,
-                isPinned = rootSaved?.isPinned ?: true
+                isPinned = rootSaved?.isPinned ?: true,
+                themeColor = rootSaved?.themeColor
             )
             canvas.nodes.add(rootNode)
 
@@ -87,7 +88,8 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                         canvasId = path,
                         x = rootNode.x,
                         y = rootNode.y,
-                        isPinned = true
+                        isPinned = true,
+                        themeColor = null
                     )
                 )
             }
@@ -115,7 +117,8 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                             canvasId = path,
                             x = initX,
                             y = initY,
-                            isPinned = false
+                            isPinned = false,
+                            themeColor = null
                         )
                     )
                     Triple(initX, initY, false)
@@ -126,7 +129,8 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                     fileNode = childFile,
                     x = posX,
                     y = posY,
-                    isPinned = isPinned
+                    isPinned = isPinned,
+                    themeColor = saved?.themeColor
                 )
                 canvas.nodes.add(childNode)
 
@@ -218,9 +222,30 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                     x = node.x,
                     y = node.y,
                     isPinned = node.isPinned,
-                    customColor = node.color
+                    themeColor = node.themeColor
                 )
             )
+        }
+    }
+
+    fun updateNodeThemeColor(node: CanvasNode, color: Int?, canvasId: String) {
+        node.themeColor = color
+        viewModelScope.launch(Dispatchers.IO) {
+            val existing = repository.getNodeByPath(node.fileNode.path)
+            if (existing != null) {
+                repository.saveNode(existing.copy(themeColor = color, updatedAt = System.currentTimeMillis()))
+            } else {
+                repository.saveNode(
+                    CanvasNodeEntity(
+                        filePath = node.fileNode.path,
+                        canvasId = canvasId,
+                        x = node.x,
+                        y = node.y,
+                        isPinned = node.isPinned,
+                        themeColor = color
+                    )
+                )
+            }
         }
     }
 
@@ -235,7 +260,7 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                     x = it.x,
                     y = it.y,
                     isPinned = it.isPinned,
-                    customColor = it.color
+                    themeColor = it.themeColor
                 )
             }
             repository.saveNodes(entities)

@@ -2,6 +2,8 @@ package com.polymath.fs.core.canvas.physics
 
 import com.polymath.fs.domain.canvas.models.CanvasEdge
 import com.polymath.fs.domain.canvas.models.CanvasNode
+import com.polymath.fs.domain.canvas.models.CanvasNodeType
+import com.polymath.fs.domain.canvas.models.extension
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -138,6 +140,59 @@ class ForceSimulationEngine(
             nodes[i].y = originY + (kotlin.math.sin(angle.toDouble()) * distance).toFloat()
             nodes[i].vx = 0f
             nodes[i].vy = 0f
+        }
+    }
+
+    /**
+     * Organizes nodes into spatial clusters based on file metadata, extensions, and directory paths.
+     * Computes distinct radial cluster anchors and seeds nodes in clustered orbits
+     * for force-directed convergence.
+     */
+    fun arrangeByClusteredMetadata(nodes: List<CanvasNode>, originX: Float = 0f, originY: Float = 0f) {
+        if (nodes.isEmpty()) return
+
+        // Categorize nodes by metadata cluster
+        val clusters = nodes.groupBy { node ->
+            if (node.nodeType == CanvasNodeType.DIRECTORY) {
+                "Directories"
+            } else {
+                val ext = node.fileNode.extension.lowercase()
+                when (ext) {
+                    "kt", "java", "js", "ts", "py", "c", "cpp", "rs", "go", "html", "xml", "json", "sh" -> "Code & Scripts"
+                    "png", "jpg", "jpeg", "webp", "gif", "svg", "ico" -> "Images & Vectors"
+                    "mp4", "mkv", "mov", "webm", "mp3", "flac", "wav", "ogg" -> "Audio & Video"
+                    "pdf", "doc", "docx", "txt", "md", "csv", "xlsx", "epub" -> "Documents"
+                    "zip", "tar", "gz", "7z", "rar", "apk", "bin" -> "Archives & Packages"
+                    else -> "Other Files"
+                }
+            }
+        }
+
+        val clusterList = clusters.entries.toList()
+        val numClusters = clusterList.size
+        val clusterRadius = max(320f, numClusters * 95f)
+
+        clusterList.forEachIndexed { clusterIndex, entry ->
+            val clusterAngle = (clusterIndex * (2 * Math.PI / numClusters)).toFloat()
+            val clusterCenterX = originX + (kotlin.math.cos(clusterAngle.toDouble()) * clusterRadius).toFloat()
+            val clusterCenterY = originY + (kotlin.math.sin(clusterAngle.toDouble()) * clusterRadius).toFloat()
+
+            val memberNodes = entry.value
+            val localRadiusStep = 90f
+
+            memberNodes.forEachIndexed { memberIndex, node ->
+                if (!node.isPinned) {
+                    val localAngle = (memberIndex * 0.9f)
+                    val localDist = ((memberIndex / 6) + 1) * localRadiusStep
+                    val targetX = clusterCenterX + (kotlin.math.cos(localAngle.toDouble()) * localDist).toFloat()
+                    val targetY = clusterCenterY + (kotlin.math.sin(localAngle.toDouble()) * localDist).toFloat()
+
+                    node.x = targetX
+                    node.y = targetY
+                    node.vx = 0f
+                    node.vy = 0f
+                }
+            }
         }
     }
 }
