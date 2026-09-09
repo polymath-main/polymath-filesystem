@@ -121,4 +121,142 @@ class CognitiveCanvasUnitTest {
         assertEquals(0xFF10B981.toInt(), node.themeColor)
         assertEquals(0xFF10B981.toInt(), node.color)
     }
+
+    @Test
+    fun testSpringDamperPhysics() {
+        val engine = ForceSimulationEngine()
+        val node = CanvasNode(
+            id = "test-node",
+            fileNode = FileNode.LocalFile("test.kt", "/storage/test.kt", size = 100, lastModified = 0, isDirectory = false),
+            x = 0f,
+            y = 0f
+        )
+
+        // Apply drag spring towards (100, 100)
+        engine.applyDragSpring(node, 100f, 100f, stiffness = 0.35f, dragDamping = 0.65f)
+
+        // Node should have moved towards target
+        assertTrue("Node X should increase towards target", node.x > 0f)
+        assertTrue("Node Y should increase towards target", node.y > 0f)
+        assertTrue("Node velocity should be positive", node.vx > 0f && node.vy > 0f)
+
+        // Multiple steps should converge close to target
+        for (i in 0 until 50) {
+            engine.applyDragSpring(node, 100f, 100f, stiffness = 0.35f, dragDamping = 0.65f)
+        }
+        assertEquals(100f, node.x, 2.0f)
+        assertEquals(100f, node.y, 2.0f)
+    }
+
+    @Test
+    fun testWorkspaceSnapshotSerialization() {
+        val canvas = com.polymath.fs.domain.canvas.models.CognitiveCanvas(
+            id = "/storage/project",
+            nodes = mutableListOf(
+                CanvasNode(
+                    id = "n1",
+                    fileNode = FileNode.LocalFile("App.kt", "/storage/project/App.kt", size = 100, lastModified = 1000, isDirectory = false),
+                    x = 150f,
+                    y = 250f,
+                    themeColor = 0xFF38BDF8.toInt()
+                ),
+                CanvasNode(
+                    id = "n2",
+                    fileNode = FileNode.LocalFile("Build.gradle", "/storage/project/Build.gradle", size = 200, lastModified = 1000, isDirectory = false),
+                    x = 350f,
+                    y = 450f,
+                    themeColor = 0xFFA855F7.toInt()
+                )
+            ),
+            edges = mutableListOf(
+                com.polymath.fs.domain.canvas.models.CanvasEdge(
+                    id = "e1",
+                    sourceNodeId = "n1",
+                    targetNodeId = "n2",
+                    label = "Configures"
+                )
+            )
+        )
+
+        val snapshot = com.polymath.fs.domain.canvas.models.WorkspaceSnapshot.capture(canvas, "Initial Architecture")
+        assertEquals("Initial Architecture", snapshot.label)
+        assertEquals(2, snapshot.nodes.size)
+        assertEquals(1, snapshot.edges.size)
+
+        val json = snapshot.toJson()
+        assertTrue("JSON should contain snapshot label", json.contains("Initial Architecture"))
+
+        val restored = com.polymath.fs.domain.canvas.models.WorkspaceSnapshot.fromJson(json)
+        assertNotNull(restored)
+        assertEquals(snapshot.id, restored!!.id)
+        assertEquals(snapshot.label, restored.label)
+        assertEquals(2, restored.nodes.size)
+        assertEquals(150f, restored.nodes[0].x, 0.001f)
+        assertEquals(250f, restored.nodes[0].y, 0.001f)
+    }
+
+    @Test
+    fun testActivityHeatmapScoring() {
+        val now = System.currentTimeMillis()
+        val hotNode = CanvasNode(
+            id = "hot",
+            fileNode = FileNode.LocalFile("recent.kt", "/storage/recent.kt", size = 100, lastModified = now - 60_000, isDirectory = false),
+            x = 100f,
+            y = 100f
+        )
+        val coldNode = CanvasNode(
+            id = "cold",
+            fileNode = FileNode.LocalFile("old.kt", "/storage/old.kt", size = 100, lastModified = now - 30L * 24 * 3600 * 1000, isDirectory = false),
+            x = 800f,
+            y = 800f
+        )
+
+        val scores = com.polymath.fs.domain.canvas.heatmap.CanvasHeatmapEvaluator.computeHeatScores(listOf(hotNode, coldNode))
+        val hotScore = scores["hot"] ?: 0f
+        val coldScore = scores["cold"] ?: 0f
+
+        assertTrue("Recently modified node should have high activity score: $hotScore", hotScore >= 0.8f)
+        assertTrue("Old modified node should have low activity score: $coldScore", coldScore <= 0.4f)
+        assertTrue("Hot node should be hotter than cold node", hotScore > coldScore)
+    }
+
+    @Test
+    fun testMLGroupingProposals() {
+        val nodes = listOf(
+            CanvasNode(
+                id = "doc1",
+                fileNode = FileNode.LocalFile("report_q1.pdf", "/storage/report_q1.pdf", size = 100, lastModified = 0, isDirectory = false),
+                x = 100f,
+                y = 100f
+            ),
+            CanvasNode(
+                id = "doc2",
+                fileNode = FileNode.LocalFile("report_q2.pdf", "/storage/report_q2.pdf", size = 100, lastModified = 0, isDirectory = false),
+                x = 200f,
+                y = 100f
+            ),
+            CanvasNode(
+                id = "doc3",
+                fileNode = FileNode.LocalFile("report_q3.pdf", "/storage/report_q3.pdf", size = 100, lastModified = 0, isDirectory = false),
+                x = 300f,
+                y = 100f
+            ),
+            CanvasNode(
+                id = "img1",
+                fileNode = FileNode.LocalFile("logo.png", "/storage/logo.png", size = 100, lastModified = 0, isDirectory = false),
+                x = 800f,
+                y = 800f
+            )
+        )
+
+        val clusters = com.polymath.fs.domain.canvas.ai.CanvasMLSuggestionEngine.proposeAutoGrouping(
+            allNodes = nodes,
+            allEdges = emptyList()
+        )
+
+        assertTrue("Should detect auto-grouping cluster for report PDFs", clusters.isNotEmpty())
+        val pdfCluster = clusters.firstOrNull { it.nodes.any { n -> n.fileNode.name.contains("report") } }
+        assertNotNull(pdfCluster)
+        assertTrue("Cluster should have at least 2 matching files", (pdfCluster?.nodes?.size ?: 0) >= 2)
+    }
 }

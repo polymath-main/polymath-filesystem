@@ -22,15 +22,27 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import android.view.ViewGroup
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.polymath.fs.R
 import com.polymath.fs.core.SystemBarHelper
 import com.polymath.fs.core.ThemeManager
+import com.polymath.fs.data.db.entities.CanvasPresetEntity
+import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
 import com.polymath.fs.databinding.ActivityCognitiveCanvasBinding
+import com.polymath.fs.databinding.LayoutDialogCanvasPresetsBinding
+import com.polymath.fs.databinding.LayoutDialogMlSuggestionsBinding
+import com.polymath.fs.databinding.LayoutDialogWorkspaceSnapshotsBinding
 import com.polymath.fs.domain.canvas.models.CanvasAction
 import com.polymath.fs.domain.canvas.models.CanvasNode
 import com.polymath.fs.domain.canvas.models.CanvasNodeType
 import com.polymath.fs.domain.canvas.models.CanvasRelationType
+import com.polymath.fs.domain.canvas.models.WorkspaceSnapshot
+import com.polymath.fs.ui.canvas.adapters.CanvasPresetAdapter
+import com.polymath.fs.ui.canvas.adapters.MLSuggestionClusterAdapter
+import com.polymath.fs.ui.canvas.adapters.WorkspaceSnapshotAdapter
 import com.polymath.fs.ui.canvas.preview.CanvasFilePreviewPanelController
 import com.polymath.fs.viewers.EditorActivity
 import com.polymath.fs.viewmodels.CognitiveCanvasViewModel
@@ -73,10 +85,25 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         // Dynamically adjust status bar contrast for header component
         SystemBarHelper.adjustSystemBarContrastForHeader(this, binding.headerCard)
 
-        // Handle edge-to-edge status bar padding
+        // Ensure top panel contents never go below status bar - keeping status bar area strictly reserved for status bar contents!
+        val baseHeaderMarginTop = (binding.headerCard.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: 0
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
-            val statusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
-            binding.headerCard.setPadding(0, statusBarInsets.top / 2, 0, 0)
+            val statusBarInsets = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            (binding.headerCard.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+                lp.topMargin = statusBarInsets.top + baseHeaderMarginTop
+                binding.headerCard.layoutParams = lp
+            }
+
+            // Adjust navigation bar insets for preview sheet
+            val navBars = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            binding.previewPanel.root.setPadding(
+                binding.previewPanel.root.paddingLeft,
+                binding.previewPanel.root.paddingTop,
+                binding.previewPanel.root.paddingRight,
+                navBars.bottom
+            )
             insets
         }
 
@@ -95,14 +122,51 @@ class CognitiveCanvasActivity : AppCompatActivity() {
 
         binding.tvCanvasSubtitle.text = currentDirectoryPath
 
+        // Activity Heatmap toggle (Recency & Hotspot halos)
+        binding.btnHeatmap.setOnClickListener {
+            val isEnabled = binding.cognitiveCanvasView.toggleHeatmap()
+            binding.btnHeatmap.setBackgroundResource(
+                if (isEnabled) R.drawable.bg_canvas_tool_pill_hot else R.drawable.bg_canvas_tool_pill
+            )
+            binding.ivHeatmapIcon.setColorFilter(
+                if (isEnabled) Color.parseColor("#FF2A6D") else Color.parseColor("#94A3B8")
+            )
+            binding.tvHeatmapText.setTextColor(
+                if (isEnabled) Color.parseColor("#FF2A6D") else Color.parseColor("#E2E8F0")
+            )
+            Toast.makeText(
+                this,
+                if (isEnabled) "Activity Heatmap Active: Thermal Halos & Activity Indicators" else "Heatmap Disabled",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        // ML Auto-Grouping suggestions
+        binding.btnMLSuggest.setOnClickListener {
+            showMLSuggestionsDialog()
+        }
+
+        // Spatial Canvas Presets (Project Flow, Chronological, Resource Clusters, Grid Matrix)
+        binding.btnPresets.setOnClickListener {
+            showCanvasPresetsDialog()
+        }
+
+        // Workspace Snapshots (Timestamped Layout Reversion)
+        binding.btnSnapshots.setOnClickListener {
+            showWorkspaceSnapshotsDialog()
+        }
+
         // Snap to grid toggle
         binding.btnSnapToGrid.setOnClickListener {
             binding.cognitiveCanvasView.isSnapToGridEnabled = !binding.cognitiveCanvasView.isSnapToGridEnabled
             val isEnabled = binding.cognitiveCanvasView.isSnapToGridEnabled
             binding.btnSnapToGrid.setBackgroundResource(
-                if (isEnabled) R.drawable.bg_canvas_btn_active else 0
+                if (isEnabled) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_canvas_tool_pill
             )
-            binding.btnSnapToGrid.setColorFilter(
+            binding.ivSnapIcon.setColorFilter(
+                if (isEnabled) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+            )
+            binding.tvSnapText.setTextColor(
                 if (isEnabled) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
             )
             Toast.makeText(
@@ -118,9 +182,12 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             val isVisible = viewModel.uiState.value.isVisualGridOverlayVisible
             binding.cognitiveCanvasView.isVisualGridOverlayVisible = isVisible
             binding.btnVisualGrid.setBackgroundResource(
-                if (isVisible) R.drawable.bg_canvas_btn_active else 0
+                if (isVisible) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_canvas_tool_pill
             )
-            binding.btnVisualGrid.setColorFilter(
+            binding.ivGridLinesIcon.setColorFilter(
+                if (isVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+            )
+            binding.tvGridLinesText.setTextColor(
                 if (isVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
             )
             Toast.makeText(
@@ -169,9 +236,12 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             binding.cognitiveCanvasView.isLinkModeActive = !binding.cognitiveCanvasView.isLinkModeActive
             val isLinkActive = binding.cognitiveCanvasView.isLinkModeActive
             binding.btnLinkMode.setBackgroundResource(
-                if (isLinkActive) R.drawable.bg_canvas_btn_active else 0
+                if (isLinkActive) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_canvas_tool_pill
             )
-            binding.btnLinkMode.setColorFilter(
+            binding.ivLinkIcon.setColorFilter(
+                if (isLinkActive) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+            )
+            binding.tvLinkText.setTextColor(
                 if (isLinkActive) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
             )
             binding.tvStatusHelp.text = if (isLinkActive) {
@@ -368,9 +438,12 @@ class CognitiveCanvasActivity : AppCompatActivity() {
                 // Update Visual grid overlay
                 binding.cognitiveCanvasView.isVisualGridOverlayVisible = state.isVisualGridOverlayVisible
                 binding.btnVisualGrid.setBackgroundResource(
-                    if (state.isVisualGridOverlayVisible) R.drawable.bg_canvas_btn_active else 0
+                    if (state.isVisualGridOverlayVisible) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_canvas_tool_pill
                 )
-                binding.btnVisualGrid.setColorFilter(
+                binding.ivGridLinesIcon.setColorFilter(
+                    if (state.isVisualGridOverlayVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+                )
+                binding.tvGridLinesText.setTextColor(
                     if (state.isVisualGridOverlayVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
                 )
             }
@@ -692,6 +765,146 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun showMLSuggestionsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = LayoutDialogMlSuggestionsBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        val adapter = MLSuggestionClusterAdapter { cluster ->
+            viewModel.applyMLGroupingSuggestion(cluster) {
+                binding.cognitiveCanvasView.invalidate()
+                Toast.makeText(this, "Auto-grouped: ${cluster.title}", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+        dialogBinding.rvMLClusters.layoutManager = LinearLayoutManager(this)
+        dialogBinding.rvMLClusters.adapter = adapter
+        dialogBinding.btnCloseMLDialog.setOnClickListener { dialog.dismiss() }
+
+        dialogBinding.pbMLLoading.visibility = View.VISIBLE
+        dialogBinding.rvMLClusters.visibility = View.GONE
+        dialogBinding.tvMLEmpty.visibility = View.GONE
+
+        viewModel.computeMLGroupingSuggestions { clusters ->
+            dialogBinding.pbMLLoading.visibility = View.GONE
+            if (clusters.isEmpty()) {
+                dialogBinding.tvMLEmpty.visibility = View.VISIBLE
+                dialogBinding.rvMLClusters.visibility = View.GONE
+            } else {
+                dialogBinding.tvMLEmpty.visibility = View.GONE
+                dialogBinding.rvMLClusters.visibility = View.VISIBLE
+                adapter.submitList(clusters)
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun showCanvasPresetsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = LayoutDialogCanvasPresetsBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        val adapter = CanvasPresetAdapter { preset ->
+            viewModel.applyCanvasPreset(preset) {
+                binding.cognitiveCanvasView.invalidate()
+                Toast.makeText(this, "Applied preset: ${preset.name}", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+        dialogBinding.rvPresetsList.layoutManager = LinearLayoutManager(this)
+        dialogBinding.rvPresetsList.adapter = adapter
+        dialogBinding.btnClosePresetsDialog.setOnClickListener { dialog.dismiss() }
+
+        viewModel.getCanvasPresets { presets ->
+            adapter.submitList(presets)
+        }
+
+        dialogBinding.btnSaveCurrentPreset.setOnClickListener {
+            val editText = EditText(this).apply {
+                hint = "Preset Name (e.g., Project Pipeline)"
+            }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Save Canvas Preset")
+                .setView(editText)
+                .setPositiveButton("Save") { _, _ ->
+                    val name = editText.text.toString().trim()
+                    if (name.isNotEmpty()) {
+                        viewModel.saveCurrentLayoutAsPreset(
+                            name = name,
+                            description = "Custom layout arrangement for $currentDirectoryPath"
+                        ) { success ->
+                            if (success) {
+                                Toast.makeText(this, "Preset '$name' saved!", Toast.LENGTH_SHORT).show()
+                                viewModel.getCanvasPresets { presets ->
+                                    adapter.submitList(presets)
+                                }
+                            }
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        dialog.show()
+    }
+
+    private fun showWorkspaceSnapshotsDialog() {
+        val dialog = BottomSheetDialog(this)
+        val dialogBinding = LayoutDialogWorkspaceSnapshotsBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        lateinit var adapter: WorkspaceSnapshotAdapter
+        val refreshSnapshots = {
+            viewModel.getWorkspaceSnapshots { snapshots ->
+                if (snapshots.isEmpty()) {
+                    dialogBinding.tvSnapshotsEmpty.visibility = View.VISIBLE
+                    dialogBinding.rvSnapshotsList.visibility = View.GONE
+                } else {
+                    dialogBinding.tvSnapshotsEmpty.visibility = View.GONE
+                    dialogBinding.rvSnapshotsList.visibility = View.VISIBLE
+                    adapter.submitList(snapshots)
+                }
+            }
+        }
+
+        adapter = WorkspaceSnapshotAdapter(
+            onRestoreSnapshot = { snapshot ->
+                viewModel.restoreWorkspaceSnapshot(snapshot) {
+                    binding.cognitiveCanvasView.invalidate()
+                    Toast.makeText(this, "Restored snapshot: ${snapshot.label}", Toast.LENGTH_SHORT).show()
+                    dialog.dismiss()
+                }
+            },
+            onDeleteSnapshot = { entity ->
+                viewModel.deleteWorkspaceSnapshot(entity.id) {
+                    Toast.makeText(this, "Snapshot deleted", Toast.LENGTH_SHORT).show()
+                    refreshSnapshots()
+                }
+            }
+        )
+        dialogBinding.rvSnapshotsList.layoutManager = LinearLayoutManager(this)
+        dialogBinding.rvSnapshotsList.adapter = adapter
+        dialogBinding.btnCloseSnapshotsDialog.setOnClickListener { dialog.dismiss() }
+
+        refreshSnapshots()
+
+        dialogBinding.btnCaptureSnapshot.setOnClickListener {
+            val labelText = dialogBinding.etSnapshotLabel.text.toString().trim().ifEmpty {
+                "Snapshot " + SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date())
+            }
+            viewModel.captureWorkspaceSnapshot(labelText) {
+                dialogBinding.etSnapshotLabel.setText("")
+                hideKeyboard(dialogBinding.etSnapshotLabel)
+                Toast.makeText(this, "Snapshot '$labelText' captured!", Toast.LENGTH_SHORT).show()
+                refreshSnapshots()
+            }
+        }
+
+        dialog.show()
     }
 
     @Deprecated("Deprecated in Java")

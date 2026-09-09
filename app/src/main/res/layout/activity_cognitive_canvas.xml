@@ -31,7 +31,7 @@
             android:paddingHorizontal="14dp"
             android:paddingVertical="8dp">
 
-            <!-- Header Action Row -->
+            <!-- Header Action Row: Navigation & Primary Actions -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -74,55 +74,11 @@
                         android:textSize="11sp" />
                 </LinearLayout>
 
-                <!-- Search Toggle Button -->
-                <ImageButton
-                    android:id="@+id/btnSearchToggle"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Search Canvas Files"
-                    android:src="@android:drawable/ic_menu_search"
-                    app:tint="#94A3B8" />
-
-                <!-- Smart Arrange Button (Force-Directed Clustering) -->
-                <ImageButton
-                    android:id="@+id/btnSmartArrange"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Smart Arrange Clustered Graph"
-                    android:src="@android:drawable/ic_menu_rotate"
-                    app:tint="#38BDF8" />
-
-                <!-- Snap to Grid Toggle Button -->
-                <ImageButton
-                    android:id="@+id/btnSnapToGrid"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="@drawable/bg_canvas_btn_active"
-                    android:contentDescription="Toggle Snap to Grid"
-                    android:src="@android:drawable/ic_menu_sort_by_size"
-                    app:tint="#38BDF8" />
-
-                <!-- Visual Grid Overlay Toggle Button -->
-                <ImageButton
-                    android:id="@+id/btnVisualGrid"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="@drawable/bg_canvas_btn_active"
-                    android:contentDescription="Toggle Visual Grid Lines"
-                    android:src="@drawable/ic_grid_on"
-                    app:tint="#38BDF8" />
-
                 <!-- Undo Action Button -->
                 <ImageButton
                     android:id="@+id/btnUndo"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_marginStart="2dp"
                     android:alpha="0.4"
                     android:background="?attr/selectableItemBackgroundBorderless"
@@ -133,8 +89,8 @@
                 <!-- Redo Action Button -->
                 <ImageButton
                     android:id="@+id/btnRedo"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_marginStart="2dp"
                     android:alpha="0.4"
                     android:background="?attr/selectableItemBackgroundBorderless"
@@ -142,50 +98,374 @@
                     android:src="@drawable/ic_redo"
                     app:tint="#E2E8F0" />
 
-                <!-- Export Layout as Image Button -->
+                <!-- Search Toggle Button -->
                 <ImageButton
-                    android:id="@+id/btnExportImage"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
+                    android:id="@+id/btnSearchToggle"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_marginStart="2dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Export Canvas as Image"
-                    android:src="@drawable/ic_export_image"
-                    app:tint="#38BDF8" />
-
-                <!-- Link Mode Toggle -->
-                <ImageButton
-                    android:id="@+id/btnLinkMode"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Draw Link"
-                    android:src="@android:drawable/ic_menu_share"
+                    android:contentDescription="Search Canvas Files"
+                    android:src="@android:drawable/ic_menu_search"
                     app:tint="#94A3B8" />
 
-                <!-- Reset Camera / Center -->
-                <ImageButton
-                    android:id="@+id/btnResetView"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Center View"
-                    android:src="@android:drawable/ic_menu_compass"
-                    app:tint="#94A3B8" />
-
-                <!-- Help / Coach Mark Guide -->
-                <ImageButton
-                    android:id="@+id/btnHelp"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_marginStart="2dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="Show Gesture Guide"
-                    android:src="@android:drawable/ic_menu_help"
-                    app:tint="#94A3B8" />
             </LinearLayout>
+
+            <!-- Horizontal Tool Ribbon: Heatmap, ML Auto-Grouping, Presets, Snapshots & Canvas Controls -->
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fadingEdge="horizontal"
+                android:fadingEdgeLength="16dp"
+                android:requiresFadingEdge="horizontal"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <!-- Activity Heatmap Toggle -->
+                    <LinearLayout
+                        android:id="@+id/btnHeatmap"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivHeatmapIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Activity Heatmap"
+                            android:src="@drawable/ic_flame_heatmap"
+                            app:tint="#FF2A6D" />
+
+                        <TextView
+                            android:id="@+id/tvHeatmapText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Heatmap"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- ML Auto-Grouping Suggestions -->
+                    <LinearLayout
+                        android:id="@+id/btnMLSuggest"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="ML Grouping"
+                            android:src="@drawable/ic_auto_awesome"
+                            app:tint="#C084FC" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="ML Group"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Spatial Canvas Presets -->
+                    <LinearLayout
+                        android:id="@+id/btnPresets"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Canvas Presets"
+                            android:src="@drawable/ic_canvas_presets"
+                            app:tint="#38BDF8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Presets"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Workspace Snapshots (Timestamp Recovery) -->
+                    <LinearLayout
+                        android:id="@+id/btnSnapshots"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Workspace Snapshots"
+                            android:src="@drawable/ic_workspace_snapshot"
+                            app:tint="#34D399" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Snapshots"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Snap to Grid Toggle Button -->
+                    <LinearLayout
+                        android:id="@+id/btnSnapToGrid"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill_active"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivSnapIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Toggle Snap to Grid"
+                            android:src="@android:drawable/ic_menu_sort_by_size"
+                            app:tint="#38BDF8" />
+
+                        <TextView
+                            android:id="@+id/tvSnapText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Snap Grid"
+                            android:textColor="#38BDF8"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Visual Grid Overlay Toggle Button -->
+                    <LinearLayout
+                        android:id="@+id/btnVisualGrid"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill_active"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivGridLinesIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Toggle Visual Grid Lines"
+                            android:src="@drawable/ic_grid_on"
+                            app:tint="#38BDF8" />
+
+                        <TextView
+                            android:id="@+id/tvGridLinesText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Grid Lines"
+                            android:textColor="#38BDF8"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Smart Arrange Button -->
+                    <LinearLayout
+                        android:id="@+id/btnSmartArrange"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Smart Arrange Clustered Graph"
+                            android:src="@android:drawable/ic_menu_rotate"
+                            app:tint="#38BDF8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Arrange"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Export Layout as Image Button -->
+                    <LinearLayout
+                        android:id="@+id/btnExportImage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Export Canvas as Image"
+                            android:src="@drawable/ic_export_image"
+                            app:tint="#38BDF8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Export"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Link Mode Toggle -->
+                    <LinearLayout
+                        android:id="@+id/btnLinkMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:id="@+id/ivLinkIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Draw Link"
+                            android:src="@android:drawable/ic_menu_share"
+                            app:tint="#94A3B8" />
+
+                        <TextView
+                            android:id="@+id/tvLinkText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Draw Link"
+                            android:textColor="#94A3B8"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Reset Camera / Center -->
+                    <LinearLayout
+                        android:id="@+id/btnResetView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Center View"
+                            android:src="@android:drawable/ic_menu_compass"
+                            app:tint="#94A3B8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Center"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Help / Guide -->
+                    <LinearLayout
+                        android:id="@+id/btnHelp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/bg_canvas_tool_pill"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="10dp">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="Show Gesture Guide"
+                            android:src="@android:drawable/ic_menu_help"
+                            app:tint="#94A3B8" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Guide"
+                            android:textColor="#E2E8F0"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </HorizontalScrollView>
 
             <!-- Search Bar Row (Top of CognitiveCanvas view) -->
             <LinearLayout

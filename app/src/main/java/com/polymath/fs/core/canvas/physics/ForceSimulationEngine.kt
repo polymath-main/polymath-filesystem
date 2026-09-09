@@ -15,12 +15,34 @@ import kotlin.math.sqrt
  */
 class ForceSimulationEngine(
     private val repulsionStrength: Float = 25000f,
-    private val springStiffness: Float = 0.04f,
+    private val springStiffness: Float = 0.055f,
+    private val springDamping: Float = 0.12f,
     private val restingLength: Float = 140f,
     private val centerGravityStrength: Float = 0.002f,
-    private val damping: Float = 0.85f,
-    private val maxVelocity: Float = 40f
+    private val damping: Float = 0.88f,
+    private val maxVelocity: Float = 45f
 ) {
+
+    fun applyDragSpring(
+        node: CanvasNode,
+        targetX: Float,
+        targetY: Float,
+        stiffness: Float = 0.35f,
+        dragDamping: Float = 0.65f
+    ) {
+        val dx = targetX - node.x
+        val dy = targetY - node.y
+
+        // Spring acceleration towards finger
+        val ax = dx * stiffness
+        val ay = dy * stiffness
+
+        node.vx = (node.vx + ax) * dragDamping
+        node.vy = (node.vy + ay) * dragDamping
+
+        node.x += node.vx
+        node.y += node.vy
+    }
 
     fun step(
         nodes: List<CanvasNode>,
@@ -67,7 +89,7 @@ class ForceSimulationEngine(
             }
         }
 
-        // 2. Hooke's Law Spring attraction for connected edges
+        // 2. Hooke's Law Spring-Damper for connected edges
         for (edge in edges) {
             val source = nodeMap[edge.sourceNodeId] ?: continue
             val target = nodeMap[edge.targetNodeId] ?: continue
@@ -79,8 +101,16 @@ class ForceSimulationEngine(
             val displacement = dist - (restingLength * edge.weight)
             val springForce = displacement * springStiffness
 
-            val fx = (dx / dist) * springForce
-            val fy = (dy / dist) * springForce
+            // Relative velocity damping along the edge unit vector
+            val nx = dx / dist
+            val ny = dy / dist
+            val relVx = target.vx - source.vx
+            val relVy = target.vy - source.vy
+            val normalDampingForce = (relVx * nx + relVy * ny) * springDamping
+
+            val totalForce = springForce + normalDampingForce
+            val fx = nx * totalForce
+            val fy = ny * totalForce
 
             if (!source.isPinned) {
                 source.vx += fx

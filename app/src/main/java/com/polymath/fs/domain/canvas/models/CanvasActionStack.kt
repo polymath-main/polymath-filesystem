@@ -24,6 +24,11 @@ sealed class CanvasAction(val description: String) {
         val relationType: CanvasRelationType,
         val label: String
     ) : CanvasAction("Link nodes")
+
+    data class RestoreSnapshot(
+        val previousSnapshot: WorkspaceSnapshot,
+        val restoredSnapshot: WorkspaceSnapshot
+    ) : CanvasAction("Revert workspace snapshot")
 }
 
 class CanvasActionStack(private val maxCapacity: Int = 50) {

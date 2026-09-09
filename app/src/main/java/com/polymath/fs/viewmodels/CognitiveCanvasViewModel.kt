@@ -8,8 +8,13 @@ import com.polymath.fs.core.canvas.physics.ForceSimulationEngine
 import com.polymath.fs.data.db.AppDatabase
 import com.polymath.fs.data.db.entities.CanvasEdgeEntity
 import com.polymath.fs.data.db.entities.CanvasNodeEntity
+import com.polymath.fs.data.db.entities.CanvasPresetEntity
+import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
 import com.polymath.fs.data.repository.CognitiveCanvasRepository
+import com.polymath.fs.domain.canvas.ai.CanvasMLSuggestionEngine
+import com.polymath.fs.domain.canvas.ai.CanvasSuggestionCluster
 import com.polymath.fs.domain.canvas.models.*
+import com.polymath.fs.domain.canvas.presets.PresetLayoutEngine
 import com.polymath.fs.models.FileNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +43,11 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
 
     private val repository: CognitiveCanvasRepository by lazy {
         val db = AppDatabase.getDatabase(application)
-        CognitiveCanvasRepository(db.cognitiveCanvasDao())
+        CognitiveCanvasRepository(
+            canvasDao = db.cognitiveCanvasDao(),
+            snapshotDao = db.workspaceSnapshotDao(),
+            presetDao = db.canvasPresetDao()
+        )
     }
 
     private val _uiState = MutableStateFlow(CognitiveCanvasUiState())
@@ -48,6 +57,9 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
     val actionStack = CanvasActionStack()
 
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.seedBuiltInPresetsIfEmpty()
+        }
         actionStack.onStackChangedListener = { canUndo, canRedo ->
             _uiState.value = _uiState.value.copy(
                 canUndo = canUndo,
@@ -391,6 +403,9 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                     }
                 }
             }
+            is CanvasAction.RestoreSnapshot -> {
+                restoreSnapshotInternal(action.previousSnapshot)
+            }
         }
         onComplete(action)
     }
@@ -444,8 +459,312 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                     }
                 }
             }
+            is CanvasAction.RestoreSnapshot -> {
+                restoreSnapshotInternal(action.restoredSnapshot)
+            }
         }
         onComplete(action)
+    }
+
+    private fun restoreSnapshotInternal(snapshot: WorkspaceSnapshot) {
+        val currentCanvas = _uiState.value.canvas
+        val canvasId = _uiState.value.currentPath
+
+        val nodeMap = currentCanvas.nodes.associateBy { it.fileNode.path }
+        val nodesToPersist = mutableListOf<CanvasNodeEntity>()
+
+        for (nData in snapshot.nodes) {
+            val node = nodeMap[nData.filePath]
+            if (node != null) {
+                node.x = nData.x
+                node.y = nData.y
+                node.isPinned = nData.isPinned
+                node.themeColor = nData.themeColor
+                node.vx = 0f
+                node.vy = 0f
+
+                nodesToPersist.add(
+                    CanvasNodeEntity(
+                        filePath = node.fileNode.path,
+                        canvasId = canvasId,
+                        x = node.x,
+                        y = node.y,
+                        isPinned = node.isPinned,
+                        themeColor = node.themeColor
+                    )
+                )
+            }
+        }
+
+        currentCanvas.edges.clear()
+        val edgesToPersist = mutableListOf<CanvasEdgeEntity>()
+        for (eData in snapshot.edges) {
+            val edge = CanvasEdge(
+                id = eData.id,
+                sourceNodeId = eData.sourcePath,
+                targetNodeId = eData.targetPath,
+                relationType = try { CanvasRelationType.valueOf(eData.relationType) } catch (e: Exception) { CanvasRelationType.USER_LINK },
+                label = eData.label,
+                weight = eData.weight
+            )
+            currentCanvas.edges.add(edge)
+            edgesToPersist.add(
+                CanvasEdgeEntity(
+                    id = edge.id,
+                    canvasId = canvasId,
+                    sourcePath = edge.sourceNodeId,
+                    targetPath = edge.targetNodeId,
+                    relationType = edge.relationType.name,
+                    label = edge.label,
+                    weight = edge.weight
+                )
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearCanvas(canvasId)
+            repository.saveNodes(nodesToPersist)
+            repository.saveEdges(edgesToPersist)
+            withContext(Dispatchers.Main) {
+                _uiState.value = _uiState.value.copy(
+                    nodeCount = currentCanvas.nodes.size,
+                    edgeCount = currentCanvas.edges.size
+                )
+            }
+        }
+    }
+
+    // --- Workspace Snapshot APIs ---
+
+    fun captureWorkspaceSnapshot(label: String, onComplete: ((WorkspaceSnapshot) -> Unit)? = null) {
+        val currentCanvas = _uiState.value.canvas
+        if (currentCanvas.nodes.isEmpty()) return
+
+        val snapshot = WorkspaceSnapshot.capture(currentCanvas, label)
+        val entity = WorkspaceSnapshotEntity(
+            id = snapshot.id,
+            canvasPath = snapshot.canvasPath,
+            timestamp = snapshot.timestamp,
+            label = snapshot.label,
+            nodeCount = snapshot.nodes.size,
+            edgeCount = snapshot.edges.size,
+            snapshotJson = snapshot.toJson()
+        )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveSnapshot(entity)
+            withContext(Dispatchers.Main) {
+                onComplete?.invoke(snapshot)
+            }
+        }
+    }
+
+    fun getWorkspaceSnapshots(onResult: (List<WorkspaceSnapshotEntity>) -> Unit) {
+        val canvasPath = _uiState.value.currentPath
+        viewModelScope.launch(Dispatchers.IO) {
+            val snapshots = repository.getSnapshotsOnce(canvasPath)
+            withContext(Dispatchers.Main) {
+                onResult(snapshots)
+            }
+        }
+    }
+
+    fun restoreWorkspaceSnapshot(snapshot: WorkspaceSnapshot, onComplete: () -> Unit) {
+        val currentCanvas = _uiState.value.canvas
+        val beforeSnapshot = WorkspaceSnapshot.capture(currentCanvas, "Pre-restore Snapshot")
+
+        actionStack.pushAction(
+            CanvasAction.RestoreSnapshot(
+                previousSnapshot = beforeSnapshot,
+                restoredSnapshot = snapshot
+            )
+        )
+
+        restoreSnapshotInternal(snapshot)
+        onComplete()
+    }
+
+    fun deleteWorkspaceSnapshot(snapshotId: String, onComplete: (() -> Unit)? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.deleteSnapshot(snapshotId)
+            withContext(Dispatchers.Main) {
+                onComplete?.invoke()
+            }
+        }
+    }
+
+    // --- Machine Learning Auto-Grouping APIs ---
+
+    fun computeMLGroupingSuggestions(onResult: (List<CanvasSuggestionCluster>) -> Unit) {
+        val currentCanvas = _uiState.value.canvas
+        viewModelScope.launch(Dispatchers.Default) {
+            val suggestions = CanvasMLSuggestionEngine.proposeAutoGrouping(
+                allNodes = currentCanvas.nodes,
+                allEdges = currentCanvas.edges
+            )
+            withContext(Dispatchers.Main) {
+                onResult(suggestions)
+            }
+        }
+    }
+
+    fun applyMLGroupingSuggestion(cluster: CanvasSuggestionCluster, onComplete: () -> Unit) {
+        val currentCanvas = _uiState.value.canvas
+        val canvasId = _uiState.value.currentPath
+        val preSnapshot = WorkspaceSnapshot.capture(currentCanvas, "Before Auto-Grouping ${cluster.title}")
+
+        val clusterNodes = cluster.nodes.filter { node -> currentCanvas.nodes.any { it.id == node.id } }
+        if (clusterNodes.size >= 2) {
+            var avgX = 0f
+            var avgY = 0f
+            for (node in clusterNodes) {
+                avgX += node.x
+                avgY += node.y
+            }
+            avgX /= clusterNodes.size
+            avgY /= clusterNodes.size
+
+            val orbitRadius = 110f
+            val angleStep = (2 * Math.PI / clusterNodes.size).toFloat()
+
+            clusterNodes.forEachIndexed { index, node ->
+                val angle = index * angleStep
+                node.x = avgX + (kotlin.math.cos(angle.toDouble()) * orbitRadius).toFloat()
+                node.y = avgY + (kotlin.math.sin(angle.toDouble()) * orbitRadius).toFloat()
+                node.themeColor = cluster.suggestedThemeColor
+                node.vx = 0f
+                node.vy = 0f
+            }
+
+            val edgesToPersist = mutableListOf<CanvasEdgeEntity>()
+            for (i in 0 until clusterNodes.size - 1) {
+                val src = clusterNodes[i]
+                val tgt = clusterNodes[i + 1]
+                val existing = currentCanvas.edges.any {
+                    (it.sourceNodeId == src.id && it.targetNodeId == tgt.id) ||
+                    (it.sourceNodeId == tgt.id && it.targetNodeId == src.id)
+                }
+                if (!existing) {
+                    val edge = CanvasEdge(
+                        sourceNodeId = src.id,
+                        targetNodeId = tgt.id,
+                        relationType = CanvasRelationType.SIMILARITY,
+                        label = "ML Group",
+                        weight = cluster.confidence
+                    )
+                    currentCanvas.edges.add(edge)
+                    edgesToPersist.add(
+                        CanvasEdgeEntity(
+                            id = edge.id,
+                            canvasId = canvasId,
+                            sourcePath = edge.sourceNodeId,
+                            targetPath = edge.targetNodeId,
+                            relationType = edge.relationType.name,
+                            label = edge.label,
+                            weight = edge.weight
+                        )
+                    )
+                }
+            }
+
+            val postSnapshot = WorkspaceSnapshot.capture(currentCanvas, "Applied Auto-Grouping ${cluster.title}")
+            actionStack.pushAction(
+                CanvasAction.RestoreSnapshot(
+                    previousSnapshot = preSnapshot,
+                    restoredSnapshot = postSnapshot
+                )
+            )
+
+            viewModelScope.launch(Dispatchers.IO) {
+                persistAllNodePositions()
+                if (edgesToPersist.isNotEmpty()) {
+                    repository.saveEdges(edgesToPersist)
+                }
+                withContext(Dispatchers.Main) {
+                    _uiState.value = _uiState.value.copy(
+                        edgeCount = currentCanvas.edges.size
+                    )
+                    onComplete()
+                }
+            }
+        } else {
+            onComplete()
+        }
+    }
+
+    // --- Canvas Presets APIs ---
+
+    fun getCanvasPresets(onResult: (List<CanvasPresetEntity>) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val presets = repository.getPresetsOnce()
+            withContext(Dispatchers.Main) {
+                onResult(presets)
+            }
+        }
+    }
+
+    fun applyCanvasPreset(presetEntity: CanvasPresetEntity, onComplete: () -> Unit) {
+        val currentCanvas = _uiState.value.canvas
+        val canvasId = _uiState.value.currentPath
+        val preSnapshot = WorkspaceSnapshot.capture(currentCanvas, "Before Preset ${presetEntity.name}")
+
+        val layoutType = try {
+            PresetLayoutType.valueOf(presetEntity.layoutType)
+        } catch (e: Exception) {
+            PresetLayoutType.RESOURCE_CLUSTERS
+        }
+
+        val domainPreset = CanvasPreset(
+            id = presetEntity.id,
+            name = presetEntity.name,
+            description = presetEntity.description,
+            isBuiltIn = presetEntity.isBuiltIn,
+            layoutType = layoutType,
+            templateJson = presetEntity.templateJson
+        )
+
+        PresetLayoutEngine.applyPreset(currentCanvas, domainPreset)
+
+        val postSnapshot = WorkspaceSnapshot.capture(currentCanvas, "Applied Preset ${presetEntity.name}")
+        actionStack.pushAction(
+            CanvasAction.RestoreSnapshot(
+                previousSnapshot = preSnapshot,
+                restoredSnapshot = postSnapshot
+            )
+        )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            persistAllNodePositions()
+            withContext(Dispatchers.Main) {
+                onComplete()
+            }
+        }
+    }
+
+    fun saveCurrentLayoutAsPreset(name: String, description: String, onComplete: (Boolean) -> Unit) {
+        val currentCanvas = _uiState.value.canvas
+        if (currentCanvas.nodes.isEmpty()) {
+            onComplete(false)
+            return
+        }
+
+        val snapshot = WorkspaceSnapshot.capture(currentCanvas, name)
+        val entity = CanvasPresetEntity(
+            id = "custom_preset_${System.currentTimeMillis()}",
+            name = name,
+            description = description,
+            isBuiltIn = false,
+            layoutType = PresetLayoutType.CUSTOM.name,
+            createdAt = System.currentTimeMillis(),
+            templateJson = snapshot.toJson()
+        )
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.savePreset(entity)
+            withContext(Dispatchers.Main) {
+                onComplete(true)
+            }
+        }
     }
 
     fun toggleLinkMode() {

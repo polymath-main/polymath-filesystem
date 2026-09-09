@@ -10,6 +10,7 @@ import android.view.ScaleGestureDetector
 import android.view.View
 import android.view.animation.DecelerateInterpolator
 import com.polymath.fs.core.canvas.physics.ForceSimulationEngine
+import com.polymath.fs.domain.canvas.heatmap.CanvasHeatmapEvaluator
 import com.polymath.fs.domain.canvas.models.*
 import kotlin.math.max
 import kotlin.math.min
@@ -57,6 +58,11 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private var linkStartNode: CanvasNode? = null
     private var linkCurrentWorldX: Float = 0f
     private var linkCurrentWorldY: Float = 0f
+
+    // Activity Heatmap Layer
+    var isHeatmapVisible: Boolean = false
+    private var heatScores: Map<String, Float> = emptyMap()
+    var onHeatmapToggledListener: ((Boolean) -> Unit)? = null
 
     // Interaction Callbacks
     var onNodeSelectedListener: ((CanvasNode) -> Unit)? = null
@@ -141,6 +147,13 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private val nodeGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 12f
+    }
+    private val heatmapGlowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+    }
+    private val heatFlamePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 20f
+        textAlign = Paint.Align.CENTER
     }
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
@@ -508,10 +521,8 @@ class CognitiveCanvasView @JvmOverloads constructor(
                             isGridSnappingActive = true
                         }
 
-                        node.x = targetX
-                        node.y = targetY
-                        node.vx = 0f
-                        node.vy = 0f
+                        // Apply spring-damper drag physics follower
+                        physicsEngine.applyDragSpring(node, targetX, targetY)
                     }
                     startPhysicsSimulation()
                 } else if (!scaleGestureDetector.isInProgress) {
@@ -541,6 +552,11 @@ class CognitiveCanvasView @JvmOverloads constructor(
                     if (isSnapToGridEnabled) {
                         node.x = (node.x / snapGridSize).roundToInt() * snapGridSize
                         node.y = (node.y / snapGridSize).roundToInt() * snapGridSize
+                        node.vx = 0f
+                        node.vy = 0f
+                    } else {
+                        // Allow node to carry residual spring-damper momentum and settle naturally
+                        node.isPinned = false
                     }
                     isGridSnappingActive = false
                     if (hasMovedNode) {
@@ -676,12 +692,30 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private fun drawNodes(canvas: Canvas) {
         val isSearchActive = currentSearchQuery.isNotEmpty()
 
+        // If Heatmap is enabled, ensure scores are populated
+        if (isHeatmapVisible && heatScores.isEmpty() && nodes.isNotEmpty()) {
+            heatScores = CanvasHeatmapEvaluator.computeHeatScores(nodes)
+        }
+
         for (node in nodes) {
             val radius = node.radius
             val isMatch = node.isHighlighted
 
             // If search active, dim non-matching nodes for clear visual pop
             val alphaMultiplier = if (!isSearchActive || isMatch) 1.0f else 0.22f
+
+            // Activity Heatmap Thermal Halo Layer
+            if (isHeatmapVisible) {
+                val heat = heatScores[node.id] ?: 0.1f
+                val heatColor = CanvasHeatmapEvaluator.getHeatColor(heat, alpha = (140 * alphaMultiplier).toInt())
+                heatmapGlowPaint.color = heatColor
+                val heatRadius = radius + 18f + (heat * 24f)
+                canvas.drawCircle(node.x, node.y, heatRadius, heatmapGlowPaint)
+
+                if (heat >= 0.70f) {
+                    canvas.drawText("🔥", node.x, node.y - radius - 10f, heatFlamePaint)
+                }
+            }
 
             // Glow if search match or selected
             if (isMatch) {
@@ -828,6 +862,26 @@ class CognitiveCanvasView @JvmOverloads constructor(
         viewport.translationX = centerX - (centerX - viewport.translationX) * scaleDelta
         viewport.translationY = centerY - (centerY - viewport.translationY) * scaleDelta
         invalidate()
+    }
+
+    /**
+     * Toggles the visual Activity Heatmap layer
+     */
+    fun toggleHeatmap(): Boolean {
+        isHeatmapVisible = !isHeatmapVisible
+        if (isHeatmapVisible) {
+            heatScores = CanvasHeatmapEvaluator.computeHeatScores(nodes)
+        }
+        onHeatmapToggledListener?.invoke(isHeatmapVisible)
+        invalidate()
+        return isHeatmapVisible
+    }
+
+    fun updateHeatmapScores() {
+        if (isHeatmapVisible) {
+            heatScores = CanvasHeatmapEvaluator.computeHeatScores(nodes)
+            invalidate()
+        }
     }
 
     /**
