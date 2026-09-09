@@ -62,6 +62,38 @@ class HomeDashboardFragment : Fragment() {
     private lateinit var tvKernelMem: TextView
     private lateinit var tvKernelState: TextView
 
+    private val overlayPermissionLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) {
+        if (android.provider.Settings.canDrawOverlays(requireContext())) {
+            toggleDropletService()
+        } else {
+            Toast.makeText(requireContext(), "Overlay permission is required for The Droplet", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private var isDropletRunning = false
+
+    private fun toggleDropletService() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M && !android.provider.Settings.canDrawOverlays(requireContext())) {
+            try {
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${requireContext().packageName}"))
+                overlayPermissionLauncher.launch(intent)
+                Toast.makeText(requireContext(), "Please grant Overlay Permission to use Droplet", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(requireContext(), "Unable to open Overlay Settings. Please grant it manually.", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+        val intent = Intent(requireContext(), com.polymath.fs.core.DropletService::class.java)
+        if (isDropletRunning) {
+            requireContext().stopService(intent)
+            Toast.makeText(requireContext(), "Droplet Deactivated", Toast.LENGTH_SHORT).show()
+        } else {
+            requireContext().startService(intent)
+            Toast.makeText(requireContext(), "Droplet Activated \ud83d\udca7", Toast.LENGTH_SHORT).show()
+        }
+        isDropletRunning = !isDropletRunning
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -388,6 +420,22 @@ class HomeDashboardFragment : Fragment() {
 
         view.findViewById<MaterialButton>(R.id.btn_launch_terminal)?.setOnClickListener {
             startActivity(Intent(requireContext(), TerminalActivity::class.java))
+        }
+        
+        view.findViewById<View>(R.id.btn_feature_droplet)?.setOnClickListener {
+            toggleDropletService()
+        }
+        view.findViewById<View>(R.id.btn_feature_omni_terminal)?.setOnClickListener {
+            startActivity(Intent(requireContext(), TerminalActivity::class.java))
+        }
+        view.findViewById<View>(R.id.btn_feature_workbench)?.setOnClickListener {
+            Toast.makeText(requireContext(), "Initializing Architect's Workbench...", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.btn_feature_intent_engine)?.setOnClickListener {
+            Toast.makeText(requireContext(), "Initializing Intent Engine...", Toast.LENGTH_SHORT).show()
+        }
+        view.findViewById<View>(R.id.btn_feature_synapse)?.setOnClickListener {
+            Toast.makeText(requireContext(), "Initializing Synapse Protocol...", Toast.LENGTH_SHORT).show()
         }
     }
 
