@@ -20,7 +20,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.polymath.fs"
+        applicationId "com.aistudio.filesystem.pmfsxz"
         minSdk 26
         targetSdk 34
         versionCode 1
