@@ -25,8 +25,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="?attr/colorSurfaceVariant"
-            app:itemIconTint="@color/nav_item_color"
-            app:itemTextColor="@color/nav_item_color"
+            app:itemIconTint="?attr/colorOnSurfaceVariant"
+            app:itemTextColor="?attr/colorOnSurfaceVariant"
             app:labelVisibilityMode="labeled"
             app:menu="@menu/menu_main_nav"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -41,14 +41,15 @@
             android:gravity="center"
             android:orientation="vertical"
             android:padding="32dp"
-            android:visibility="gone">
+            android:visibility="gone"
+            android:elevation="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:text="Storage Permission Required"
-                android:textColor="#ffffff"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -58,16 +59,15 @@
                 android:layout_marginBottom="24dp"
                 android:text="Polymath requires full storage access to manage your files."
                 android:textAlignment="center"
-                android:textColor="#94a3b8"
+                android:textColor="?android:attr/textColorSecondary"
                 android:textSize="14sp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGrantPermission"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="#38bdf8"
                 android:text="Grant Access"
-                android:textColor="#ffffff" />
+                app:cornerRadius="12dp" />
 
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,273 +1,298 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurfaceVariant"
-        app:titleTextColor="#ffffff"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
-        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceVariant"
-        app:tabTextColor="#94a3b8"
-        app:tabSelectedTextColor="#ffffff"
-        app:tabIndicatorColor="#38bdf8"
-        app:tabMode="scrollable"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <LinearLayout
-        android:id="@+id/addressBarContainer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:background="?attr/colorSurface"
-        android:gravity="center_vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tabLayout">
+        app:elevation="0dp">
 
-        <TextView
-            android:id="@+id/pathText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:textColor="#94a3b8"
-            android:textSize="14sp"
-            android:ellipsize="middle"
-            android:singleLine="true"
-            tools:text="/storage/emulated/0/Download/SomeFolder" />
-
-        <ImageButton
-            android:id="@+id/copyPathButton"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Copy Path"
-            android:src="@android:drawable/ic_menu_edit"
-            app:tint="#94a3b8" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/recentFilesPanel"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        android:background="?attr/colorSurfaceVariant"
-        app:layout_constraintTop_toBottomOf="@id/addressBarContainer"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-        <LinearLayout
+        <com.google.android.material.appbar.CollapsingToolbarLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
-            <TextView
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="Recent Files"
-                android:textColor="#ffffff"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-            <TextView
-                android:id="@+id/btnViewMoreRecents"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="View more"
-                android:textColor="#38bdf8"
-                android:textSize="14sp"
-                android:background="?attr/selectableItemBackground" />
-        </LinearLayout>
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recentRecyclerView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipToPadding="false"
-            android:paddingHorizontal="8dp"
-            android:paddingBottom="16dp" />
-    </LinearLayout>
+            app:layout_scrollFlags="scroll|enterAlways|snap">
 
-    <!-- The Architect's Workbench Pane -->
-    <FrameLayout
-        android:id="@+id/workbench_container"
-        android:layout_width="0dp"
-        android:layout_height="200dp"
-        android:layout_margin="8dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/recentFilesPanel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:cardCornerRadius="12dp"
-            app:cardBackgroundColor="#1e293b"
-            app:strokeColor="#38bdf8"
-            app:strokeWidth="1dp">
-
-            <WebView
-                android:id="@+id/workbench_webview"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone" />
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="?attr/actionBarSize">
                 
-        </com.google.android.material.card.MaterialCardView>
-    </FrameLayout>
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/tabLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?attr/colorSurface"
+                    app:tabTextColor="?android:attr/textColorSecondary"
+                    app:tabSelectedTextColor="?attr/colorPrimary"
+                    app:tabIndicatorColor="?attr/colorPrimary"
+                    app:tabMode="scrollable" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/addressBarContainerCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginVertical="8dp"
+                    app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:id="@+id/addressBarContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="4dp">
+
+                        <TextView
+                            android:id="@+id/pathText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:padding="12dp"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="14sp"
+                            android:ellipsize="middle"
+                            android:singleLine="true"
+                            tools:text="/storage/emulated/0/Download/SomeFolder" />
+
+                        <ImageButton
+                            android:id="@+id/copyPathButton"
+                            android:layout_width="40dp"
+                            android:layout_height="40dp"
+                            android:layout_marginEnd="4dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="Copy Path"
+                            android:src="@android:drawable/ic_menu_edit"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <LinearLayout
+                    android:id="@+id/recentFilesPanel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:paddingTop="8dp">
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="20dp"
+                        android:paddingVertical="8dp"
+                        android:gravity="center_vertical">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:text="Recent Files"
+                            android:textColor="?android:attr/textColorPrimary"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+                        <TextView
+                            android:id="@+id/btnViewMoreRecents"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="View more"
+                            android:textColor="?attr/colorPrimary"
+                            android:textSize="14sp"
+                            android:background="?attr/selectableItemBackground" />
+                    </LinearLayout>
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recentRecyclerView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:paddingHorizontal="12dp"
+                        android:paddingBottom="8dp" />
+                </LinearLayout>
+
+                <!-- The Architect's Workbench Pane -->
+                <FrameLayout
+                    android:id="@+id/workbench_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="200dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        app:cardCornerRadius="16dp"
+                        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+                        app:strokeColor="?attr/colorPrimary"
+                        app:strokeWidth="1dp">
+
+                        <WebView
+                            android:id="@+id/workbench_webview"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:visibility="gone" />
+                            
+                    </com.google.android.material.card.MaterialCardView>
+                </FrameLayout>
+            </LinearLayout>
+
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:layout_collapseMode="pin"
+                app:titleTextColor="?android:attr/textColorPrimary" />
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
-        android:paddingVertical="8dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintBottom_toTopOf="@+id/omniTerminalContainer"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/workbench_container"
+        android:paddingTop="8dp"
+        android:paddingBottom="100dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:listitem="@layout/item_file" />
 
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="center"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/emptyText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Folder is empty"
-        android:textColor="#94a3b8"
+        android:textColor="?android:attr/textColorSecondary"
         android:textSize="16sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_gravity="center"
+        android:visibility="gone" />
 
-    <LinearLayout
-        android:id="@+id/omniTerminalContainer"
-        android:layout_width="0dp"
+    <!-- Terminal Container aligned to bottom -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/omniTerminalContainerCard"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#0f172a"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-        
+        android:layout_gravity="bottom"
+        android:layout_margin="12dp"
+        app:cardBackgroundColor="?attr/colorSecondaryContainer"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="1dp"
+        app:strokeColor="?attr/colorOutlineVariant">
+
         <LinearLayout
+            android:id="@+id/omniTerminalContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="#1e293b"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp">
+            android:orientation="vertical">
             
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="JS ENGINE STATUS"
-                android:textColor="#94a3b8"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:layout_weight="1" />
-                
-            <TextView
-                android:id="@+id/cpuMetricText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CPU: 0%"
-                android:textColor="#38bdf8"
-                android:textSize="10sp"
-                android:fontFamily="monospace"
-                android:layout_marginEnd="8dp" />
-                
-            <TextView
-                android:id="@+id/memMetricText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="MEM: 0MB"
-                android:textColor="#10b981"
-                android:textSize="10sp"
-                android:fontFamily="monospace" />
-        </LinearLayout>
-        
-        <ScrollView
-            android:id="@+id/terminalConsoleScroll"
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:visibility="gone"
-            android:background="#0f172a"
-            android:padding="8dp">
-            <TextView
-                android:id="@+id/terminalConsoleOutput"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#38bdf8"
-                android:textSize="12sp"
-                android:fontFamily="monospace" />
-        </ScrollView>
-            
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:padding="8dp">
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=">"
-                android:textColor="#38bdf8"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:paddingEnd="8dp" />
+                android:orientation="horizontal"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="?attr/colorSecondaryContainer">
                 
-            <EditText
-                android:id="@+id/omniTerminalInput"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:background="@null"
-                android:hint="Type a JS command or action..."
-                android:textColorHint="#475569"
-                android:textColor="#e2e8f0"
-                android:textSize="14sp"
-                android:inputType="textNoSuggestions"
-                android:imeOptions="actionSend"
-                android:fontFamily="monospace" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="JS ENGINE STATUS"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:layout_weight="1" />
+                    
+                <TextView
+                    android:id="@+id/cpuMetricText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CPU: 0%"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginEnd="12dp" />
+                    
+                <TextView
+                    android:id="@+id/memMetricText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MEM: 0MB"
+                    android:textColor="?attr/colorTertiary"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+            
+            <ScrollView
+                android:id="@+id/terminalConsoleScroll"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:visibility="gone"
+                android:background="?attr/colorSurface"
+                android:padding="12dp">
+                <TextView
+                    android:id="@+id/terminalConsoleOutput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+            </ScrollView>
                 
-            <ImageButton
-                android:id="@+id/btnBrainTalk"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@android:drawable/ic_btn_speak_now"
-                android:contentDescription="Brain-Talk Voice Command"
-                app:tint="#38bdf8" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp"
+                android:background="?attr/colorSurface">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=">"
+                    android:textColor="?attr/colorPrimary"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:paddingEnd="12dp" />
+                    
+                <EditText
+                    android:id="@+id/omniTerminalInput"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="Type a JS command or action..."
+                    android:textColorHint="?android:attr/textColorHint"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="14sp"
+                    android:inputType="textNoSuggestions"
+                    android:imeOptions="actionSend"
+                    android:fontFamily="monospace" />
+                    
+                <ImageButton
+                    android:id="@+id/btnBrainTalk"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_btn_speak_now"
+                    android:contentDescription="Brain-Talk Voice Command"
+                    app:tint="?attr/colorPrimary" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

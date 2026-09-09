@@ -46,7 +46,7 @@ data class KernelTelemetrics(
 
 /**
  * Polymath Kernel Controller & Hardware Telemetry Subsystem.
- * Optimized for Android's security architecture: uses zero-audit platform APIs
+ * Optimized for Androids security architecture: uses zero-audit platform APIs
  * and safe procfs nodes without triggering SELinux AVC denials or audit log rate-limits.
  */
 @Singleton
@@ -122,8 +122,8 @@ class KernelEngineController @Inject constructor() {
     }
 
     /**
-     * Safely checks SELinux enforcement status using Android's internal platform API
-     * instead of opening /sys/fs/selinux/enforce (which triggers an SELinux AVC denial).
+     * Safely checks SELinux enforcement status using Androids internal platform API
+     * to avoid executing a shell process which can be audited or blocked. (which triggers an SELinux AVC denial).
      */
     private fun checkSeLinuxEnforcing(): Boolean {
         return try {
@@ -138,13 +138,15 @@ class KernelEngineController @Inject constructor() {
     private fun readProcVersion(): String {
         return try {
             val file = File("/proc/version")
-            if (file.canRead()) {
-                file.readText().trim()
+            val osVer = System.getProperty("os.version") ?: "unknown"
+            if (File("/proc/version").exists()) {
+                File("/proc/version").readText().trim()
             } else {
-                "Linux version ${System.getProperty("os.version") ?: "unknown"}"
+                "Linux version $osVer"
             }
         } catch (e: Exception) {
-            "Linux version ${System.getProperty("os.version") ?: "unknown"}"
+            val osVer = System.getProperty("os.version") ?: "unknown"
+            "Linux version $osVer"
         }
     }
 

@@ -631,7 +631,7 @@ class FileBrowserFragment : Fragment() {
                     }
                     
                     if (activeTab != null && !activeTab.isLoading) {
-                        // The Architect's Workbench Logic (Context Morphing)
+                        // The Architects Workbench Logic (Context Morphing)
                         val indexHtmlFile = activeTab.files.find { it.name.lowercase() == "index.html" }
                         if (indexHtmlFile != null) {
                             binding.workbenchContainer.visibility = View.VISIBLE
@@ -640,7 +640,7 @@ class FileBrowserFragment : Fragment() {
                             binding.workbenchWebview.settings.domStorageEnabled = true
                             binding.workbenchWebview.settings.allowFileAccess = true
                             binding.workbenchWebview.settings.allowContentAccess = true
-                            // Only load if it's not already loaded to prevent continuous refreshing
+                            // Only load if it is not already loaded to prevent continuous refreshing
                             val fileUrl = "file://${indexHtmlFile.path}"
                             if (binding.workbenchWebview.url != fileUrl) {
                                 binding.workbenchWebview.loadUrl(fileUrl)
@@ -950,13 +950,7 @@ class FileBrowserFragment : Fragment() {
         val riftFile = java.io.File(currentPath, "Antigravity_Demo.rift")
         
         lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            val riftContent = """
-                {
-                  "rift_name": "Antigravity Demo",
-                  "target_dir": "$currentPath",
-                  "script": "_os.alert('Rift Cast Successful', 'Hello from the Polymath Procedural Engine! This code executed inside a 0-byte virtual file footprint.');"
-                }
-            """.trimIndent()
+            val riftContent = "{\n  \"rift_name\": \"Antigravity Demo\",\n  \"target_dir\": \"$currentPath\",\n  \"script\": \"_os.alert('Rift Cast Successful', 'Hello from the Polymath Procedural Engine! This code executed inside a 0-byte virtual file footprint.');\"\n}"
             
             try {
                 riftFile.writeText(riftContent)
