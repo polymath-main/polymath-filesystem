@@ -521,6 +521,10 @@ class PolymathJSRuntime @Inject constructor(
                     return res;
                 },
                 setTheme: function(json) { return PolymathOSNative.setTheme(String(json)); },
+                getThemeColors: function() { 
+                    var raw = PolymathOSNative.getThemeColors();
+                    try { return JSON.parse(raw); } catch(e) { return {}; }
+                },
                 daemonCommand: function(action, payload) { return PolymathOSNative.daemonCommand(String(action), String(payload || "")); },
                 listen: function(event, path, cb) { return PolymathOSNative.listen(String(event), String(path), String(cb || "")); },
                 readFile: function(p) { return fs.readFileSync(p, 'utf-8'); },

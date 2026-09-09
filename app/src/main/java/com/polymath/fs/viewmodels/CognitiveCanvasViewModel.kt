@@ -888,6 +888,31 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun copyFile(node: CanvasNode, destinationDir: String, onComplete: (Boolean, String) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val src = File(node.fileNode.path)
+            val destDir = File(destinationDir)
+            if (!destDir.exists()) destDir.mkdirs()
+
+            val target = File(destDir, src.name)
+            if (target.exists()) {
+                withContext(Dispatchers.Main) { onComplete(false, "File already exists at destination") }
+                return@launch
+            }
+            try {
+                src.copyRecursively(target)
+                loadPath(_uiState.value.currentPath)
+                withContext(Dispatchers.Main) {
+                    onComplete(true, "Copied to ${target.name}")
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    onComplete(false, "Failed to copy file")
+                }
+            }
+        }
+    }
+
     /**
      * Purges orphaned relationship links from the Room database and the in-memory CognitiveCanvas
      * that no longer have valid source or target file node IDs.

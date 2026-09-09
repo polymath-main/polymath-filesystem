@@ -21,6 +21,7 @@ interface PolymathOSNativeInterface {
     fun alert2(title: String, message: String): String
     fun prompt2(title: String, callbackName: String): String
     fun setTheme(themeJson: String): Boolean
+    fun getThemeColors(): String
     fun daemonCommand(action: String, payload: String): String
     fun listen(event: String, path: String, callbackName: String): Boolean
     fun readFile(path: String): String
@@ -93,6 +94,23 @@ class PolymathOSNativeImpl(
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    override fun getThemeColors(): String {
+        return try {
+            val colors = com.polymath.fs.core.ThemeManager.getThemeColors(context)
+            JSONObject().apply {
+                put("name", colors.name)
+                put("background", String.format("#%06X", 0xFFFFFF and colors.background))
+                put("surface", String.format("#%06X", 0xFFFFFF and colors.surface))
+                put("primary", String.format("#%06X", 0xFFFFFF and colors.primary))
+                put("accent", String.format("#%06X", 0xFFFFFF and colors.accent))
+                put("textPrimary", String.format("#%06X", 0xFFFFFF and colors.textPrimary))
+                put("textSecondary", String.format("#%06X", 0xFFFFFF and colors.textSecondary))
+            }.toString()
+        } catch (e: Exception) {
+            JSONObject().toString()
         }
     }
 

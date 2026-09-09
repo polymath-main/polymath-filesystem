@@ -900,4 +900,79 @@
         android:id="@+id/previewPanel"
         layout="@layout/layout_canvas_preview_panel" />
 
+    <!-- Quick Actions Overlay (Drag and Drop) -->
+    <LinearLayout
+        android:id="@+id/quickActionsOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginTop="100dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:padding="16dp"
+        android:background="#88000000"
+        android:elevation="20dp"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/dropZoneMove"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_coachmark_card"
+            android:gravity="center"
+            android:text="MOVE"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/dropZoneCopy"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_coachmark_card"
+            android:gravity="center"
+            android:text="COPY"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/dropZoneDelete"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_margin="16dp"
+            android:background="@drawable/bg_coachmark_card"
+            android:gravity="center"
+            android:text="DELETE"
+            android:textColor="#FF5252" />
+    </LinearLayout>
+
+    <!-- Auto-generating File Preview Peek (Long Press) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/filePreviewPeekOverlay"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#CC0F172A"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="20dp"
+        app:strokeColor="#38BDF8"
+        app:strokeWidth="1dp"
+        tools:visibility="visible">
+
+        <ImageView
+            android:id="@+id/ivOverlayThumbnail"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+            
+        <TextView
+            android:id="@+id/tvOverlaySnippet"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:visibility="gone" />
+    </com.google.android.material.card.MaterialCardView>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

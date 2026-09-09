@@ -73,6 +73,9 @@ class CognitiveCanvasView @JvmOverloads constructor(
     var onNodeMovedWithInitialPositionListener: ((CanvasNode, Float, Float) -> Unit)? = null
     var onCanvasSelectionChangedListener: ((List<CanvasNode>) -> Unit)? = null
     var onNodesLinkedListener: ((CanvasNode, CanvasNode) -> Unit)? = null
+    var onNodeDragStartedListener: ((CanvasNode, Float, Float) -> Unit)? = null
+    var onNodeDragMovedListener: ((CanvasNode, Float, Float) -> Unit)? = null
+    var onNodeDragEndedListener: ((CanvasNode, Float, Float) -> Unit)? = null
 
     // Touch & Drag State
     private var activeDraggedNode: CanvasNode? = null
@@ -596,6 +599,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
                         lastSnappedGridX = (hitNode.x / snapGridSize).roundToInt() * snapGridSize
                         lastSnappedGridY = (hitNode.y / snapGridSize).roundToInt() * snapGridSize
                         startPhysicsSimulation()
+                        onNodeDragStartedListener?.invoke(hitNode, event.x, event.y)
                     }
                 } else {
                     isDraggingNode = false
@@ -640,6 +644,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
 
                         // Apply spring-damper drag physics follower
                         physicsEngine.applyDragSpring(node, targetX, targetY)
+                        onNodeDragMovedListener?.invoke(node, event.x, event.y)
                     }
                     startPhysicsSimulation()
                 }
@@ -662,6 +667,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
 
                 if (activeDraggedNode != null) {
                     val node = activeDraggedNode!!
+                    onNodeDragEndedListener?.invoke(node, event.x, event.y)
                     if (isSnapToGridEnabled) {
                         node.x = (node.x / snapGridSize).roundToInt() * snapGridSize
                         node.y = (node.y / snapGridSize).roundToInt() * snapGridSize
