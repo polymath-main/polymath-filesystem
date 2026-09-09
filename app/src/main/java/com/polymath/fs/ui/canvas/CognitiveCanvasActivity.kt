@@ -13,6 +13,9 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.SeekBar
 import android.widget.Toast
+import android.graphics.Rect
+import coil.load
+import coil.size.Scale
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -294,9 +297,49 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             openFileOrDirectory(node)
         }
 
-        // Long-press on node -> Context Menu Quick Actions
+        // Long-press on node -> Context Menu Quick Actions & File Preview Peek
         binding.cognitiveCanvasView.onNodeLongClickListener = { node ->
+            showFilePreviewPeek(node)
             showNodeContextMenu(node)
+        }
+
+        // Drag and Drop Quick Actions Overlay
+        binding.cognitiveCanvasView.onNodeDragStartedListener = { _, _, _ ->
+            binding.root.findViewById<View>(R.id.quickActionsOverlay)?.visibility = View.VISIBLE
+        }
+        
+        binding.cognitiveCanvasView.onNodeDragMovedListener = { _, x, y ->
+            val moveZone = binding.root.findViewById<View>(R.id.dropZoneMove)
+            val copyZone = binding.root.findViewById<View>(R.id.dropZoneCopy)
+            val deleteZone = binding.root.findViewById<View>(R.id.dropZoneDelete)
+            
+            val moveRect = Rect().apply { moveZone?.getGlobalVisibleRect(this) }
+            val copyRect = Rect().apply { copyZone?.getGlobalVisibleRect(this) }
+            val deleteRect = Rect().apply { deleteZone?.getGlobalVisibleRect(this) }
+            
+            moveZone?.setBackgroundResource(if (moveRect.contains(x.toInt(), y.toInt())) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_coachmark_card)
+            copyZone?.setBackgroundResource(if (copyRect.contains(x.toInt(), y.toInt())) R.drawable.bg_canvas_tool_pill_active else R.drawable.bg_coachmark_card)
+            deleteZone?.setBackgroundResource(if (deleteRect.contains(x.toInt(), y.toInt())) R.drawable.bg_canvas_tool_pill_hot else R.drawable.bg_coachmark_card)
+        }
+
+        binding.cognitiveCanvasView.onNodeDragEndedListener = { node, x, y ->
+            binding.root.findViewById<View>(R.id.quickActionsOverlay)?.visibility = View.GONE
+            
+            val moveZone = binding.root.findViewById<View>(R.id.dropZoneMove)
+            val copyZone = binding.root.findViewById<View>(R.id.dropZoneCopy)
+            val deleteZone = binding.root.findViewById<View>(R.id.dropZoneDelete)
+            
+            val moveRect = Rect().apply { moveZone?.getGlobalVisibleRect(this) }
+            val copyRect = Rect().apply { copyZone?.getGlobalVisibleRect(this) }
+            val deleteRect = Rect().apply { deleteZone?.getGlobalVisibleRect(this) }
+            
+            if (moveRect.contains(x.toInt(), y.toInt())) {
+                promptMoveFile(node)
+            } else if (copyRect.contains(x.toInt(), y.toInt())) {
+                promptCopyFile(node)
+            } else if (deleteRect.contains(x.toInt(), y.toInt())) {
+                confirmDeleteFile(node)
+            }
         }
 
         // Initialize expandable bottom sheet preview panel
@@ -319,6 +362,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         // When selection is cleared on empty canvas tap -> hide preview panel
         binding.cognitiveCanvasView.onSelectionClearedListener = {
             previewPanelController.hidePreview()
+            binding.root.findViewById<View>(R.id.filePreviewPeekOverlay)?.visibility = View.GONE
         }
     }
 
@@ -744,6 +788,64 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun promptCopyFile(node: CanvasNode) {
+        val editText = EditText(this).apply {
+            hint = "Destination directory path"
+            setText(File(node.fileNode.path).parent ?: currentDirectoryPath)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Copy '${node.fileNode.name}'")
+            .setView(editText)
+            .setPositiveButton("Copy") { _, _ ->
+                val destPath = editText.text.toString().trim()
+                if (destPath.isNotEmpty()) {
+                    viewModel.copyFile(node, destPath) { success, msg ->
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showFilePreviewPeek(node: CanvasNode) {
+        val file = File(node.fileNode.path)
+        val ext = node.fileNode.extension.lowercase(Locale.getDefault())
+
+        val peekView = binding.root.findViewById<View>(R.id.filePreviewPeekOverlay)
+        val ivPeek = binding.root.findViewById<android.widget.ImageView>(R.id.ivOverlayThumbnail)
+        val tvSnippet = binding.root.findViewById<android.widget.TextView>(R.id.tvOverlaySnippet)
+
+        peekView?.visibility = View.VISIBLE
+        
+        peekView?.translationX = (binding.root.width / 2f) - (160 * resources.displayMetrics.density / 2f)
+        peekView?.translationY = (binding.root.height / 2f) - (160 * resources.displayMetrics.density / 2f)
+        
+        val isImage = ext in listOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif", "svg")
+        val isTextOrCode = ext in listOf("kt", "java", "py", "js", "html", "css", "json", "xml", "txt", "md", "c", "cpp", "h", "sh", "sql")
+
+        tvSnippet?.visibility = View.GONE
+        ivPeek?.visibility = View.VISIBLE
+
+        if (isImage && file.exists()) {
+            ivPeek?.load(file) { crossfade(true); scale(Scale.CENTER_CROP) }
+        } else if (isTextOrCode && file.exists()) {
+            ivPeek?.visibility = View.GONE
+            tvSnippet?.visibility = View.VISIBLE
+            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                val snippet = try {
+                    file.bufferedReader().useLines { seq -> seq.take(10).joinToString("\n") }
+                } catch(e: Exception) { "" }
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    tvSnippet?.text = snippet
+                }
+            }
+        } else {
+            ivPeek?.load(R.drawable.ic_file_default)
+        }
     }
 
     private fun togglePinNode(node: CanvasNode) {
