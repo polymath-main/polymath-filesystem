@@ -33,6 +33,7 @@ class PolymathApp : Application() {
     val flowStateManager by lazy { com.polymath.fs.core.FlowStateManager(this) }
     val intentEngine by lazy { com.polymath.fs.core.IntentEngine(this) }
     val synapseEngine by lazy { com.polymath.fs.core.SynapseEngine(this, fileSystemRepository) }
+    val smartFolderManager by lazy { com.polymath.fs.core.SmartFolderManager() }
 
     override fun onCreate() {
         super.onCreate()

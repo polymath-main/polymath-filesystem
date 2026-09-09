@@ -617,11 +617,6 @@ class FileBrowserFragment : Fragment() {
                     
                     val pasteItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_paste)
                     pasteItem?.isVisible = state.clipboard != null
-                    if (state.clipboard != null) {
-                        binding.pasteButton.visibility = View.VISIBLE
-                    } else {
-                        binding.pasteButton.visibility = View.GONE
-                    }
                     
                     adapter.setViewOptions(state.viewOptions)
                     val currentLayoutManager = binding.recyclerView.layoutManager

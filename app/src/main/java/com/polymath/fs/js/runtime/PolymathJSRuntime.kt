@@ -56,11 +56,10 @@ class PolymathJSRuntime @Inject constructor(
         selectedFiles: List<String>? = null,
         actionId: String? = null,
         onAlert: ((title: String, message: String) -> Unit)? = null,
-        onConsoleLog: ((level: String, message: String) -> Unit)? = null,
-        isDryRun: Boolean = false
+        onConsoleLog: ((level: String, message: String) -> Unit)? = null
     ): String {
         QuickJs.create().use { quickJs ->
-            initializeEnvironment(quickJs, scriptName, workingDir, selectedFiles, actionId, onAlert, onConsoleLog, isDryRun)
+            initializeEnvironment(quickJs, scriptName, workingDir, selectedFiles, actionId, onAlert, onConsoleLog)
             val evaluated = quickJs.evaluate(script)
             return evaluated?.toString() ?: ""
         }
@@ -73,13 +72,10 @@ class PolymathJSRuntime @Inject constructor(
         selectedFiles: List<String>?,
         actionId: String?,
         onAlert: ((title: String, message: String) -> Unit)?,
-        onConsoleLog: ((level: String, message: String) -> Unit)?,
-        isDryRun: Boolean
+        onConsoleLog: ((level: String, message: String) -> Unit)?
     ) {
         processModule.setCwd(workingDir)
         
-        val activeRepo = if (isDryRun) com.polymath.fs.data.repository.MockFileSystemRepository(repository) else repository
-
         // 1. Bind low-level native modules
         quickJs.set("_posix", PolymathJSPOSIXInterface::class.java, fsModule)
         quickJs.set("_os", PolymathJSOSInterface::class.java, osModule)
@@ -90,12 +86,12 @@ class PolymathJSRuntime @Inject constructor(
         quickJs.set("_loader", PolymathModuleLoaderInterface::class.java, moduleLoader)
 
         // 2. Legacy Polymath bridges for backwards compatibility
-        val osNativeImpl = PolymathOSNativeImpl(context, activeRepo, shellHolder, onAlert, onConsoleLog)
+        val osNativeImpl = PolymathOSNativeImpl(context, repository, shellHolder, onAlert, onConsoleLog)
         quickJs.set("PolymathOSNative", PolymathOSNativeInterface::class.java, osNativeImpl)
 
         val fsInterface = object : PolymathFS {
             override fun listDir(path: String): String {
-                val nodes = runBlocking { activeRepo.listDir(path) }
+                val nodes = runBlocking { repository.listDir(path) }
                 val array = JSONArray()
                 nodes.forEach { node ->
                     val obj = JSONObject().apply {
@@ -113,29 +109,29 @@ class PolymathJSRuntime @Inject constructor(
             override fun copy(srcJson: String, dest: String): Boolean {
                 val arr = JSONArray(srcJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                runBlocking { activeRepo.copy(list, dest).collect {} }
+                runBlocking { repository.copy(list, dest).collect {} }
                 return true
             }
 
             override fun move(srcJson: String, dest: String): Boolean {
                 val arr = JSONArray(srcJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                runBlocking { activeRepo.move(list, dest).collect {} }
+                runBlocking { repository.move(list, dest).collect {} }
                 return true
             }
 
             override fun delete(pathsJson: String): Boolean {
                 val arr = JSONArray(pathsJson)
                 val list = (0 until arr.length()).map { arr.getString(it) }
-                return runBlocking { activeRepo.delete(list) }
+                return runBlocking { repository.delete(list) }
             }
 
             override fun mkdir(path: String): Boolean {
-                return runBlocking { activeRepo.mkdir(path) }
+                return runBlocking { repository.mkdir(path) }
             }
 
             override fun rename(oldPath: String, newName: String): Boolean {
-                return runBlocking { activeRepo.rename(oldPath, newName) }
+                return runBlocking { repository.rename(oldPath, newName) }
             }
         }
 

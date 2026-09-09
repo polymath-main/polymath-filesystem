@@ -47,8 +47,7 @@ class RiftEngine @Inject constructor() {
                 },
                 onAlert = { title, msg -> 
                     onOutput("[ALERT: $title] $msg")
-                },
-                isDryRun = true
+                }
             )
             
             if (result.isNotBlank()) {

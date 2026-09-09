@@ -74,8 +74,7 @@ class PolymathJSBridge @Inject constructor(
         onAlert: ((String, String) -> Unit)? = null,
         onConsoleLog: ((String, String) -> Unit)? = null,
         selectedFiles: List<String>? = null,
-        actionId: String? = null,
-        isDryRun: Boolean = false
+        actionId: String? = null
     ): String {
         val manifest = try { ExtensionManifest.fromJson(manifestJson) } catch (e: Exception) { null }
         val scriptName = manifest?.name ?: "extension.js"
@@ -86,8 +85,7 @@ class PolymathJSBridge @Inject constructor(
             selectedFiles = selectedFiles,
             actionId = actionId,
             onAlert = onAlert,
-            onConsoleLog = onConsoleLog,
-            isDryRun = isDryRun
+            onConsoleLog = onConsoleLog
         )
     }
 
@@ -96,8 +94,7 @@ class PolymathJSBridge @Inject constructor(
         scriptName: String = "script.js",
         onAlert: ((String, String) -> Unit)? = null,
         onConsoleLog: ((String, String) -> Unit)? = null,
-        selectedFiles: List<String>? = null,
-        isDryRun: Boolean = false
+        selectedFiles: List<String>? = null
     ): String {
         return jsRuntime.execute(
             script = script,
@@ -105,9 +102,7 @@ class PolymathJSBridge @Inject constructor(
             workingDir = "/storage/emulated/0",
             selectedFiles = selectedFiles,
             onAlert = onAlert,
-            onConsoleLog = onConsoleLog,
-            isDryRun = isDryRun
+            onConsoleLog = onConsoleLog
         )
     }
 }
-

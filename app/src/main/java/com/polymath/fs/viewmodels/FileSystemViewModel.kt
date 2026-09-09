@@ -433,6 +433,7 @@ class FileSystemViewModel @Inject constructor(
                         app.copyFilesUseCase,
                         app.moveFilesUseCase,
                         app.flowStateManager,
+                        app.smartFolderManager,
                         app.intentEngine,
                         app.synapseEngine,
                         app.fileSystemRepository
