@@ -29,6 +29,8 @@ enum class CanvasNodeType {
 
 enum class CanvasRelationType {
     PARENT_CHILD,
+    PARENT_TO_PARENT,
+    PARENT_TO_CHILD,
     IMPORT_REFERENCE,
     SIMILARITY,
     USER_LINK,

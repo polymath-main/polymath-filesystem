@@ -2,6 +2,7 @@ package com.polymath.fs.ui.canvas
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
@@ -10,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -25,18 +27,26 @@ import com.polymath.fs.R
 import com.polymath.fs.core.SystemBarHelper
 import com.polymath.fs.core.ThemeManager
 import com.polymath.fs.databinding.ActivityCognitiveCanvasBinding
+import com.polymath.fs.domain.canvas.models.CanvasAction
 import com.polymath.fs.domain.canvas.models.CanvasNode
 import com.polymath.fs.domain.canvas.models.CanvasNodeType
+import com.polymath.fs.domain.canvas.models.CanvasRelationType
+import com.polymath.fs.ui.canvas.preview.CanvasFilePreviewPanelController
 import com.polymath.fs.viewers.EditorActivity
 import com.polymath.fs.viewmodels.CognitiveCanvasViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class CognitiveCanvasActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityCognitiveCanvasBinding
     private val viewModel: CognitiveCanvasViewModel by viewModels()
+    private lateinit var previewPanelController: CanvasFilePreviewPanelController
     private var currentDirectoryPath: String = ""
     private val PREF_NAME = "cognitive_canvas_prefs"
     private val PREF_KEY_COACH_MARK_SHOWN = "coach_mark_shown_v1"
@@ -102,6 +112,49 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             ).show()
         }
 
+        // Visual grid overlay toggle
+        binding.btnVisualGrid.setOnClickListener {
+            viewModel.toggleVisualGridOverlay()
+            val isVisible = viewModel.uiState.value.isVisualGridOverlayVisible
+            binding.cognitiveCanvasView.isVisualGridOverlayVisible = isVisible
+            binding.btnVisualGrid.setBackgroundResource(
+                if (isVisible) R.drawable.bg_canvas_btn_active else 0
+            )
+            binding.btnVisualGrid.setColorFilter(
+                if (isVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+            )
+            Toast.makeText(
+                this,
+                if (isVisible) "Visual Grid Overlay On" else "Visual Grid Overlay Off",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        // Undo action
+        binding.btnUndo.setOnClickListener {
+            viewModel.undoAction { action ->
+                if (action != null) {
+                    binding.cognitiveCanvasView.invalidate()
+                    Toast.makeText(this, "Undo: ${action.description}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // Redo action
+        binding.btnRedo.setOnClickListener {
+            viewModel.redoAction { action ->
+                if (action != null) {
+                    binding.cognitiveCanvasView.invalidate()
+                    Toast.makeText(this, "Redo: ${action.description}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+
+        // Export Canvas Layout as Image
+        binding.btnExportImage.setOnClickListener {
+            exportCanvasAsImage()
+        }
+
         // Smart Arrange force-directed clustering button
         binding.btnSmartArrange.setOnClickListener {
             Toast.makeText(this, "Smart Arranging files by metadata & directory clusters...", Toast.LENGTH_SHORT).show()
@@ -122,11 +175,14 @@ class CognitiveCanvasActivity : AppCompatActivity() {
                 if (isLinkActive) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
             )
             binding.tvStatusHelp.text = if (isLinkActive) {
-                "🔗 Link Mode: Drag from one file to another to create a relationship"
+                "🔗 Link Mode: Drag from one node to another to create relationship"
             } else {
                 "💡 Long-press any file for Quick Actions (Color-Code, Rename, Move, Delete)"
             }
         }
+
+        // Floating Precision Scale Slider & Indicator
+        setupFloatingZoomSlider()
 
         // Reset camera / center
         binding.btnResetView.setOnClickListener {
@@ -138,15 +194,26 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             showCoachMark()
         }
 
-        // Handle user manual node move -> persist to Room
+        // Handle user manual node move with initial position for Undo tracking -> persist to Room
+        binding.cognitiveCanvasView.onNodeMovedWithInitialPositionListener = { movedNode, oldX, oldY ->
+            viewModel.recordNodeMove(movedNode, oldX, oldY)
+            viewModel.persistNodePosition(movedNode, currentDirectoryPath)
+            if (::previewPanelController.isInitialized && previewPanelController.isShowing() &&
+                previewPanelController.getCurrentNode()?.id == movedNode.id) {
+                previewPanelController.updateSpatialCoordinates(movedNode.x, movedNode.y)
+            }
+        }
         binding.cognitiveCanvasView.onNodeMovedListener = { movedNode ->
             viewModel.persistNodePosition(movedNode, currentDirectoryPath)
+            if (::previewPanelController.isInitialized && previewPanelController.isShowing() &&
+                previewPanelController.getCurrentNode()?.id == movedNode.id) {
+                previewPanelController.updateSpatialCoordinates(movedNode.x, movedNode.y)
+            }
         }
 
-        // Handle user link drawn between nodes -> persist to Room
+        // Handle user link drawn between nodes -> prompt for Parent-to-Parent, Parent-to-Child, or Custom Link
         binding.cognitiveCanvasView.onNodesLinkedListener = { source, target ->
-            viewModel.linkNodes(source, target, "User Link")
-            Toast.makeText(this, "Linked ${source.fileNode.name} to ${target.fileNode.name}", Toast.LENGTH_SHORT).show()
+            promptLinkRelationshipType(source, target)
         }
 
         // Double-click node to open
@@ -157,6 +224,28 @@ class CognitiveCanvasActivity : AppCompatActivity() {
         // Long-press on node -> Context Menu Quick Actions
         binding.cognitiveCanvasView.onNodeLongClickListener = { node ->
             showNodeContextMenu(node)
+        }
+
+        // Initialize expandable bottom sheet preview panel
+        previewPanelController = CanvasFilePreviewPanelController(
+            binding = binding.previewPanel,
+            context = this,
+            scope = lifecycleScope,
+            onOpenFile = { node -> openFileOrDirectory(node) },
+            onColorTag = { node -> showThemeColorPicker(node) },
+            onPanelDismissed = {
+                binding.cognitiveCanvasView.clearSelection()
+            }
+        )
+
+        // When user selects a node on the canvas -> slide up the expandable preview panel
+        binding.cognitiveCanvasView.onNodeSelectedListener = { selectedNode ->
+            previewPanelController.showPreview(selectedNode)
+        }
+
+        // When selection is cleared on empty canvas tap -> hide preview panel
+        binding.cognitiveCanvasView.onSelectionClearedListener = {
+            previewPanelController.hidePreview()
         }
     }
 
@@ -269,7 +358,163 @@ class CognitiveCanvasActivity : AppCompatActivity() {
                         autoArrange = false
                     )
                 }
+
+                // Update Undo/Redo button states and alphas
+                binding.btnUndo.isEnabled = state.canUndo
+                binding.btnUndo.alpha = if (state.canUndo) 1.0f else 0.35f
+                binding.btnRedo.isEnabled = state.canRedo
+                binding.btnRedo.alpha = if (state.canRedo) 1.0f else 0.35f
+
+                // Update Visual grid overlay
+                binding.cognitiveCanvasView.isVisualGridOverlayVisible = state.isVisualGridOverlayVisible
+                binding.btnVisualGrid.setBackgroundResource(
+                    if (state.isVisualGridOverlayVisible) R.drawable.bg_canvas_btn_active else 0
+                )
+                binding.btnVisualGrid.setColorFilter(
+                    if (state.isVisualGridOverlayVisible) Color.parseColor("#38BDF8") else Color.parseColor("#94A3B8")
+                )
             }
+        }
+    }
+
+    private fun setupFloatingZoomSlider() {
+        var isProgrammaticChange = false
+
+        // Synchronize View scale changes (pinch-zoom or programmatic) with Floating Slider
+        binding.cognitiveCanvasView.onScaleChangedListener = { scale ->
+            val percent = (scale * 100).toInt()
+            binding.tvZoomPercent.text = "$percent%"
+
+            if (!isProgrammaticChange) {
+                // scale ranges from 0.20f to 4.0f -> progress 0 to 380
+                val progress = ((scale - 0.20f) * 100f).toInt().coerceIn(0, 380)
+                binding.seekBarZoom.progress = progress
+            }
+        }
+
+        binding.seekBarZoom.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    isProgrammaticChange = true
+                    val newScale = 0.20f + (progress / 100f)
+                    val percent = (newScale * 100).toInt()
+                    binding.tvZoomPercent.text = "$percent%"
+                    binding.cognitiveCanvasView.setManualScale(newScale)
+                    isProgrammaticChange = false
+                }
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        binding.btnZoomIn.setOnClickListener {
+            val currentScale = binding.cognitiveCanvasView.viewport.scale
+            val targetScale = (currentScale + 0.25f).coerceAtMost(4.0f)
+            binding.cognitiveCanvasView.setManualScale(targetScale)
+            val percent = (targetScale * 100).toInt()
+            binding.tvZoomPercent.text = "$percent%"
+            val progress = ((targetScale - 0.20f) * 100f).toInt().coerceIn(0, 380)
+            binding.seekBarZoom.progress = progress
+        }
+
+        binding.btnZoomOut.setOnClickListener {
+            val currentScale = binding.cognitiveCanvasView.viewport.scale
+            val targetScale = (currentScale - 0.25f).coerceAtLeast(0.20f)
+            binding.cognitiveCanvasView.setManualScale(targetScale)
+            val percent = (targetScale * 100).toInt()
+            binding.tvZoomPercent.text = "$percent%"
+            val progress = ((targetScale - 0.20f) * 100f).toInt().coerceIn(0, 380)
+            binding.seekBarZoom.progress = progress
+        }
+    }
+
+    private fun promptLinkRelationshipType(source: CanvasNode, target: CanvasNode) {
+        val linkOptions = arrayOf(
+            "📁↔📁 Parent to Parent (Workspace peer association)",
+            "📁↳📄 Parent to Child (Folder hierarchy membership)",
+            "🔗 Custom Spatial Link (Freeform association)"
+        )
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Link '${source.fileNode.name}' ➔ '${target.fileNode.name}'")
+            .setItems(linkOptions) { _, which ->
+                when (which) {
+                    0 -> {
+                        viewModel.linkNodes(
+                            sourceNode = source,
+                            targetNode = target,
+                            relationType = CanvasRelationType.PARENT_TO_PARENT,
+                            label = "Parent-to-Parent"
+                        )
+                        binding.cognitiveCanvasView.invalidate()
+                        Toast.makeText(this, "Linked as Parent-to-Parent peer", Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> {
+                        viewModel.linkNodes(
+                            sourceNode = source,
+                            targetNode = target,
+                            relationType = CanvasRelationType.PARENT_TO_CHILD,
+                            label = "Parent-to-Child"
+                        )
+                        binding.cognitiveCanvasView.invalidate()
+                        Toast.makeText(this, "Linked as Parent-to-Child hierarchy", Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> {
+                        viewModel.linkNodes(
+                            sourceNode = source,
+                            targetNode = target,
+                            relationType = CanvasRelationType.USER_LINK,
+                            label = "User Link"
+                        )
+                        binding.cognitiveCanvasView.invalidate()
+                        Toast.makeText(this, "Linked files", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun exportCanvasAsImage() {
+        try {
+            Toast.makeText(this, "Generating high-res canvas image...", Toast.LENGTH_SHORT).show()
+            val bitmap = binding.cognitiveCanvasView.exportLayoutAsBitmap()
+
+            val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val exportDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "CognitiveCanvas")
+            if (!exportDir.exists()) {
+                exportDir.mkdirs()
+            }
+
+            val exportFile = File(exportDir, "Canvas_Layout_${timeStamp}.png")
+            FileOutputStream(exportFile).use { outStream ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, outStream)
+                outStream.flush()
+            }
+
+            // Share / view prompt
+            val uri = try {
+                FileProvider.getUriForFile(this, "${packageName}.provider", exportFile)
+            } catch (ex: Exception) {
+                Uri.fromFile(exportFile)
+            }
+
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Canvas Layout Exported")
+                .setMessage("Saved image to:\n${exportFile.absolutePath}")
+                .setPositiveButton("Share") { _, _ ->
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "image/png"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(Intent.createChooser(shareIntent, "Share Canvas Layout"))
+                }
+                .setNegativeButton("Close", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to export image: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -334,6 +579,10 @@ class CognitiveCanvasActivity : AppCompatActivity() {
                 val selectedColor = colorValues[which]
                 viewModel.updateNodeThemeColor(node, selectedColor, currentDirectoryPath)
                 binding.cognitiveCanvasView.invalidate()
+                if (::previewPanelController.isInitialized && previewPanelController.isShowing() &&
+                    previewPanelController.getCurrentNode()?.id == node.id) {
+                    previewPanelController.updateThemeColor(selectedColor)
+                }
                 val colorName = colorOptions[which]
                 Toast.makeText(this, "Theme color updated: $colorName", Toast.LENGTH_SHORT).show()
             }
@@ -342,6 +591,9 @@ class CognitiveCanvasActivity : AppCompatActivity() {
     }
 
     private fun openFileOrDirectory(node: CanvasNode) {
+        if (::previewPanelController.isInitialized) {
+            previewPanelController.hidePreview()
+        }
         val file = File(node.fileNode.path)
         if (file.isDirectory) {
             // Load canvas into directory
@@ -440,5 +692,15 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             }
             .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (::previewPanelController.isInitialized && previewPanelController.isShowing()) {
+            previewPanelController.hidePreview()
+            binding.cognitiveCanvasView.clearSelection()
+            return
+        }
+        super.onBackPressed()
     }
 }

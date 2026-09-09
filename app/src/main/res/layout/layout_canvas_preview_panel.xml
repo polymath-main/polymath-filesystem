@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/previewBottomSheet"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_canvas_preview_sheet"
+    android:clickable="true"
+    android:elevation="16dp"
+    android:focusable="true"
+    android:orientation="vertical"
+    android:paddingTop="8dp"
+    app:behavior_hideable="true"
+    app:behavior_peekHeight="112dp"
+    app:behavior_skipCollapsed="false"
+    app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+    <!-- Top Drag Handle Bar -->
+    <View
+        android:id="@+id/dragHandle"
+        android:layout_width="44dp"
+        android:layout_height="5dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_chip_meta_secondary" />
+
+    <!-- Compact / Peek Header (Visible in Collapsed & Expanded states) -->
+    <LinearLayout
+        android:id="@+id/llPreviewPeekHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="12dp">
+
+        <!-- Thumbnail Container -->
+        <FrameLayout
+            android:id="@+id/flPeekThumbnailContainer"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:background="@drawable/bg_preview_thumbnail_frame"
+            android:clipToOutline="true">
+
+            <ImageView
+                android:id="@+id/ivPeekThumbnail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="File Thumbnail Preview"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_file_default" />
+
+            <!-- Mini Extension Badge -->
+            <TextView
+                android:id="@+id/tvPeekExtensionBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="3dp"
+                android:background="#CC0F172A"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="1dp"
+                android:text="PNG"
+                android:textColor="#38BDF8"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                tools:ignore="SmallSp" />
+        </FrameLayout>
+
+        <!-- Primary Metadata Column -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvPreviewFileName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="middle"
+                android:singleLine="true"
+                android:text="project_screenshot.png"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- Size and Type Badges -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvPreviewFileSize"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chip_meta"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="2.4 MB"
+                    android:textColor="#38BDF8"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPreviewFileTypeBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_chip_meta_secondary"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="IMAGE"
+                    android:textColor="#C084FC"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvPreviewLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="start"
+                android:singleLine="true"
+                android:text="/storage/emulated/0/Pictures"
+                android:textColor="#94A3B8"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <!-- Header Action Controls -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnToggleExpandPreview"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Expand or Collapse Preview"
+                android:padding="6dp"
+                android:src="@drawable/ic_expand_less"
+                app:tint="#38BDF8" />
+
+            <ImageButton
+                android:id="@+id/btnDismissPreview"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
+                android:layout_marginStart="2dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Dismiss Preview"
+                android:padding="8dp"
+                android:src="@drawable/ic_close_white"
+                app:tint="#94A3B8" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Expandable Detailed Section -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollExpandedDetails"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="24dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="12dp"
+                android:background="#1F38BDF8" />
+
+            <!-- Large Image / Visual Preview Container -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardLargePreview"
+                android:layout_width="match_parent"
+                android:layout_height="190dp"
+                app:cardBackgroundColor="#070C18"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#2638BDF8"
+                app:strokeWidth="1dp">
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- High-Resolution Image Thumbnail loaded with Coil -->
+                    <ImageView
+                        android:id="@+id/ivLargePreviewThumbnail"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="High-Resolution Preview"
+                        android:scaleType="centerCrop" />
+
+                    <!-- Text/Code Snippet Preview Overlay (For text/code files) -->
+                    <TextView
+                        android:id="@+id/tvCodeSnippetPreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#151E293B"
+                        android:fontFamily="monospace"
+                        android:lineSpacingMultiplier="1.2"
+                        android:padding="12dp"
+                        android:textColor="#E2E8F0"
+                        android:textSize="11sp"
+                        android:visibility="gone" />
+
+                    <!-- Extra Overlay Tag (e.g. Dimensions / Item count) -->
+                    <TextView
+                        android:id="@+id/tvPreviewDimensionTag"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="10dp"
+                        android:background="@drawable/bg_chip_meta"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="3dp"
+                        android:text="1920 × 1080"
+                        android:textColor="#38BDF8"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Metadata Details Grid -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:cardBackgroundColor="#0C1322"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#1E293B"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <!-- Title -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="METADATA &amp; ATTRIBUTES"
+                        android:textColor="#38BDF8"
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
+
+                    <!-- Exact Size Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="File Size"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaExactSize"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="2.4 MB (2,516,582 bytes)"
+                            android:textColor="#E2E8F0"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <!-- Full Path Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Full Path"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaFullPath"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:ellipsize="middle"
+                            android:singleLine="true"
+                            android:text="/storage/emulated/0/Download/file.ext"
+                            android:textColor="#38BDF8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Last Modified Date Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Last Modified"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaModified"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="2026-09-09 10:24:12"
+                            android:textColor="#E2E8F0"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- MIME Type / Classification -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="MIME Type"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaMimeType"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="image/png"
+                            android:textColor="#E2E8F0"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Permissions & Attribute Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Permissions"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaPermissions"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Read / Write (rw-rw-r--)"
+                            android:textColor="#E2E8F0"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <!-- Spatial Coordinates on Canvas -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="100dp"
+                            android:layout_height="wrap_content"
+                            android:text="Canvas Position"
+                            android:textColor="#64748B"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvMetaSpatialCoords"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="X: 340.0, Y: -120.0"
+                            android:textColor="#94A3B8"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Bottom Quick Actions Row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnPreviewOpen"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_canvas_btn_primary"
+                    android:text="Open File"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnPreviewShare"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="0.8"
+                    android:background="@drawable/bg_chip_meta_secondary"
+                    android:text="Share"
+                    android:textAllCaps="false"
+                    android:textColor="#38BDF8"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null" />
+
+                <Button
+                    android:id="@+id/btnPreviewColorTag"
+                    android:layout_width="0dp"
+                    android:layout_height="46dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="0.8"
+                    android:background="@drawable/bg_chip_meta_secondary"
+                    android:text="Color Tag"
+                    android:textAllCaps="false"
+                    android:textColor="#C084FC"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:backgroundTint="@null" />
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

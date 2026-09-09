@@ -36,9 +36,15 @@ class CognitiveCanvasView @JvmOverloads constructor(
     // Snap to grid movement system
     var isSnapToGridEnabled: Boolean = true
     var snapGridSize: Float = 75f
+    var isVisualGridOverlayVisible: Boolean = true
     private var lastSnappedGridX = 0f
     private var lastSnappedGridY = 0f
     private var isGridSnappingActive = false
+    private var dragNodeInitialX = 0f
+    private var dragNodeInitialY = 0f
+
+    // Zoom listener & precision manual scale control
+    var onScaleChangedListener: ((Float) -> Unit)? = null
 
     // Search state & navigation
     private var currentSearchQuery: String = ""
@@ -54,9 +60,11 @@ class CognitiveCanvasView @JvmOverloads constructor(
 
     // Interaction Callbacks
     var onNodeSelectedListener: ((CanvasNode) -> Unit)? = null
+    var onSelectionClearedListener: (() -> Unit)? = null
     var onNodeDoubleClickListener: ((CanvasNode) -> Unit)? = null
     var onNodeLongClickListener: ((CanvasNode) -> Unit)? = null
     var onNodeMovedListener: ((CanvasNode) -> Unit)? = null
+    var onNodeMovedWithInitialPositionListener: ((CanvasNode, Float, Float) -> Unit)? = null
     var onCanvasSelectionChangedListener: ((List<CanvasNode>) -> Unit)? = null
     var onNodesLinkedListener: ((CanvasNode, CanvasNode) -> Unit)? = null
 
@@ -71,6 +79,11 @@ class CognitiveCanvasView @JvmOverloads constructor(
     private val gridDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#2E38BDF8")
         style = Paint.Style.FILL
+    }
+    private val visualGridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#1538BDF8")
+        strokeWidth = 1f
+        style = Paint.Style.STROKE
     }
     private val snapTargetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -90,6 +103,16 @@ class CognitiveCanvasView @JvmOverloads constructor(
         strokeWidth = 2.5f
         style = Paint.Style.STROKE
         color = Color.parseColor("#5038BDF8")
+    }
+    private val edgeParentToParentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        strokeWidth = 3.5f
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#80F59E0B") // Amber glow for parent-parent architecture
+    }
+    private val edgeParentToChildPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        strokeWidth = 2.8f
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#8006B6D4") // Cyan for parent-child tree
     }
     private val edgeSimilarityPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         strokeWidth = 1.8f
@@ -184,6 +207,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
                 viewport.translationX = focusX - (focusX - viewport.translationX) * scaleDelta
                 viewport.translationY = focusY - (focusY - viewport.translationY) * scaleDelta
 
+                onScaleChangedListener?.invoke(newScale)
                 invalidate()
                 return true
             }
@@ -217,17 +241,32 @@ class CognitiveCanvasView @JvmOverloads constructor(
                 val worldY = viewport.toWorldY(e.y)
                 val clickedNode = findNodeAt(worldX, worldY)
                 if (clickedNode != null) {
-                    clickedNode.isSelected = !clickedNode.isSelected
-                    onNodeSelectedListener?.invoke(clickedNode)
-                    onCanvasSelectionChangedListener?.invoke(nodes.filter { it.isSelected })
+                    val willBeSelected = !clickedNode.isSelected
+                    nodes.forEach { it.isSelected = false }
+                    clickedNode.isSelected = willBeSelected
+                    if (willBeSelected) {
+                        onNodeSelectedListener?.invoke(clickedNode)
+                        onCanvasSelectionChangedListener?.invoke(listOf(clickedNode))
+                    } else {
+                        onSelectionClearedListener?.invoke()
+                        onCanvasSelectionChangedListener?.invoke(emptyList())
+                    }
                 } else {
                     nodes.forEach { it.isSelected = false }
+                    onSelectionClearedListener?.invoke()
                     onCanvasSelectionChangedListener?.invoke(emptyList())
                 }
                 invalidate()
                 return true
             }
         })
+    }
+
+    fun clearSelection() {
+        nodes.forEach { it.isSelected = false }
+        onSelectionClearedListener?.invoke()
+        onCanvasSelectionChangedListener?.invoke(emptyList())
+        invalidate()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -429,6 +468,8 @@ class CognitiveCanvasView @JvmOverloads constructor(
                         activeDraggedNode = hitNode
                         isDraggingNode = true
                         hitNode.isPinned = true
+                        dragNodeInitialX = hitNode.x
+                        dragNodeInitialY = hitNode.y
                         lastSnappedGridX = (hitNode.x / snapGridSize).roundToInt() * snapGridSize
                         lastSnappedGridY = (hitNode.y / snapGridSize).roundToInt() * snapGridSize
                         startPhysicsSimulation()
@@ -504,6 +545,7 @@ class CognitiveCanvasView @JvmOverloads constructor(
                     isGridSnappingActive = false
                     if (hasMovedNode) {
                         onNodeMovedListener?.invoke(node)
+                        onNodeMovedWithInitialPositionListener?.invoke(node, dragNodeInitialX, dragNodeInitialY)
                     }
                     activeDraggedNode = null
                 }
@@ -569,6 +611,20 @@ class CognitiveCanvasView @JvmOverloads constructor(
         val offsetX = viewport.translationX % gridSize
         val offsetY = viewport.translationY % gridSize
 
+        // If visual grid overlay is enabled, draw subtle grid guidelines to visualize snap boundaries
+        if (isVisualGridOverlayVisible) {
+            var lx = offsetX
+            while (lx < width) {
+                canvas.drawLine(lx, 0f, lx, height.toFloat(), visualGridLinePaint)
+                lx += gridSize
+            }
+            var ly = offsetY
+            while (ly < height) {
+                canvas.drawLine(0f, ly, width.toFloat(), ly, visualGridLinePaint)
+                ly += gridSize
+            }
+        }
+
         var x = offsetX
         while (x < width) {
             var y = offsetY
@@ -590,6 +646,8 @@ class CognitiveCanvasView @JvmOverloads constructor(
             val paint = when (edge.relationType) {
                 CanvasRelationType.USER_LINK -> edgeUserLinkPaint
                 CanvasRelationType.SIMILARITY -> edgeSimilarityPaint
+                CanvasRelationType.PARENT_TO_PARENT -> edgeParentToParentPaint
+                CanvasRelationType.PARENT_TO_CHILD -> edgeParentToChildPaint
                 else -> edgeParentChildPaint
             }
 
@@ -756,5 +814,36 @@ class CognitiveCanvasView @JvmOverloads constructor(
             min(frustumBottom, miniMapBounds.bottom)
         )
         canvas.drawRect(tempBounds, miniMapViewfrustumPaint)
+    }
+
+    /**
+     * Precision manual zoom scale adjustment with screen center pinning
+     */
+    fun setManualScale(newScale: Float) {
+        val clampedScale = newScale.coerceIn(0.20f, 4.0f)
+        val centerX = width / 2f
+        val centerY = height / 2f
+        val scaleDelta = clampedScale / viewport.scale
+        viewport.scale = clampedScale
+        viewport.translationX = centerX - (centerX - viewport.translationX) * scaleDelta
+        viewport.translationY = centerY - (centerY - viewport.translationY) * scaleDelta
+        invalidate()
+    }
+
+    /**
+     * Exports the current canvas arrangement and layout to a high-resolution Bitmap.
+     */
+    fun exportLayoutAsBitmap(): Bitmap {
+        val w = if (width > 0) width else 1080
+        val h = if (height > 0) height else 1920
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val exportCanvas = Canvas(bitmap)
+
+        // Fill modern dark canvas background
+        exportCanvas.drawColor(Color.parseColor("#0F172A"))
+
+        // Render current view state
+        draw(exportCanvas)
+        return bitmap
     }
 }

@@ -107,6 +107,52 @@
                     android:src="@android:drawable/ic_menu_sort_by_size"
                     app:tint="#38BDF8" />
 
+                <!-- Visual Grid Overlay Toggle Button -->
+                <ImageButton
+                    android:id="@+id/btnVisualGrid"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="2dp"
+                    android:background="@drawable/bg_canvas_btn_active"
+                    android:contentDescription="Toggle Visual Grid Lines"
+                    android:src="@drawable/ic_grid_on"
+                    app:tint="#38BDF8" />
+
+                <!-- Undo Action Button -->
+                <ImageButton
+                    android:id="@+id/btnUndo"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="2dp"
+                    android:alpha="0.4"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Undo Canvas Action"
+                    android:src="@drawable/ic_undo"
+                    app:tint="#E2E8F0" />
+
+                <!-- Redo Action Button -->
+                <ImageButton
+                    android:id="@+id/btnRedo"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="2dp"
+                    android:alpha="0.4"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Redo Canvas Action"
+                    android:src="@drawable/ic_redo"
+                    app:tint="#E2E8F0" />
+
+                <!-- Export Layout as Image Button -->
+                <ImageButton
+                    android:id="@+id/btnExportImage"
+                    android:layout_width="38dp"
+                    android:layout_height="38dp"
+                    android:layout_marginStart="2dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Export Canvas as Image"
+                    android:src="@drawable/ic_export_image"
+                    app:tint="#38BDF8" />
+
                 <!-- Link Mode Toggle -->
                 <ImageButton
                     android:id="@+id/btnLinkMode"
@@ -224,6 +270,62 @@
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
+
+    <!-- Floating Scale Slider Pill (Precision Zoom Control & Indicator) -->
+    <LinearLayout
+        android:id="@+id/floatingScalePill"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="68dp"
+        android:background="@drawable/bg_zoom_slider_pill"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="6dp">
+
+        <TextView
+            android:id="@+id/btnZoomOut"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="-"
+            android:textColor="#38BDF8"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/seekBarZoom"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:max="380"
+            android:progress="80"
+            android:progressTint="#38BDF8"
+            android:thumbTint="#38BDF8" />
+
+        <TextView
+            android:id="@+id/btnZoomIn"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="#38BDF8"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvZoomPercent"
+            android:layout_width="44dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:gravity="end"
+            android:text="100%"
+            android:textColor="#E2E8F0"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <!-- Bottom Status Pill -->
     <LinearLayout
@@ -508,5 +610,10 @@
                 app:backgroundTint="@null" />
         </LinearLayout>
     </FrameLayout>
+
+    <!-- Expandable Bottom Sheet Preview Panel for Selected File Nodes -->
+    <include
+        android:id="@+id/previewPanel"
+        layout="@layout/layout_canvas_preview_panel" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

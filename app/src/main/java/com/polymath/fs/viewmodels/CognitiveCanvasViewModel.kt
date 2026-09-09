@@ -27,7 +27,10 @@ data class CognitiveCanvasUiState(
     val nodeCount: Int = 0,
     val edgeCount: Int = 0,
     val isSnapToGridEnabled: Boolean = true,
+    val isVisualGridOverlayVisible: Boolean = true,
     val isLinkModeActive: Boolean = false,
+    val canUndo: Boolean = false,
+    val canRedo: Boolean = false,
     val message: String? = null
 )
 
@@ -42,6 +45,16 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
     val uiState: StateFlow<CognitiveCanvasUiState> = _uiState.asStateFlow()
 
     private val physicsEngine = ForceSimulationEngine()
+    val actionStack = CanvasActionStack()
+
+    init {
+        actionStack.onStackChangedListener = { canUndo, canRedo ->
+            _uiState.value = _uiState.value.copy(
+                canUndo = canUndo,
+                canRedo = canRedo
+            )
+        }
+    }
 
     fun loadPath(path: String = Environment.getExternalStorageDirectory().absolutePath) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -213,6 +226,20 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
+    fun recordNodeMove(node: CanvasNode, oldX: Float, oldY: Float) {
+        if (oldX == node.x && oldY == node.y) return
+        actionStack.pushAction(
+            CanvasAction.MoveNode(
+                nodeId = node.id,
+                filePath = node.fileNode.path,
+                oldX = oldX,
+                oldY = oldY,
+                newX = node.x,
+                newY = node.y
+            )
+        )
+    }
+
     fun persistNodePosition(node: CanvasNode, canvasId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.saveNode(
@@ -229,7 +256,16 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun updateNodeThemeColor(node: CanvasNode, color: Int?, canvasId: String) {
+        val previousColor = node.themeColor
         node.themeColor = color
+        actionStack.pushAction(
+            CanvasAction.UpdateThemeColor(
+                nodeId = node.id,
+                filePath = node.fileNode.path,
+                oldColor = previousColor,
+                newColor = color
+            )
+        )
         viewModelScope.launch(Dispatchers.IO) {
             val existing = repository.getNodeByPath(node.fileNode.path)
             if (existing != null) {
@@ -267,13 +303,28 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
         }
     }
 
-    fun linkNodes(sourceNode: CanvasNode, targetNode: CanvasNode, label: String = "Link") {
+    fun linkNodes(
+        sourceNode: CanvasNode,
+        targetNode: CanvasNode,
+        relationType: CanvasRelationType = CanvasRelationType.USER_LINK,
+        label: String = "Link"
+    ) {
         val canvasId = _uiState.value.currentPath
         val edge = _uiState.value.canvas.linkNodes(
             sourceId = sourceNode.id,
             targetId = targetNode.id,
-            relationType = CanvasRelationType.USER_LINK,
+            relationType = relationType,
             label = label
+        )
+
+        actionStack.pushAction(
+            CanvasAction.LinkNodes(
+                edgeId = edge.id,
+                sourceNodeId = sourceNode.id,
+                targetNodeId = targetNode.id,
+                relationType = relationType,
+                label = label
+            )
         )
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -300,6 +351,101 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
         _uiState.value = _uiState.value.copy(
             isSnapToGridEnabled = !_uiState.value.isSnapToGridEnabled
         )
+    }
+
+    fun toggleVisualGridOverlay() {
+        _uiState.value = _uiState.value.copy(
+            isVisualGridOverlayVisible = !_uiState.value.isVisualGridOverlayVisible
+        )
+    }
+
+    fun undoAction(onComplete: (CanvasAction?) -> Unit) {
+        val action = actionStack.popUndo() ?: return
+        val currentCanvas = _uiState.value.canvas
+        val canvasId = _uiState.value.currentPath
+
+        when (action) {
+            is CanvasAction.MoveNode -> {
+                val node = currentCanvas.findNodeById(action.nodeId)
+                if (node != null) {
+                    node.x = action.oldX
+                    node.y = action.oldY
+                    persistNodePosition(node, canvasId)
+                }
+            }
+            is CanvasAction.UpdateThemeColor -> {
+                val node = currentCanvas.findNodeById(action.nodeId)
+                if (node != null) {
+                    node.themeColor = action.oldColor
+                    viewModelScope.launch(Dispatchers.IO) {
+                        repository.updateThemeColor(node.fileNode.path, action.oldColor)
+                    }
+                }
+            }
+            is CanvasAction.LinkNodes -> {
+                currentCanvas.edges.removeAll { it.id == action.edgeId }
+                viewModelScope.launch(Dispatchers.IO) {
+                    repository.deleteEdge(action.edgeId)
+                    withContext(Dispatchers.Main) {
+                        _uiState.value = _uiState.value.copy(edgeCount = currentCanvas.edges.size)
+                    }
+                }
+            }
+        }
+        onComplete(action)
+    }
+
+    fun redoAction(onComplete: (CanvasAction?) -> Unit) {
+        val action = actionStack.popRedo() ?: return
+        val currentCanvas = _uiState.value.canvas
+        val canvasId = _uiState.value.currentPath
+
+        when (action) {
+            is CanvasAction.MoveNode -> {
+                val node = currentCanvas.findNodeById(action.nodeId)
+                if (node != null) {
+                    node.x = action.newX
+                    node.y = action.newY
+                    persistNodePosition(node, canvasId)
+                }
+            }
+            is CanvasAction.UpdateThemeColor -> {
+                val node = currentCanvas.findNodeById(action.nodeId)
+                if (node != null) {
+                    node.themeColor = action.newColor
+                    viewModelScope.launch(Dispatchers.IO) {
+                        repository.updateThemeColor(node.fileNode.path, action.newColor)
+                    }
+                }
+            }
+            is CanvasAction.LinkNodes -> {
+                val edge = CanvasEdge(
+                    id = action.edgeId,
+                    sourceNodeId = action.sourceNodeId,
+                    targetNodeId = action.targetNodeId,
+                    relationType = action.relationType,
+                    label = action.label
+                )
+                currentCanvas.edges.add(edge)
+                viewModelScope.launch(Dispatchers.IO) {
+                    repository.saveEdge(
+                        CanvasEdgeEntity(
+                            id = edge.id,
+                            canvasId = canvasId,
+                            sourcePath = edge.sourceNodeId,
+                            targetPath = edge.targetNodeId,
+                            relationType = edge.relationType.name,
+                            label = edge.label,
+                            weight = edge.weight
+                        )
+                    )
+                    withContext(Dispatchers.Main) {
+                        _uiState.value = _uiState.value.copy(edgeCount = currentCanvas.edges.size)
+                    }
+                }
+            }
+        }
+        onComplete(action)
     }
 
     fun toggleLinkMode() {
