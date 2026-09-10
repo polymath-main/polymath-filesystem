@@ -134,6 +134,22 @@ class ForceSimulationEngine(
             val gravDy = centerY - node.y
             node.vx += gravDx * centerGravityStrength
             node.vy += gravDy * centerGravityStrength
+            
+            // Tangential Vortex Force (Twist)
+            val dx = node.x - centerX
+            val dy = node.y - centerY
+            val dist = sqrt(max(dx * dx + dy * dy, 1f))
+            
+            val nx = dx / dist
+            val ny = dy / dist
+            
+            val tx = -ny
+            val ty = nx
+            
+            val twistStrength = 8.0f / (dist * 0.01f)
+            
+            node.vx += tx * twistStrength
+            node.vy += ty * twistStrength
 
             node.vx *= damping
             node.vy *= damping
