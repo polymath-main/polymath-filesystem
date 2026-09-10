@@ -429,13 +429,22 @@ class HomeDashboardFragment : Fragment() {
             startActivity(Intent(requireContext(), TerminalActivity::class.java))
         }
         view.findViewById<View>(R.id.btn_feature_workbench)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Initializing Architect's Workbench...", Toast.LENGTH_SHORT).show()
+            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                putExtra("EXTRA_FEATURE_ID", "workbench")
+            }
+            startActivity(intent)
         }
         view.findViewById<View>(R.id.btn_feature_intent_engine)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Initializing Intent Engine...", Toast.LENGTH_SHORT).show()
+            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                putExtra("EXTRA_FEATURE_ID", "intent_engine")
+            }
+            startActivity(intent)
         }
         view.findViewById<View>(R.id.btn_feature_synapse)?.setOnClickListener {
-            Toast.makeText(requireContext(), "Initializing Synapse Protocol...", Toast.LENGTH_SHORT).show()
+            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                putExtra("EXTRA_FEATURE_ID", "synapse")
+            }
+            startActivity(intent)
         }
     }
 

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Feature Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        :root {
+            --bg-color: #0f172a;
+            --surface-color: rgba(30, 41, 59, 0.7);
+            --accent-color: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Glassmorphic Background Shapes */
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.5;
+        }
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: #38bdf8;
+            top: -100px;
+            right: -100px;
+        }
+        .shape-2 {
+            width: 250px;
+            height: 250px;
+            background: #f43f5e;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .header {
+            padding: 40px 24px 20px 24px;
+            background: linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0) 100%);
+            z-index: 10;
+        }
+
+        .header-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        p.subtitle {
+            margin: 8px 0 0 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .content-container {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: var(--surface-color);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--accent-color);
+            padding: 6px 12px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            margin-right: 8px;
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        /* Action Buttons */
+        .btn-primary {
+            background: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            width: 100%;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .console-box {
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 12px;
+            font-family: monospace;
+            color: #10b981;
+            font-size: 12px;
+            margin-top: 16px;
+            min-height: 80px;
+            overflow-y: auto;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <div class="header">
+        <div class="header-icon" id="icon">🛠️</div>
+        <h1 id="title">Initializing...</h1>
+        <p class="subtitle" id="subtitle">Establishing secure neuro-link to Polymath engine...</p>
+    </div>
+
+    <div class="content-container">
+        
+        <div class="glass-card" style="animation-delay: 0.1s;">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span id="status-text">System Online</span>
+            </div>
+            
+            <h3 style="margin-top:0; font-size:18px;">Engine Telemetry</h3>
+            <div id="telemetry-data" style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+                Booting core services...
+            </div>
+            
+            <div class="console-box" id="console">
+                > Listening for events...
+            </div>
+        </div>
+
+        <div class="glass-card" style="animation-delay: 0.2s;">
+            <button class="btn-primary" onclick="AndroidBridge.executePrimaryAction()">Initialize Protocol</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Data configurations for different features
+        const features = {
+            "workbench": {
+                icon: "🛠️",
+                title: "Architect's Workbench",
+                subtitle: "Advanced IDE and semantic structure overview for massive codebase manipulation.",
+                telemetry: "Pro-Workspace Engine loaded. AST memory allocated. Ready for semantic queries.",
+                btnText: "Launch Architect IDE"
+            },
+            "intent_engine": {
+                icon: "🧠",
+                title: "Intent Engine",
+                subtitle: "Semantic intent resolution and natural language command execution core.",
+                telemetry: "Neural heuristics loaded. Local LLM bridge is standing by for intents.",
+                btnText: "Trigger Intent Scan"
+            },
+            "synapse": {
+                icon: "🔗",
+                title: "Synapse Protocol",
+                subtitle: "Real-time swarm synchronization and zero-latency device-to-device file bridging.",
+                telemetry: "Listening on port 8443. End-to-end encryption negotiated.",
+                btnText: "Connect to Swarm"
+            },
+            "rift": {
+                icon: "🌌",
+                title: "Antigravity Rift",
+                subtitle: "Temporal file versioning and spatial memory persistence engine.",
+                telemetry: "Rift singularity stabilized. Version ledgers are intact.",
+                btnText: "Open Timeline"
+            },
+            "rahman": {
+                icon: "🌀",
+                title: "Rahman Flow",
+                subtitle: "Continuous integration and fluid workflow automation state manager.",
+                telemetry: "Flow channels mapped. Waiting for structural mutations.",
+                btnText: "Analyze Workflows"
+            }
+        };
+
+        // Initialize based on Android bridge
+        function loadFeature(featureId) {
+            const data = features[featureId] || features["workbench"];
+            
+            document.getElementById('icon').textContent = data.icon;
+            document.getElementById('title').textContent = data.title;
+            document.getElementById('subtitle').textContent = data.subtitle;
+            document.getElementById('telemetry-data').textContent = data.telemetry;
+            
+            const btn = document.querySelector('.btn-primary');
+            btn.textContent = data.btnText;
+            
+            logToConsole("Loaded configuration: " + featureId.toUpperCase());
+        }
+
+        function logToConsole(msg) {
+            const consoleBox = document.getElementById('console');
+            consoleBox.innerHTML += "<br>> " + msg;
+            consoleBox.scrollTop = consoleBox.scrollHeight;
+        }
+
+        // Auto-fetch feature from Native Bridge when ready
+        window.onload = () => {
+            if (typeof AndroidBridge !== "undefined") {
+                loadFeature(AndroidBridge.getFeatureId());
+            } else {
+                loadFeature("workbench"); // Fallback for browser testing
+            }
+        };
+    </script>
+</body>
+</html>
