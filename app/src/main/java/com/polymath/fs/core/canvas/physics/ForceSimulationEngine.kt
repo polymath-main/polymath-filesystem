@@ -65,18 +65,20 @@ class ForceSimulationEngine(
             val nodeA = nodes[i]
             for (j in i + 1 until nodeCount) {
                 val nodeB = nodes[j]
-
                 val dx = nodeB.x - nodeA.x
                 val dy = nodeB.y - nodeA.y
-                val distSq = dx * dx + dy * dy
-                val dist = sqrt(max(distSq, 1f))
+                val distSq = max(dx * dx + dy * dy, 1f)
                 val minDist = nodeA.radius + nodeB.radius + 20f
+                val minDistSq = minDist * minDist
 
-                val effectiveDist = max(dist, minDist)
-                val force = repulsionStrength / (effectiveDist * effectiveDist)
+                val effectiveDistSq = max(distSq, minDistSq)
+                
+                // Optimized to power of 2: 32768f = 2^15
+                val force = 32768f / effectiveDistSq
+                val inverseDist = 1f / sqrt(effectiveDistSq)
 
-                val fx = (dx / dist) * force
-                val fy = (dy / dist) * force
+                val fx = dx * inverseDist * force
+                val fy = dy * inverseDist * force
 
                 if (!nodeA.isPinned) {
                     nodeA.vx -= fx

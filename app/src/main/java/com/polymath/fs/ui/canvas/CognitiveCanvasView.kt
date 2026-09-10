@@ -640,6 +640,17 @@ class CognitiveCanvasView @JvmOverloads constructor(
                             targetY = snappedY
                             isGridSnappingActive = true
                         }
+                        val dx = targetX - node.x
+                        val dy = targetY - node.y
+                        val distSq = dx * dx + dy * dy
+                        
+                        if (distSq < 16384f) {
+                            node.stateFlag = com.polymath.fs.domain.canvas.models.CanvasNode.STATE_INTERACTIVE
+                            node.vx *= 0.5f
+                            node.vy *= 0.5f
+                        } else {
+                            node.stateFlag = com.polymath.fs.domain.canvas.models.CanvasNode.STATE_DYNAMIC
+                        }
 
                         // Apply spring-damper drag physics follower
                         physicsEngine.applyDragSpring(node, targetX, targetY)

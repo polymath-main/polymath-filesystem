@@ -51,12 +51,16 @@ data class CanvasNode(
     var isPinned: Boolean = false,
     var isExpanded: Boolean = false,
     var isHighlighted: Boolean = false,
-    val clusterTag: String = if (fileNode.isDirectory) "folder" else fileNode.extension.ifEmpty { "other" }
+    val clusterTag: String = if (fileNode.isDirectory) "folder" else fileNode.extension.ifEmpty { "other" },
+    var stateFlag: Int = STATE_DYNAMIC
 ) {
     val color: Int
         get() = themeColor ?: getNodeColorForFile(fileNode)
 
     companion object {
+        const val STATE_DYNAMIC = 0b00  // 0: Under engine influence
+        const val STATE_INTERACTIVE = 0b01 // 1: Pointer focus locked
+
         fun calculateNodeRadius(file: FileNode): Float {
             if (file.isDirectory) return 56f
             val size = file.size
