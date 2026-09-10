@@ -223,6 +223,8 @@ class FileBrowserFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
+        com.polymath.fs.core.SystemBarHelper.applyDynamicStatusBarInsets(binding.appBarLayout)
+        
         setupRecyclerView()
         setupObservers()
         setupToolbar()

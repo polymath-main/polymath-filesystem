@@ -102,10 +102,10 @@
     </style>
 
     <!-- Material 3 Header Title Typography -->
-    <style name="TextAppearance.Polymath.HeaderTitle" parent="TextAppearance.Material3.TitleLarge">
+    <style name="TextAppearance.Polymath.HeaderTitle" parent="TextAppearance.Material3.TitleMedium">
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">?android:attr/textColorPrimary</item>
-        <item name="android:textSize">22sp</item>
+        <item name="android:textSize">18sp</item>
         <item name="android:letterSpacing">0.01</item>
     </style>
 </resources>

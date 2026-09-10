@@ -133,9 +133,11 @@ class CognitiveCanvasViewModel(application: Application) : AndroidViewModel(appl
                 val (posX, posY, isPinned) = if (saved != null) {
                     Triple(saved.x, saved.y, saved.isPinned)
                 } else {
-                    val angle = index * 0.4
-                    val initX = rootNode.x + (kotlin.math.cos(angle) * 220).toFloat()
-                    val initY = rootNode.y + (kotlin.math.sin(angle) * 220).toFloat()
+                    val goldenAngle = 2.39996f
+                    val angle = index * goldenAngle
+                    val radius = 80f + kotlin.math.sqrt(index.toFloat()) * 40f
+                    val initX = rootNode.x + (kotlin.math.cos(angle) * radius).toFloat()
+                    val initY = rootNode.y + (kotlin.math.sin(angle) * radius).toFloat()
                     nodesToPersist.add(
                         CanvasNodeEntity(
                             filePath = file.absolutePath,
