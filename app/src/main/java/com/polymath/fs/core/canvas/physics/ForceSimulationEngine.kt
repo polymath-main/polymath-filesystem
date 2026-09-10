@@ -22,6 +22,7 @@ class ForceSimulationEngine(
     private val damping: Float = 0.88f,
     private val maxVelocity: Float = 45f
 ) {
+    private val quadTreeEngine = QuadTreeEngine()
 
     fun applyDragSpring(
         node: CanvasNode,
@@ -59,43 +60,33 @@ class ForceSimulationEngine(
 
         var totalKineticEnergy = 0f
 
-        // 1. Coulomb Repulsion between all node pairs
+        // 1. Coulomb Repulsion via Barnes-Hut Quadtree (O(N log N))
+        quadTreeEngine.clear()
+        
+        var minX = Float.MAX_VALUE
+        var minY = Float.MAX_VALUE
+        var maxX = Float.MIN_VALUE
+        var maxY = Float.MIN_VALUE
+        
         val nodeCount = nodes.size
         for (i in 0 until nodeCount) {
-            val nodeA = nodes[i]
-            for (j in i + 1 until nodeCount) {
-                val nodeB = nodes[j]
-                var dx = nodeB.x - nodeA.x
-                var dy = nodeB.y - nodeA.y
-                
-                // If they are strictly on top of each other, artificially push them apart
-                if (dx == 0f && dy == 0f) {
-                    dx = 0.1f  
-                    dy = 0.1f
-                }
-                val distSq = max(dx * dx + dy * dy, 1f)
-                val minDist = nodeA.radius + nodeB.radius + 20f
-                val minDistSq = minDist * minDist
-
-                val effectiveDistSq = max(distSq, minDistSq)
-                
-                // Optimized to power of 2: 32768f = 2^15
-                val force = 32768f / effectiveDistSq
-                val inverseDist = 1f / sqrt(effectiveDistSq)
-
-                val fx = dx * inverseDist * force
-                val fy = dy * inverseDist * force
-
-                if (!nodeA.isPinned) {
-                    nodeA.vx -= fx
-                    nodeA.vy -= fy
-                }
-                if (!nodeB.isPinned) {
-                    nodeB.vx += fx
-                    nodeB.vy += fy
-                }
-            }
+            val n = nodes[i]
+            if (n.x < minX) minX = n.x
+            if (n.x > maxX) maxX = n.x
+            if (n.y < minY) minY = n.y
+            if (n.y > maxY) maxY = n.y
         }
+        
+        val rootIdx = quadTreeEngine.obtainNode(minX, minY, maxX, maxY)
+        for (i in 0 until nodeCount) {
+            quadTreeEngine.insert(rootIdx, nodes, i)
+        }
+        
+        for (i in 0 until nodeCount) {
+            val nodeA = nodes[i]
+            quadTreeEngine.computeRepulsionForces(rootIdx, nodeA, 0.5f, nodes)
+        }
+
 
         // 2. Hooke's Law Spring-Damper for connected edges
         for (edge in edges) {
