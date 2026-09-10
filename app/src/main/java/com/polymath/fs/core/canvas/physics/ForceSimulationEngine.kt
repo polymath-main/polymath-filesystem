@@ -65,8 +65,14 @@ class ForceSimulationEngine(
             val nodeA = nodes[i]
             for (j in i + 1 until nodeCount) {
                 val nodeB = nodes[j]
-                val dx = nodeB.x - nodeA.x
-                val dy = nodeB.y - nodeA.y
+                var dx = nodeB.x - nodeA.x
+                var dy = nodeB.y - nodeA.y
+                
+                // If they are strictly on top of each other, artificially push them apart
+                if (dx == 0f && dy == 0f) {
+                    dx = 0.1f  
+                    dy = 0.1f
+                }
                 val distSq = max(dx * dx + dy * dy, 1f)
                 val minDist = nodeA.radius + nodeB.radius + 20f
                 val minDistSq = minDist * minDist
@@ -153,6 +159,7 @@ class ForceSimulationEngine(
             totalKineticEnergy += (node.vx * node.vx + node.vy * node.vy)
         }
 
+        if (totalKineticEnergy.isNaN()) return false
         return totalKineticEnergy > 0.5f
     }
 
