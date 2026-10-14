@@ -451,7 +451,7 @@ class CanvasFilePreviewPanelController(
 
         try {
             val uri = try {
-                FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             } catch (e: Exception) {
                 Uri.fromFile(file)
             }

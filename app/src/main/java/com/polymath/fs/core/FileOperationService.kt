@@ -43,21 +43,33 @@ class FileOperationService : Service() {
         serviceScope.launch {
             when (action) {
                 "COPY" -> {
-                    copyFilesUseCase(src, dest).collectLatest { progress ->
-                        updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Copying files...")
-                        if (progress.isComplete) {
-                            ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                            stopSelf()
+                    try {
+                        copyFilesUseCase(src, dest).collectLatest { progress ->
+                            updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Copying files...")
+                            if (progress.isComplete) {
+                                ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                                stopSelf()
+                            }
                         }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FileOperationService", "COPY failed", e)
+                        ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                        stopSelf()
                     }
                 }
                 "MOVE" -> {
-                    moveFilesUseCase(src, dest).collectLatest { progress ->
-                        updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Moving files...")
-                        if (progress.isComplete) {
-                            ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
-                            stopSelf()
+                    try {
+                        moveFilesUseCase(src, dest).collectLatest { progress ->
+                            updateNotification(progress.currentBytes.toInt(), progress.totalBytes.toInt(), "Moving files...")
+                            if (progress.isComplete) {
+                                ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                                stopSelf()
+                            }
                         }
+                    } catch (e: Exception) {
+                        android.util.Log.e("FileOperationService", "MOVE failed", e)
+                        ServiceCompat.stopForeground(this@FileOperationService, ServiceCompat.STOP_FOREGROUND_REMOVE)
+                        stopSelf()
                     }
                 }
             }

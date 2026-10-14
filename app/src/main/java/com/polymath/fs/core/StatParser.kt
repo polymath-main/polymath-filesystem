@@ -34,4 +34,35 @@ object StatParser {
             permissions = permissions
         )
     }
+
+    /**
+     * Parses a line output from `stat -c "%A|%s|%Y|%n" <file>` into a VfsStat
+     */
+    fun parseVfsStatLine(line: String): com.polymath.fs.domain.vfs.VfsStat? {
+        val parts = line.split("|", limit = 4)
+        if (parts.size < 4) return null
+
+        val permissions = parts[0]
+        val sizeStr = parts[1]
+        val timeStr = parts[2]
+        val pathStr = parts[3]
+
+        val isDirectory = permissions.startsWith("d")
+        val isSymlink = permissions.startsWith("l")
+        val size = sizeStr.toLongOrNull() ?: 0L
+        val lastModified = (timeStr.toLongOrNull() ?: 0L) * 1000L
+        val name = File(pathStr).name
+
+        return com.polymath.fs.domain.vfs.VfsStat(
+            name = name,
+            uri = pathStr,
+            isDirectory = isDirectory,
+            isSymlink = isSymlink,
+            size = size,
+            lastModified = lastModified,
+            permissions = permissions,
+            mimeType = null,
+            capabilities = com.polymath.fs.domain.vfs.VfsCapabilities.FULL_LOCAL
+        )
+    }
 }

@@ -167,7 +167,7 @@ class FileBrowserFragment : Fragment() {
                     return true
                 }
                 com.polymath.fs.R.id.action_start_synapse -> {
-                    val synapseEngine = com.polymath.fs.core.SynapseEngine(requireContext(), viewModel.fileSystemRepository)
+                    val synapseEngine = viewModel.synapseEngine
                     synapseEngine.startSynapse()
                     Toast.makeText(requireContext(), "Synapse Broadcast Started on Port 8888", Toast.LENGTH_SHORT).show()
                     mode.finish()

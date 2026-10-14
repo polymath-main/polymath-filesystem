@@ -6,20 +6,30 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.polymath.fs.core.DirectoryWatcher
 import com.polymath.fs.core.RootShellHolder
 import com.polymath.fs.core.VolumeManager
-import com.polymath.fs.data.repository.FileSystemRepository
+import com.polymath.fs.data.db.AppDatabase
+import com.polymath.fs.data.repository.IFileSystemRepository
+import com.polymath.fs.data.repository.VfsRepository
+import com.polymath.fs.data.saf.SafPermissionManager
 import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.ListDirUseCase
 import com.polymath.fs.domain.usecase.MkdirUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
+import com.polymath.fs.domain.vfs.VfsRegistry
+import com.polymath.fs.domain.vfs.provider.LocalVfsProvider
+import com.polymath.fs.domain.vfs.provider.SafVfsProvider
 import com.polymath.fs.js.PolymathJSBridge
 import com.topjohnwu.superuser.Shell
 
 class PolymathApp : Application() {
 
     val shellHolder by lazy { RootShellHolder() }
-    val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository by lazy { FileSystemRepository(shellHolder) }
+    val localVfsProvider by lazy { LocalVfsProvider(shellHolder) }
+    val safVfsProvider by lazy { SafVfsProvider(this) }
+    val vfsRegistry by lazy { VfsRegistry(listOf(localVfsProvider, safVfsProvider)) }
+    val safPermissionManager by lazy { SafPermissionManager(this, AppDatabase.getDatabase(this).safGrantDao()) }
+    val fileSystemRepository: IFileSystemRepository by lazy { VfsRepository(vfsRegistry, this) }
     val jsBridge by lazy { PolymathJSBridge(fileSystemRepository, this, shellHolder) }
     val jsRuntime by lazy { jsBridge.jsRuntime }
     val listDirUseCase by lazy { ListDirUseCase(fileSystemRepository) }

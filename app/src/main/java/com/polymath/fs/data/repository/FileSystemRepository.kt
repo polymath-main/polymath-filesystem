@@ -10,12 +10,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
-data class Progress(
-    val currentBytes: Long,
-    val totalBytes: Long,
-    val isComplete: Boolean = false
-)
-
 class FileSystemRepository @Inject constructor(
     private val shellHolder: RootShellHolder
 ) : IFileSystemRepository {
@@ -92,6 +86,7 @@ class FileSystemRepository @Inject constructor(
                     copied = res.isSuccess
                 }
             }
+            if (!copied) throw java.io.IOException("Failed to copy '$s' to '$dest'")
             emit(Progress(index.toLong() + 1, total, isComplete = (index + 1 == src.size)))
         }
     }
@@ -132,6 +127,7 @@ class FileSystemRepository @Inject constructor(
                     moved = res.isSuccess
                 }
             }
+            if (!moved) throw java.io.IOException("Failed to move '$s' to '$dest'")
             emit(Progress(index.toLong() + 1, total, isComplete = (index + 1 == src.size)))
         }
     }
@@ -190,29 +186,19 @@ class FileSystemRepository @Inject constructor(
     }
 
     override suspend fun chmod(path: String, mode: String): Boolean = withContext(Dispatchers.IO) {
-        val file = File(path)
-        if (file.exists()) {
-            try {
-                file.setReadable(true, false)
-                file.setWritable(true, false)
-                file.setExecutable(true, false)
-            } catch (ignored: Exception) {}
-        }
-        if (shellHolder.hasRootAccess()) {
-            val safePath = path.replace("'", "'\\''")
-            val result = shellHolder.execute("chmod $mode '$safePath'")
-            return@withContext result.isSuccess
-        }
-        true
+        if (!shellHolder.hasRootAccess()) return@withContext false
+        val safePath = path.replace("'", "'\\''")
+        val safeMode = mode.replace("'", "'\\''")
+        val result = shellHolder.execute("chmod '$safeMode' '$safePath'")
+        result.isSuccess
     }
 
     override suspend fun chown(path: String, owner: String): Boolean = withContext(Dispatchers.IO) {
-        if (shellHolder.hasRootAccess()) {
-            val safePath = path.replace("'", "'\\''")
-            val result = shellHolder.execute("chown $owner '$safePath'")
-            return@withContext result.isSuccess
-        }
-        true
+        if (!shellHolder.hasRootAccess()) return@withContext false
+        val safePath = path.replace("'", "'\\''")
+        val safeOwner = owner.replace("'", "'\\''")
+        val result = shellHolder.execute("chown '$safeOwner' '$safePath'")
+        result.isSuccess
     }
 }
 

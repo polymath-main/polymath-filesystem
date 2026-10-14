@@ -14,13 +14,19 @@ import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.RenameUseCase
 import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.MoveFilesUseCase
+import com.polymath.fs.domain.usecase.MkdirUseCase
 import com.polymath.fs.models.Clipboard
 import com.polymath.fs.models.FileBrowserUiState
+import android.net.Uri
+import com.polymath.fs.data.db.entities.SafGrantEntity
+import com.polymath.fs.data.saf.SafPermissionManager
 import com.polymath.fs.models.TabState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,15 +38,54 @@ class FileSystemViewModel @Inject constructor(
     private val renameUseCase: RenameUseCase,
     private val copyFilesUseCase: CopyFilesUseCase,
     private val moveFilesUseCase: MoveFilesUseCase,
+    private val mkdirUseCase: MkdirUseCase,
     private val flowStateManager: FlowStateManager,
     private val smartFolderManager: SmartFolderManager,
     private val intentEngine: com.polymath.fs.core.IntentEngine,
     val synapseEngine: com.polymath.fs.core.SynapseEngine,
-    val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
+    val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository,
+    val safPermissionManager: SafPermissionManager = SafPermissionManager(context)
 ) : ViewModel() {
+
+    constructor(
+        context: Context,
+        listDirUseCase: ListDirUseCase,
+        deleteFilesUseCase: DeleteFilesUseCase,
+        renameUseCase: RenameUseCase,
+        copyFilesUseCase: CopyFilesUseCase,
+        moveFilesUseCase: MoveFilesUseCase,
+        mkdirUseCase: MkdirUseCase,
+        flowStateManager: FlowStateManager,
+        smartFolderManager: SmartFolderManager,
+        intentEngine: com.polymath.fs.core.IntentEngine,
+        synapseEngine: com.polymath.fs.core.SynapseEngine,
+        fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository
+    ) : this(
+        context,
+        listDirUseCase,
+        deleteFilesUseCase,
+        renameUseCase,
+        copyFilesUseCase,
+        moveFilesUseCase,
+        mkdirUseCase,
+        flowStateManager,
+        smartFolderManager,
+        intentEngine,
+        synapseEngine,
+        fileSystemRepository,
+        SafPermissionManager(context)
+    )
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
     val uiState: StateFlow<FileBrowserUiState> = _uiState.asStateFlow()
+
+    val safGrants: StateFlow<List<SafGrantEntity>> = safPermissionManager
+        .getAllGrants()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
     
     // In-memory zero-storage Rift tracking
     private val activeRiftPaths = mutableSetOf<String>()
@@ -269,6 +314,33 @@ class FileSystemViewModel @Inject constructor(
         }
     }
 
+    fun createDirectory(path: String, name: String) {
+        val targetPath = if (path.endsWith("/")) "$path$name" else "$path/$name"
+        viewModelScope.launch {
+            val result = mkdirUseCase(targetPath)
+            if (result.isSuccess) {
+                logIntent("mkdir", targetPath, "directory creation")
+                val activeTab = _uiState.value.activeTab
+                if (activeTab != null) navigateTo(activeTab.currentPath)
+            } else {
+                _uiState.update { it.copy(error = result.exceptionOrNull()?.message) }
+            }
+        }
+    }
+
+    fun mkdir(path: String) {
+        viewModelScope.launch {
+            val result = mkdirUseCase(path)
+            if (result.isSuccess) {
+                logIntent("mkdir", path, "directory creation")
+                val activeTab = _uiState.value.activeTab
+                if (activeTab != null) navigateTo(activeTab.currentPath)
+            } else {
+                _uiState.update { it.copy(error = result.exceptionOrNull()?.message) }
+            }
+        }
+    }
+
     fun copyFiles(paths: List<String>) {
         _uiState.update { it.copy(clipboard = Clipboard(paths, isCut = false)) }
     }
@@ -415,6 +487,30 @@ class FileSystemViewModel @Inject constructor(
         }
     }
 
+    fun addSafGrant(treeUri: Uri, label: String? = null, writable: Boolean = true) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                safPermissionManager.takePersistablePermission(treeUri, label, writable)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun removeSafGrant(treeUri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                safPermissionManager.releasePermission(treeUri)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun removeSafGrant(treeUriString: String) {
+        removeSafGrant(Uri.parse(treeUriString))
+    }
+
     override fun onCleared() {
         super.onCleared()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
@@ -432,11 +528,13 @@ class FileSystemViewModel @Inject constructor(
                         app.renameUseCase,
                         app.copyFilesUseCase,
                         app.moveFilesUseCase,
+                        app.mkdirUseCase,
                         app.flowStateManager,
                         app.smartFolderManager,
                         app.intentEngine,
                         app.synapseEngine,
-                        app.fileSystemRepository
+                        app.fileSystemRepository,
+                        app.safPermissionManager
                     ) as T
                 }
             }

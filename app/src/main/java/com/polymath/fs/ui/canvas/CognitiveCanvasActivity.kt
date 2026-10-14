@@ -627,7 +627,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
 
             // Share / view prompt
             val uri = try {
-                FileProvider.getUriForFile(this, "${packageName}.provider", exportFile)
+                FileProvider.getUriForFile(this, "${packageName}.fileprovider", exportFile)
             } catch (ex: Exception) {
                 Uri.fromFile(exportFile)
             }
@@ -724,7 +724,7 @@ class CognitiveCanvasActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 // Fallback to system intent
                 val uri = try {
-                    FileProvider.getUriForFile(this, "${packageName}.provider", file)
+                    FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
                 } catch (ex: Exception) {
                     Uri.fromFile(file)
                 }

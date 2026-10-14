@@ -9,6 +9,7 @@ import com.polymath.fs.data.db.dao.CanvasPresetDao
 import com.polymath.fs.data.db.dao.CognitiveCanvasDao
 import com.polymath.fs.data.db.dao.OperationHistoryDao
 import com.polymath.fs.data.db.dao.RecentFileDao
+import com.polymath.fs.data.db.dao.SafGrantDao
 import com.polymath.fs.data.db.dao.SearchIndexDao
 import com.polymath.fs.data.db.dao.WorkspaceSnapshotDao
 import com.polymath.fs.data.db.entities.BookmarkEntity
@@ -17,6 +18,7 @@ import com.polymath.fs.data.db.entities.CanvasNodeEntity
 import com.polymath.fs.data.db.entities.CanvasPresetEntity
 import com.polymath.fs.data.db.entities.OperationHistoryEntity
 import com.polymath.fs.data.db.entities.RecentFileEntity
+import com.polymath.fs.data.db.entities.SafGrantEntity
 import com.polymath.fs.data.db.entities.SearchIndexEntity
 import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
 
@@ -29,9 +31,10 @@ import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
         CanvasNodeEntity::class,
         CanvasEdgeEntity::class,
         WorkspaceSnapshotEntity::class,
-        CanvasPresetEntity::class
+        CanvasPresetEntity::class,
+        SafGrantEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -42,6 +45,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cognitiveCanvasDao(): CognitiveCanvasDao
     abstract fun workspaceSnapshotDao(): WorkspaceSnapshotDao
     abstract fun canvasPresetDao(): CanvasPresetDao
+    abstract fun safGrantDao(): SafGrantDao
 
     companion object {
         @Volatile

@@ -252,7 +252,7 @@ class PolymathOSNativeImpl(
             socket.close()
             val res = JSONObject().apply {
                 put("success", true)
-                put("status", "FTP Server reachable at $host:$port. Handshake verified for user '$user'.")
+                put("status", "FTP server TCP connection established at $host:$port. Protocol authentication not performed.")
             }
             res.toString()
         } catch (e: Exception) {
@@ -271,7 +271,7 @@ class PolymathOSNativeImpl(
             socket.close()
             val res = JSONObject().apply {
                 put("success", true)
-                put("status", "SMB Server reachable at $host:$port. Authentication payload verified.")
+                put("status", "SMB server TCP connection established at $host:$port. Protocol authentication not performed.")
             }
             res.toString()
         } catch (e: Exception) {
