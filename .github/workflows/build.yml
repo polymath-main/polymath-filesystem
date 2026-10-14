@@ -25,6 +25,7 @@ jobs:
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '9.3.1'
+        cache-disabled: true
 
     - name: Restore Debug Keystore
       run: |
@@ -36,7 +37,7 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --no-daemon
+      run: ./gradlew assembleDebug --no-daemon --no-build-cache
 
     - name: Prepare Release APK
       run: |
