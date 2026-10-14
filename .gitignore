@@ -39,3 +39,8 @@ captures/
 
 # Mac hidden files
 .DS_Store
+
+# DocGen
+.docgen_cache.json
+docs_manifest.json
+
