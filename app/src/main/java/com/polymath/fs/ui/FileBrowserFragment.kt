@@ -21,6 +21,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.polymath.fs.MainActivity
 import com.polymath.fs.R
 import com.polymath.fs.core.RiftEngine
 import com.polymath.fs.databinding.FragmentFileBrowserBinding

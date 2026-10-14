@@ -1,7 +1,7 @@
 # Polymath Filesystem — Architecture End-Point & Codebase Blueprint
 > **Version:** 2.0.0 (Hardened VFS Core, SAF, Remote SFTP, High-Performance TransferEngine & Unified UI)  
 > **Target OS:** Android 16 (API 36) / Linux 5.15 aarch64 (Bionic libc)  
-> **Build Engine:** AGY-NodeOS AST Graph & Jage Semantic Version Control (v48)  
+> **Build Engine:** AGY-NodeOS AST Graph & Jage Semantic Version Control (v51)  
 > **Database:** Room SQLite WAL (Schema Version 6) + Android Keystore AES-256-GCM  
 
 ---
