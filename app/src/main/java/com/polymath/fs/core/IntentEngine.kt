@@ -152,4 +152,10 @@ class IntentEngine @Inject constructor(private val context: Context) {
         return scoredPaths.entries.sortedByDescending { it.value }
             .associate { it.key to (pathReasons[it.key] ?: emptyList()) }
     }
+
+    fun getRecentLogs(limit: Int = 50): List<IntentLog> {
+        return logs.take(limit)
+    }
+
+    fun getLogCount(): Int = logs.size
 }

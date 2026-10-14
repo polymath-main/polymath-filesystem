@@ -56,6 +56,10 @@
             android:exported="false" />
 
         <activity android:name=".ui.FeatureDashboardActivity" />
+        <activity android:name=".ui.clips.CognitiveClipsActivity" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.intent.IntentEngineActivity" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.synapse.SynapseActivity" />
+        <activity android:name=".ui.workbench.WorkbenchActivity" />
 
     </application>
 </manifest>

@@ -177,24 +177,46 @@ class FileListAdapter(
                 }
 
                 if (isImage) {
-                    val localFile = File(file.path)
-                    if (localFile.exists() && localFile.canRead()) {
-                        binding.fileIcon.imageTintList = null
-                        binding.fileIcon.setPadding(0, 0, 0, 0)
-                        binding.fileIcon.load(localFile) {
-                            crossfade(true)
-                            scale(Scale.FILL)
-                            placeholder(fallbackResId)
-                            error(fallbackResId)
-                            listener(
-                                onError = { _, _ -> 
-                                    binding.fileIcon.setPadding(8, 8, 8, 8)
-                                    binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
-                                },
-                                onSuccess = { _, _ -> binding.fileIcon.setPadding(0, 0, 0, 0) }
-                            )
-                        }
+                    binding.fileIcon.imageTintList = null
+                    binding.fileIcon.setPadding(0, 0, 0, 0)
+                    val dataToLoad: Any = if (file.path.startsWith("content://")) {
+                        android.net.Uri.parse(file.path)
                     } else {
+                        File(file.path)
+                    }
+                    binding.fileIcon.load(dataToLoad) {
+                        crossfade(true)
+                        scale(Scale.FILL)
+                        placeholder(fallbackResId)
+                        error(fallbackResId)
+                        listener(
+                            onError = { _, _ -> 
+                                binding.fileIcon.setPadding(8, 8, 8, 8)
+                                binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
+                            },
+                            onSuccess = { _, _ -> 
+                                binding.fileIcon.imageTintList = null
+                                binding.fileIcon.setPadding(0, 0, 0, 0) 
+                            }
+                        )
+                    }
+                } else if (ext == "apk" && !file.path.startsWith("content://")) {
+                    val apkLoaded = try {
+                        val pm = itemView.context.packageManager
+                        val pi = pm.getPackageArchiveInfo(file.path, 0)
+                        if (pi != null) {
+                            pi.applicationInfo.sourceDir = file.path
+                            pi.applicationInfo.publicSourceDir = file.path
+                            val apkIcon = pi.applicationInfo.loadIcon(pm)
+                            binding.fileIcon.setImageDrawable(apkIcon)
+                            binding.fileIcon.imageTintList = null
+                            binding.fileIcon.setPadding(0, 0, 0, 0)
+                            true
+                        } else false
+                    } catch (_: Exception) {
+                        false
+                    }
+                    if (!apkLoaded) {
                         binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
                         binding.fileIcon.setPadding(8, 8, 8, 8)
                         binding.fileIcon.setImageResource(fallbackResId)

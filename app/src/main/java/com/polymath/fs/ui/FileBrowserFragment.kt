@@ -502,26 +502,76 @@ class FileBrowserFragment : Fragment() {
             } else {
                 viewModel.logIntent("opened", fileNode.path, "file open")
                 viewModel.addRecentFile(fileNode)
-                val file = java.io.File(fileNode.path)
-                val ext = file.extension.lowercase()
-                if (ext == "txt" || ext == "md") {
-                    val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.TextViewerActivity::class.java)
-                    intent.putExtra("FILE_PATH", fileNode.path)
-                    startActivity(intent)
-                } else {
-                    try {
-                        val uri = androidx.core.content.FileProvider.getUriForFile(
-                            requireContext(),
-                            "${requireContext().packageName}.fileprovider",
-                            file
-                        )
-                        val mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
-                        val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
-                        intent.setDataAndType(uri, mimeType)
-                        intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                val ext = fileNode.name.substringAfterLast('.', "").lowercase()
+                
+                when {
+                    ext in listOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "svg") -> {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.ImageViewerActivity::class.java).apply {
+                            putExtra("FILE_PATH", fileNode.path)
+                            putExtra("path", fileNode.path)
+                            putExtra("filePath", fileNode.path)
+                        }
                         startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Cannot open file: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                    ext == "md" || ext == "markdown" -> {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.TextViewerActivity::class.java).apply {
+                            putExtra("FILE_PATH", fileNode.path)
+                            putExtra("path", fileNode.path)
+                            putExtra("filePath", fileNode.path)
+                        }
+                        startActivity(intent)
+                    }
+                    ext in listOf("kt", "java", "py", "js", "ts", "json", "xml", "c", "cpp", "rs", "h", "hpp", "sh", "bash", "html", "css", "sql", "txt", "log", "conf", "ini", "yaml", "yml", "properties", "gradle", "env", "toml", "lua") -> {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.EditorActivity::class.java).apply {
+                            putExtra("FILE_PATH", fileNode.path)
+                            putExtra("path", fileNode.path)
+                            putExtra("filePath", fileNode.path)
+                        }
+                        startActivity(intent)
+                    }
+                    ext == "pdf" -> {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.PdfViewerActivity::class.java).apply {
+                            putExtra("FILE_PATH", fileNode.path)
+                            putExtra("path", fileNode.path)
+                            putExtra("filePath", fileNode.path)
+                        }
+                        startActivity(intent)
+                    }
+                    ext in listOf("mp3", "wav", "flac", "ogg", "m4a", "mp4", "mkv", "webm", "avi") -> {
+                        val intent = android.content.Intent(requireContext(), com.polymath.fs.viewers.MediaPlayerActivity::class.java).apply {
+                            putExtra("FILE_PATH", fileNode.path)
+                            putExtra("path", fileNode.path)
+                            putExtra("filePath", fileNode.path)
+                        }
+                        startActivity(intent)
+                    }
+                    else -> {
+                        try {
+                            if (fileNode.path.startsWith("content://")) {
+                                val uri = android.net.Uri.parse(fileNode.path)
+                                val mimeType = requireContext().contentResolver.getType(uri) ?: "*/*"
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, mimeType)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                startActivity(intent)
+                            } else {
+                                val file = java.io.File(fileNode.path)
+                                val uri = androidx.core.content.FileProvider.getUriForFile(
+                                    requireContext(),
+                                    "${requireContext().packageName}.fileprovider",
+                                    file
+                                )
+                                val mimeType = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext) ?: "*/*"
+                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, mimeType)
+                                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                startActivity(intent)
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Cannot open file: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }

@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootIntentLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0b0f19">
+
+    <LinearLayout
+        android:id="@+id/mainContentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top App Bar -->
+        <LinearLayout
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:background="#0b0f19">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#f8fafc"
+                android:contentDescription="Navigate Back" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Intent Semantic Core"
+                    android:textColor="#f8fafc"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Neural Intent &amp; Temporal FS Engine"
+                    android:textColor="#38bdf8"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_auto_awesome"
+                app:tint="#38bdf8"
+                android:contentDescription="Intent Indicator" />
+        </LinearLayout>
+
+        <!-- Search Bar Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSearchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="6dp"
+            app:cardBackgroundColor="#1e293b"
+            app:strokeColor="#334155"
+            app:strokeWidth="1dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="14dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_search"
+                    app:tint="#94a3b8"
+                    android:contentDescription="Search Icon" />
+
+                <EditText
+                    android:id="@+id/etSearchQuery"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="10dp"
+                    android:layout_marginEnd="6dp"
+                    android:background="@null"
+                    android:hint="Ask naturally: 'modified today', 'apk packages'..."
+                    android:textColor="#f8fafc"
+                    android:textColorHint="#64748b"
+                    android:textSize="14sp"
+                    android:singleLine="true"
+                    android:imeOptions="actionSearch"
+                    android:inputType="textCapSentences" />
+
+                <ImageButton
+                    android:id="@+id/btnClearQuery"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_close_white"
+                    app:tint="#94a3b8"
+                    android:visibility="gone"
+                    android:contentDescription="Clear Query"
+                    tools:visibility="visible" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Suggestion Chips -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupSuggestions"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipModifiedToday"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Modified Today"
+                    android:textColor="#f8fafc"
+                    app:chipBackgroundColor="#1e293b"
+                    app:chipStrokeColor="#38bdf8"
+                    app:chipStrokeWidth="1dp"
+                    app:chipIcon="@drawable/ic_auto_awesome"
+                    app:chipIconTint="#38bdf8" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipDownloadedYesterday"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Downloaded Yesterday"
+                    android:textColor="#f8fafc"
+                    app:chipBackgroundColor="#1e293b"
+                    app:chipStrokeColor="#334155"
+                    app:chipStrokeWidth="1dp"
+                    app:chipIcon="@drawable/ic_download"
+                    app:chipIconTint="#38bdf8" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipKotlinSource"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Kotlin Source Files"
+                    android:textColor="#f8fafc"
+                    app:chipBackgroundColor="#1e293b"
+                    app:chipStrokeColor="#334155"
+                    app:chipStrokeWidth="1dp"
+                    app:chipIcon="@drawable/ic_outline_code"
+                    app:chipIconTint="#a855f7" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipApkPackages"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="APK Packages"
+                    android:textColor="#f8fafc"
+                    app:chipBackgroundColor="#1e293b"
+                    app:chipStrokeColor="#334155"
+                    app:chipStrokeWidth="1dp"
+                    app:chipIcon="@drawable/ic_outline_apk"
+                    app:chipIconTint="#22c55e" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRecentDocs"
+                    style="@style/Widget.Material3.Chip.Suggestion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Recent Documents"
+                    android:textColor="#f8fafc"
+                    app:chipBackgroundColor="#1e293b"
+                    app:chipStrokeColor="#334155"
+                    app:chipStrokeWidth="1dp"
+                    app:chipIcon="@drawable/ic_outline_pdf"
+                    app:chipIconTint="#f59e0b" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+        <!-- Scanning Indicator & Summary Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressBarIntent"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="#38bdf8"
+                app:trackColor="#1e293b"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tvStatusSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="#94a3b8"
+                android:textSize="12sp"
+                android:text="Select a suggestion or type your intent above" />
+        </LinearLayout>
+
+        <!-- Content Area: RecyclerView or Empty State -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- Empty State -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="32dp">
+
+                <ImageView
+                    android:layout_width="64dp"
+                    android:layout_height="64dp"
+                    android:src="@drawable/ic_auto_awesome"
+                    app:tint="#475569"
+                    android:contentDescription="Empty state icon" />
+
+                <TextView
+                    android:id="@+id/tvEmptyTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Neural Intent Search Ready"
+                    android:textColor="#f8fafc"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvEmptyDescription"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="Type in human language (e.g. 'modified today', 'downloaded yesterday', 'kotlin source') or pick a suggestion chip above."
+                    android:textColor="#64748b"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Results List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvIntentResults"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="16dp"
+                android:clipToPadding="false"
+                android:visibility="gone"
+                tools:visibility="visible"
+                tools:listitem="@layout/item_intent_result" />
+        </FrameLayout>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

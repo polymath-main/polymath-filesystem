@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_clip"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    app:cardBackgroundColor="#131B2E"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#24304A"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- Header: Pin Icon, Title, and Action Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/iv_pinned_icon"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_pin"
+                app:tint="#A78BFA"
+                android:visibility="gone"
+                android:contentDescription="Pinned Indicator"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tv_clip_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="#F8FAFC"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="2"
+                android:ellipsize="end"
+                tools:text="Liquid Architecture Memory Engine" />
+
+            <!-- Actions Row -->
+            <ImageButton
+                android:id="@+id/btn_item_pin"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_pin_outline"
+                android:contentDescription="Pin Clip"
+                app:tint="#94A3B8" />
+
+            <ImageButton
+                android:id="@+id/btn_item_edit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_edit_note"
+                android:contentDescription="Edit Clip"
+                app:tint="#94A3B8" />
+
+            <ImageButton
+                android:id="@+id/btn_item_delete"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_trash"
+                android:contentDescription="Delete Clip"
+                app:tint="#F87171" />
+
+        </LinearLayout>
+
+        <!-- Content Snippet / Preview -->
+        <TextView
+            android:id="@+id/tv_clip_content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp"
+            android:textColor="#CBD5E1"
+            android:textSize="13sp"
+            android:lineSpacingExtra="3dp"
+            android:maxLines="4"
+            android:ellipsize="end"
+            tools:text="The Liquid Runtime provides non-blocking inter-process memory maps across Termux and Android system services..." />
+
+        <!-- Footer: Badge, Timestamp, Tags, Hold Hint -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tv_clip_char_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#1E293B"
+                android:paddingHorizontal="7dp"
+                android:paddingVertical="3dp"
+                android:textColor="#38BDF8"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="1,248 chars • 180 words" />
+
+            <TextView
+                android:id="@+id/tv_clip_timestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:textColor="#94A3B8"
+                android:textSize="11sp"
+                tools:text="Oct 15, 05:30" />
+
+            <TextView
+                android:id="@+id/tv_clip_tags"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:textColor="#A78BFA"
+                android:textSize="11sp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                tools:text="#research #kernel" />
+
+            <TextView
+                android:id="@+id/tv_hold_hint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hold to copy"
+                android:textColor="#64748B"
+                android:textSize="10sp"
+                android:textStyle="italic" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

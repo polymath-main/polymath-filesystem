@@ -1,97 +1,300 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="?attr/colorSurface">
+    android:background="#050811">
 
+    <!-- Top AppBar with Navigation -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/terminalAppBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#0f172a">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/terminalToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Omni-Terminal"
+            app:titleTextColor="#f8fafc"
+            app:subtitle="Runtime Console • POSIX Shell"
+            app:subtitleTextColor="#94a3b8"
+            app:navigationIcon="@android:drawable/ic_menu_revert" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Path & Environment Banner -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#1e293b"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PWD: "
+            android:textColor="#38bdf8"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvCurrentPath"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="/data/data/com.termux/files/home/Projects/polymath-filesystem"
+            android:textColor="#cbd5e1"
+            android:textSize="11sp"
+            android:fontFamily="monospace"
+            android:singleLine="true"
+            android:ellipsize="start" />
+
+        <TextView
+            android:id="@+id/tvShellBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_badge_active"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:text="BASH"
+            android:textColor="#34d399"
+            android:textSize="9sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Monospace Terminal Output View -->
     <ScrollView
         android:id="@+id/svTerminal"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp">
+        android:padding="12dp"
+        android:background="#050811"
+        android:fillViewport="true">
 
         <TextView
             android:id="@+id/tvOutput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#00FF00"
+            android:textColor="#34d399"
             android:fontFamily="monospace"
-            android:textSize="14sp"
-            android:text="Polymath Root Terminal\n" />
+            android:textSize="12sp"
+            android:lineSpacingExtra="2dp"
+            android:textIsSelectable="true"
+            android:text="Polymath Omni-Terminal Runtime Console\n" />
     </ScrollView>
 
+    <!-- Quick Action Chips Row -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#0f172a"
+        android:paddingVertical="4dp"
+        android:paddingHorizontal="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipLs"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="ls -la"
+                android:textSize="11sp"
+                android:textColor="#38bdf8"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipPwd"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="pwd"
+                android:textSize="11sp"
+                android:textColor="#38bdf8"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipDf"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="df -h"
+                android:textSize="11sp"
+                android:textColor="#38bdf8"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipUname"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="uname -a"
+                android:textSize="11sp"
+                android:textColor="#38bdf8"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipGitStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="git status"
+                android:textSize="11sp"
+                android:textColor="#f59e0b"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipNodeOsPing"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="nodeos -c ping"
+                android:textSize="11sp"
+                android:textColor="#10b981"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                android:layout_marginEnd="6dp"
+                app:cornerRadius="6dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chipClear"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="clear"
+                android:textSize="11sp"
+                android:textColor="#94a3b8"
+                android:backgroundTint="#1e293b"
+                android:paddingHorizontal="10dp"
+                app:cornerRadius="6dp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Modifier Key Buttons Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="?attr/colorSurfaceVariant"
+        android:background="#1e293b"
         android:padding="4dp">
-        
+
         <Button
             android:id="@+id/btnCtrl"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
             android:text="Ctrl"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#555555" />
-            
+            android:backgroundTint="#334155" />
+
         <Button
             android:id="@+id/btnAlt"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
             android:text="Alt"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#555555" />
-            
+            android:backgroundTint="#334155" />
+
         <Button
             android:id="@+id/btnEsc"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
             android:text="Esc"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#555555" />
-            
+            android:backgroundTint="#334155" />
+
         <Button
             android:id="@+id/btnTab"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
             android:text="Tab"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#555555" />
-            
+            android:backgroundTint="#334155" />
+
         <Button
             android:id="@+id/btnExit"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="38dp"
             android:layout_weight="1"
             android:text="Exit"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#AA3333" />
-            
+            android:backgroundTint="#b91c1c" />
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/etInput"
+    <!-- Command Prompt Input Row -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Enter command..."
-        android:textColorHint="#888888"
-        android:textColor="#FFFFFF"
-        android:fontFamily="monospace"
-        android:inputType="textNoSuggestions"
-        android:imeOptions="actionSend"
-        android:background="?attr/colorSurfaceVariant"
-        android:padding="12dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#0f172a"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="4dp">
+
+        <TextView
+            android:id="@+id/tvPromptSymbol"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$ "
+            android:textColor="#34d399"
+            android:textSize="16sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:paddingHorizontal="4dp" />
+
+        <EditText
+            android:id="@+id/etInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Enter shell command..."
+            android:textColorHint="#64748b"
+            android:textColor="#FFFFFF"
+            android:fontFamily="monospace"
+            android:textSize="13sp"
+            android:inputType="textNoSuggestions"
+            android:imeOptions="actionSend"
+            android:background="@android:color/transparent"
+            android:padding="8dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:text="Run"
+            android:textSize="12sp"
+            android:backgroundTint="#0284c7"
+            app:cornerRadius="6dp" />
+    </LinearLayout>
 
 </LinearLayout>

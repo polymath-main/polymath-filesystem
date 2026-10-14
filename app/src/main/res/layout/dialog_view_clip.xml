@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardBackgroundColor="#131B2E"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="12dp"
+    app:strokeColor="#24304A"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tv_view_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#F8FAFC"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="Quantum Entanglement Memory Matrix" />
+
+        <!-- Stats and Date Subtitle -->
+        <TextView
+            android:id="@+id/tv_view_meta"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp"
+            android:textColor="#94A3B8"
+            android:textSize="12sp"
+            tools:text="Captured Oct 15, 05:30 • 1,420 chars • 210 words • 18 lines" />
+
+        <!-- Scrollable Content -->
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxHeight="360dp"
+            android:background="#1E293B"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tv_view_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#E2E8F0"
+                android:textSize="14sp"
+                android:lineSpacingExtra="4dp"
+                android:textIsSelectable="true"
+                tools:text="Full detailed research text goes here..." />
+
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- Actions Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_share"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share"
+                android:textColor="#38BDF8"
+                app:strokeColor="#334155"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_copy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Copy"
+                android:textColor="#FFFFFF"
+                app:icon="@drawable/ic_copy"
+                app:iconTint="#FFFFFF"
+                app:backgroundTint="#7C3AED"
+                app:cornerRadius="8dp"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_view_close"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Close"
+                android:textColor="#94A3B8"
+                app:strokeColor="#334155" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

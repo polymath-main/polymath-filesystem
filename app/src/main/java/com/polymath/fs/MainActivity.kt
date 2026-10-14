@@ -100,6 +100,27 @@ class MainActivity : BaseDynamicActivity() {
         setupZoneANavigator()
         checkPermissions()
         applyElevatedStateVisuals()
+        handleNavigateIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handleNavigateIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNavigateIntent(intent)
+    }
+
+    private fun handleNavigateIntent(intent: Intent?) {
+        val targetPath = intent?.getStringExtra("EXTRA_NAVIGATE_PATH")
+        if (!targetPath.isNullOrBlank()) {
+            intent.removeExtra("EXTRA_NAVIGATE_PATH")
+            showFileBrowser()
+            navigateToDirectory(targetPath)
+        }
     }
 
     private fun setupBottomNavigation() {

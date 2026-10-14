@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootSynapseLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0b0f19">
+
+    <LinearLayout
+        android:id="@+id/synapseMainContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Top App Bar -->
+        <LinearLayout
+            android:id="@+id/synapseTopBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:background="#0b0f19">
+
+            <ImageButton
+                android:id="@+id/btnBackSynapse"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#f8fafc"
+                android:contentDescription="Back" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Synapse Protocol"
+                    android:textColor="#f8fafc"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="P2P Mesh Network &amp; Shared Memory"
+                    android:textColor="#38bdf8"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/ic_wifi_mesh"
+                app:tint="#38bdf8"
+                android:contentDescription="Synapse Mesh" />
+        </LinearLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="32dp">
+
+                <!-- 1. P2P NODE SERVER CARD -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardNodeServer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:cardBackgroundColor="#1e293b"
+                    app:strokeColor="#334155"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_wifi_mesh"
+                                app:tint="#38bdf8"
+                                android:contentDescription="Server Icon" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="10dp"
+                                android:text="P2P Node Server"
+                                android:textColor="#f8fafc"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvServerStatusBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/bg_badge_status_running"
+                                android:text="RUNNING"
+                                android:textColor="#22c55e"
+                                android:textSize="11sp"
+                                android:textStyle="bold"
+                                android:layout_marginEnd="12dp" />
+
+                            <com.google.android.material.materialswitch.MaterialSwitch
+                                android:id="@+id/switchServerToggle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:layout_marginTop="12dp"
+                            android:layout_marginBottom="12dp"
+                            android:background="#334155" />
+
+                        <!-- IP & Port Info Grid -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Local Node IP"
+                                    android:textColor="#94a3b8"
+                                    android:textSize="11sp" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="center_vertical"
+                                    android:layout_marginTop="2dp">
+
+                                    <TextView
+                                        android:id="@+id/tvLocalIp"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:textColor="#f8fafc"
+                                        android:textSize="14sp"
+                                        android:fontFamily="monospace"
+                                        android:textStyle="bold"
+                                        tools:text="192.168.1.105" />
+
+                                    <ImageButton
+                                        android:id="@+id/btnCopyIp"
+                                        android:layout_width="28dp"
+                                        android:layout_height="28dp"
+                                        android:layout_marginStart="6dp"
+                                        android:background="?attr/selectableItemBackgroundBorderless"
+                                        android:src="@drawable/ic_copy"
+                                        app:tint="#38bdf8"
+                                        android:contentDescription="Copy IP" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical"
+                                android:paddingStart="16dp"
+                                android:paddingEnd="8dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Port"
+                                    android:textColor="#94a3b8"
+                                    android:textSize="11sp" />
+
+                                <TextView
+                                    android:id="@+id/tvLocalPort"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textColor="#38bdf8"
+                                    android:textSize="14sp"
+                                    android:fontFamily="monospace"
+                                    android:textStyle="bold"
+                                    android:text="8888" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvServerDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:textColor="#64748b"
+                            android:textSize="11sp"
+                            android:text="Direct TCP Socket daemon ready to serve VFS directory queries and streaming binary downloads to mesh peers." />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 2. CONNECT TO REMOTE PEER CARD -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardConnectPeer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:cardBackgroundColor="#1e293b"
+                    app:strokeColor="#334155"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_hub"
+                                app:tint="#38bdf8"
+                                android:contentDescription="Remote Peer Icon" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:text="Connect to Remote Peer"
+                                android:textColor="#f8fafc"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Enter peer IP and port to browse and pull files over local network"
+                            android:textColor="#94a3b8"
+                            android:textSize="12sp" />
+
+                        <!-- Peer IP and Port Inputs -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/tilPeerIp"
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:hint="Remote Peer IP"
+                                app:boxStrokeColor="#38bdf8"
+                                app:hintTextColor="#38bdf8"
+                                app:boxCornerRadiusTopStart="12dp"
+                                app:boxCornerRadiusTopEnd="12dp"
+                                app:boxCornerRadiusBottomStart="12dp"
+                                app:boxCornerRadiusBottomEnd="12dp">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etPeerIp"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="#f8fafc"
+                                    android:textSize="14sp"
+                                    android:fontFamily="monospace"
+                                    android:inputType="textUri"
+                                    android:text="192.168.1.50" />
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:id="@+id/tilPeerPort"
+                                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                                android:layout_width="95dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:hint="Port"
+                                app:boxStrokeColor="#38bdf8"
+                                app:hintTextColor="#38bdf8"
+                                app:boxCornerRadiusTopStart="12dp"
+                                app:boxCornerRadiusTopEnd="12dp"
+                                app:boxCornerRadiusBottomStart="12dp"
+                                app:boxCornerRadiusBottomEnd="12dp">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etPeerPort"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textColor="#f8fafc"
+                                    android:textSize="14sp"
+                                    android:fontFamily="monospace"
+                                    android:inputType="number"
+                                    android:text="8888" />
+                            </com.google.android.material.textfield.TextInputLayout>
+                        </LinearLayout>
+
+                        <!-- Action Button & Status -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnConnectPeer"
+                                style="@style/Widget.Material3.Button"
+                                android:layout_width="wrap_content"
+                                android:layout_height="44dp"
+                                android:text="Connect / Browse"
+                                android:textColor="#0b0f19"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="#38bdf8"
+                                app:cornerRadius="12dp"
+                                app:icon="@drawable/ic_search"
+                                app:iconTint="#0b0f19" />
+
+                            <TextView
+                                android:id="@+id/tvPeerConnectionStatus"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="12dp"
+                                android:textColor="#94a3b8"
+                                android:textSize="12sp"
+                                tools:text="Connected to 192.168.1.50" />
+                        </LinearLayout>
+
+                        <com.google.android.material.progressindicator.LinearProgressIndicator
+                            android:id="@+id/progressPeerConnecting"
+                            android:layout_width="match_parent"
+                            android:layout_height="4dp"
+                            android:layout_marginTop="10dp"
+                            android:visibility="gone"
+                            android:indeterminate="true"
+                            app:indicatorColor="#38bdf8"
+                            app:trackColor="#334155"
+                            tools:visibility="visible" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 3. REMOTE DIRECTORY BROWSER CARD -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardRemoteBrowser"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:cardBackgroundColor="#1e293b"
+                    app:strokeColor="#334155"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_folder"
+                                app:tint="#38bdf8"
+                                android:contentDescription="Remote Directory" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="10dp"
+                                android:text="Remote Directory Browser"
+                                android:textColor="#f8fafc"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <ImageButton
+                                android:id="@+id/btnRemoteUp"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_expand_less"
+                                app:tint="#94a3b8"
+                                android:contentDescription="Parent Directory" />
+
+                            <ImageButton
+                                android:id="@+id/btnRemoteRefresh"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:background="?attr/selectableItemBackgroundBorderless"
+                                android:src="@drawable/ic_refresh"
+                                app:tint="#94a3b8"
+                                android:contentDescription="Refresh Remote Directory" />
+                        </LinearLayout>
+
+                        <!-- Breadcrumb Path Bar -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:background="#0f172a"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:paddingTop="6dp"
+                            android:paddingBottom="6dp">
+
+                            <TextView
+                                android:id="@+id/tvRemoteCurrentPath"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textColor="#38bdf8"
+                                android:textSize="12sp"
+                                android:fontFamily="monospace"
+                                android:singleLine="true"
+                                android:ellipsize="start"
+                                android:text="/storage/emulated/0" />
+                        </LinearLayout>
+
+                        <!-- Remote Files List / Empty View -->
+                        <FrameLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="140dp"
+                            android:layout_marginTop="10dp">
+
+                            <LinearLayout
+                                android:id="@+id/layoutRemoteEmpty"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:minHeight="140dp"
+                                android:orientation="vertical"
+                                android:gravity="center"
+                                android:padding="16dp">
+
+                                <ImageView
+                                    android:layout_width="48dp"
+                                    android:layout_height="48dp"
+                                    android:src="@drawable/ic_folder"
+                                    app:tint="#475569"
+                                    android:contentDescription="Empty Files Icon" />
+
+                                <TextView
+                                    android:id="@+id/tvRemoteEmptyMessage"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="10dp"
+                                    android:gravity="center"
+                                    android:text="Connect to a remote peer above to browse files."
+                                    android:textColor="#64748b"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
+
+                            <androidx.recyclerview.widget.RecyclerView
+                                android:id="@+id/rvRemoteFiles"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:nestedScrollingEnabled="false"
+                                android:visibility="gone"
+                                tools:visibility="visible"
+                                tools:listitem="@layout/item_synapse_file" />
+                        </FrameLayout>
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- 4. SHARED CLIPPING HUB CARD -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardClippingHub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    app:cardBackgroundColor="#1e293b"
+                    app:strokeColor="#334155"
+                    app:strokeWidth="1dp"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="2dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <ImageView
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:src="@drawable/ic_copy"
+                                app:tint="#38bdf8"
+                                android:contentDescription="Clipping Hub" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:text="Shared Clipping Hub"
+                                android:textColor="#f8fafc"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="Synchronize and broadcast clipboard snippets across mesh peers"
+                            android:textColor="#94a3b8"
+                            android:textSize="12sp" />
+
+                        <!-- Latest Received Clip -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical"
+                            android:background="#0f172a"
+                            android:padding="12dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Latest Received Mesh Clip"
+                                android:textColor="#38bdf8"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvLatestClipContent"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:textColor="#f8fafc"
+                                android:textSize="13sp"
+                                android:text="No clip received yet. Mesh nodes broadcasting clips will appear here." />
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:id="@+id/tvLatestClipMeta"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:textColor="#64748b"
+                                    android:textSize="11sp"
+                                    android:text="Idle" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnCopyReceivedClip"
+                                    style="@style/Widget.Material3.Button.TonalButton"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="36dp"
+                                    android:text="Copy to Local"
+                                    android:textSize="11sp"
+                                    android:textColor="#38bdf8"
+                                    app:backgroundTint="#0f2942"
+                                    app:icon="@drawable/ic_copy"
+                                    app:iconSize="14dp"
+                                    app:iconTint="#38bdf8" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Broadcast Clip Input -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilBroadcastClip"
+                            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:hint="Broadcast Text Snippet"
+                            app:boxStrokeColor="#38bdf8"
+                            app:hintTextColor="#38bdf8"
+                            app:boxCornerRadiusTopStart="12dp"
+                            app:boxCornerRadiusTopEnd="12dp"
+                            app:boxCornerRadiusBottomStart="12dp"
+                            app:boxCornerRadiusBottomEnd="12dp">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etBroadcastClipText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:minLines="2"
+                                android:maxLines="5"
+                                android:textColor="#f8fafc"
+                                android:textSize="13sp"
+                                android:inputType="textMultiLine|textCapSentences" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnPasteToBroadcast"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Paste"
+                                android:textColor="#38bdf8"
+                                android:textSize="12sp"
+                                app:strokeColor="#334155"
+                                app:icon="@drawable/ic_copy"
+                                app:iconSize="14dp"
+                                app:iconTint="#38bdf8" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnBroadcastClip"
+                                style="@style/Widget.Material3.Button"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:text="Broadcast to Peer"
+                                android:textColor="#0b0f19"
+                                android:textSize="12sp"
+                                android:textStyle="bold"
+                                app:backgroundTint="#38bdf8"
+                                app:cornerRadius="12dp"
+                                app:icon="@drawable/ic_send"
+                                app:iconSize="14dp"
+                                app:iconTint="#0b0f19" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvClipBroadcastStatus"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textColor="#94a3b8"
+                            android:textSize="11sp"
+                            tools:text="Broadcasted to 192.168.1.50" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

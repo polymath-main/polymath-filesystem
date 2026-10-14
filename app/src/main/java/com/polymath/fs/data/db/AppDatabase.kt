@@ -21,6 +21,8 @@ import com.polymath.fs.data.db.entities.RecentFileEntity
 import com.polymath.fs.data.db.entities.SafGrantEntity
 import com.polymath.fs.data.db.entities.SearchIndexEntity
 import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
+import com.polymath.fs.data.db.dao.CognitiveClipDao
+import com.polymath.fs.data.db.entities.CognitiveClipEntity
 import com.polymath.fs.data.remote.RemoteProfileDao
 import com.polymath.fs.data.remote.RemoteProfileEntity
 
@@ -35,9 +37,10 @@ import com.polymath.fs.data.remote.RemoteProfileEntity
         WorkspaceSnapshotEntity::class,
         CanvasPresetEntity::class,
         SafGrantEntity::class,
-        RemoteProfileEntity::class
+        RemoteProfileEntity::class,
+        CognitiveClipEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -50,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun canvasPresetDao(): CanvasPresetDao
     abstract fun safGrantDao(): SafGrantDao
     abstract fun remoteProfileDao(): RemoteProfileDao
+    abstract fun cognitiveClipDao(): CognitiveClipDao
 
     companion object {
         @Volatile

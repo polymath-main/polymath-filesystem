@@ -446,29 +446,48 @@ class HomeDashboardFragment : Fragment() {
         view.findViewById<View>(R.id.btn_feature_droplet)?.setOnClickListener {
             toggleDropletService()
         }
+        view.findViewById<View>(R.id.btn_feature_droplet)?.setOnLongClickListener {
+            startActivity(Intent(requireContext(), com.polymath.fs.ui.clips.CognitiveClipsActivity::class.java))
+            true
+        }
         view.findViewById<View>(R.id.btn_feature_omni_terminal)?.setOnClickListener {
             startActivity(Intent(requireContext(), TerminalActivity::class.java))
         }
         view.findViewById<View>(R.id.btn_feature_workbench)?.setOnClickListener {
-            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
-                putExtra("EXTRA_FEATURE_ID", "workbench")
-            }
-            startActivity(intent)
+            startActivity(Intent(requireContext(), com.polymath.fs.ui.workbench.WorkbenchActivity::class.java))
         }
         view.findViewById<View>(R.id.btn_feature_intent_engine)?.setOnClickListener {
-            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
-                putExtra("EXTRA_FEATURE_ID", "intent_engine")
+            try {
+                val clazz = Class.forName("com.polymath.fs.ui.intent.IntentEngineActivity")
+                startActivity(Intent(requireContext(), clazz))
+            } catch (_: Throwable) {
+                val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                    putExtra("EXTRA_FEATURE_ID", "intent_engine")
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
         view.findViewById<View>(R.id.btn_feature_synapse)?.setOnClickListener {
-            val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
-                putExtra("EXTRA_FEATURE_ID", "synapse")
+            try {
+                val clazz = Class.forName("com.polymath.fs.ui.synapse.SynapseActivity")
+                startActivity(Intent(requireContext(), clazz))
+            } catch (_: Throwable) {
+                val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                    putExtra("EXTRA_FEATURE_ID", "synapse")
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
         view.findViewById<View>(R.id.btn_feature_volumes)?.setOnClickListener {
-            (activity as? MainActivity)?.openVolumesDrawer()
+            val mainAct = activity as? MainActivity
+            if (mainAct != null) {
+                mainAct.openVolumesDrawer()
+            } else {
+                val intent = Intent(requireContext(), FeatureDashboardActivity::class.java).apply {
+                    putExtra("EXTRA_FEATURE_ID", "volumes")
+                }
+                startActivity(intent)
+            }
         }
         val themeStudioBtn = view.findViewById<View>(R.id.btn_feature_theme_studio)
             ?: view.findViewById<View>(R.id.btn_feature_settings)

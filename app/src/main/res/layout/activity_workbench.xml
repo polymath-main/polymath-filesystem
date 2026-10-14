@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/workbenchAppBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceVariant">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/workbenchToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:title="Architect's Workbench"
+            app:titleTextColor="#f8fafc"
+            app:subtitle="Codebase Telemetry • Hex Inspector • AST Core"
+            app:subtitleTextColor="#94a3b8"
+            app:navigationIcon="@android:drawable/ic_menu_revert" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="48dp">
+
+            <!-- 1. CODEBASE TELEMETRY CARD -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#0f172a"
+                app:strokeColor="#3338bdf8"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📊"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="CODEBASE TELEMETRY"
+                                android:textColor="#38bdf8"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvScanStatusBadge"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:background="@drawable/bg_badge_active"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="3dp"
+                            android:text="READY"
+                            android:textColor="#34d399"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace"
+                            android:textStyle="bold" />
+                    </RelativeLayout>
+
+                    <!-- Workspace Path Input & Action -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <EditText
+                            android:id="@+id/etWorkspacePath"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="#1e293b"
+                            android:textColor="#f8fafc"
+                            android:textColorHint="#64748b"
+                            android:fontFamily="monospace"
+                            android:textSize="12sp"
+                            android:padding="10dp"
+                            android:singleLine="true"
+                            android:hint="/storage/emulated/0 or workspace" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRescanTelemetry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Scan"
+                            android:textSize="12sp"
+                            android:backgroundTint="#0284c7"
+                            app:cornerRadius="8dp" />
+                    </LinearLayout>
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/progressScanTelemetry"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:indeterminate="false"
+                        android:visibility="gone"
+                        app:indicatorColor="#38bdf8"
+                        app:trackColor="#334155"
+                        android:layout_marginBottom="12dp" />
+
+                    <!-- Stat Chips Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="#1e293b"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="10dp"
+                            android:layout_marginEnd="6dp">
+
+                            <TextView
+                                android:id="@+id/tvTotalFiles"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#f8fafc"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total Files"
+                                android:textColor="#94a3b8"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="#1e293b"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="10dp"
+                            android:layout_marginHorizontal="3dp">
+
+                            <TextView
+                                android:id="@+id/tvTotalLines"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#34d399"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Lines of Code"
+                                android:textColor="#94a3b8"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="#1e293b"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:padding="10dp"
+                            android:layout_marginStart="6dp">
+
+                            <TextView
+                                android:id="@+id/tvTotalSize"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0 B"
+                                android:textColor="#38bdf8"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:fontFamily="monospace" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Total Bytes"
+                                android:textColor="#94a3b8"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Language Breakdown Container -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="LANGUAGE BREAKDOWN"
+                        android:textColor="#cbd5e1"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05"
+                        android:layout_marginBottom="8dp" />
+
+                    <LinearLayout
+                        android:id="@+id/layoutLanguageBreakdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 2. JAGE & NODEOS INTEGRATION STATUS CARD -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="#0f172a"
+                app:strokeColor="#3338bdf8"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="⚡"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="NODEOS &amp; JAGE AST RUNTIME"
+                                android:textColor="#38bdf8"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
+                    <!-- NodeOS Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#1e293b"
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:layout_marginBottom="10dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="NodeOS Daemon (Platform Linker)"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvNodeOsBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/bg_badge_inactive"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="CHECKING"
+                                android:textColor="#94a3b8"
+                                android:textSize="9sp"
+                                android:fontFamily="monospace"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:id="@+id/tvNodeOsDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="monospace"
+                            android:text="Pinging NodeOS daemon..."
+                            android:textColor="#94a3b8"
+                            android:textSize="11sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnPingNodeOs"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Ping Daemon"
+                            android:textSize="11sp"
+                            android:backgroundTint="#334155"
+                            app:cornerRadius="6dp" />
+                    </LinearLayout>
+
+                    <!-- Jage AST Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#1e293b"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Jage Semantic AST Engine (v52)"
+                                android:textColor="#f8fafc"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvJageAstBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/bg_badge_inactive"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="CHECKING"
+                                android:textColor="#94a3b8"
+                                android:textSize="9sp"
+                                android:fontFamily="monospace"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:id="@+id/tvJageAstDetails"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:fontFamily="monospace"
+                            android:text="Inspecting agy_nodeos.db AST Graph..."
+                            android:textColor="#94a3b8"
+                            android:textSize="11sp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSyncJageAst"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="Scan AST (jage push)"
+                            android:textSize="11sp"
+                            android:backgroundTint="#334155"
+                            app:cornerRadius="6dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 3. BINARY & HEX INSPECTOR CARD -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="#0f172a"
+                app:strokeColor="#3338bdf8"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="12dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="🔬"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:text="BINARY &amp; HEX INSPECTOR"
+                                android:textColor="#38bdf8"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:letterSpacing="0.05" />
+                        </LinearLayout>
+                    </RelativeLayout>
+
+                    <!-- Quick Sample Chips -->
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none"
+                        android:layout_marginBottom="8dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnHexSampleDb"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="agy_nodeos.db"
+                                android:textSize="10sp"
+                                android:paddingHorizontal="10dp"
+                                android:layout_marginEnd="6dp"
+                                android:backgroundTint="#1e293b"
+                                app:cornerRadius="18dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnHexSampleManifest"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="AndroidManifest.xml"
+                                android:textSize="10sp"
+                                android:paddingHorizontal="10dp"
+                                android:layout_marginEnd="6dp"
+                                android:backgroundTint="#1e293b"
+                                app:cornerRadius="18dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnHexSampleSh"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="/system/bin/sh"
+                                android:textSize="10sp"
+                                android:paddingHorizontal="10dp"
+                                android:layout_marginEnd="6dp"
+                                android:backgroundTint="#1e293b"
+                                app:cornerRadius="18dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnHexSampleBuild"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="build.gradle.kts"
+                                android:textSize="10sp"
+                                android:paddingHorizontal="10dp"
+                                android:backgroundTint="#1e293b"
+                                app:cornerRadius="18dp" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
+
+                    <!-- Hex File Path Input -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <EditText
+                            android:id="@+id/etHexFilePath"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:background="#1e293b"
+                            android:textColor="#f8fafc"
+                            android:textColorHint="#64748b"
+                            android:fontFamily="monospace"
+                            android:textSize="12sp"
+                            android:padding="10dp"
+                            android:singleLine="true"
+                            android:hint="Target file path to inspect..." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLoadHex"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Inspect"
+                            android:textSize="12sp"
+                            android:backgroundTint="#0284c7"
+                            app:cornerRadius="8dp" />
+                    </LinearLayout>
+
+                    <!-- Magic Header Status Badge & Info -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#1e293b"
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:layout_marginBottom="10dp">
+
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Magic Header Signature:"
+                                android:textColor="#94a3b8"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvMagicHeaderBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentEnd="true"
+                                android:background="@drawable/bg_badge_active"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="UNKNOWN"
+                                android:textColor="#38bdf8"
+                                android:textSize="10sp"
+                                android:fontFamily="monospace"
+                                android:textStyle="bold" />
+                        </RelativeLayout>
+
+                        <TextView
+                            android:id="@+id/tvHexFileInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:fontFamily="monospace"
+                            android:text="File size: 0 B • Range: 0 - 0"
+                            android:textColor="#cbd5e1"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- Page Navigation -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="8dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnPrevHexPage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="◀ Prev 2KB"
+                            android:textSize="11sp"
+                            android:backgroundTint="#334155"
+                            app:cornerRadius="6dp" />
+
+                        <TextView
+                            android:id="@+id/tvHexPageRange"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:fontFamily="monospace"
+                            android:textColor="#94a3b8"
+                            android:textSize="11sp"
+                            android:text="Offset 0x0000 - 0x0800" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnNextHexPage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Next 2KB ▶"
+                            android:textSize="11sp"
+                            android:backgroundTint="#334155"
+                            app:cornerRadius="6dp" />
+                    </LinearLayout>
+
+                    <!-- Hex Dump Scroll Area -->
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="320dp"
+                        android:background="#050811"
+                        android:padding="8dp">
+
+                        <ScrollView
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent">
+
+                            <TextView
+                                android:id="@+id/tvHexDump"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:text="Select a file to inspect binary contents..."
+                                android:textColor="#38bdf8"
+                                android:textSize="12sp"
+                                android:typeface="monospace" />
+                        </ScrollView>
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

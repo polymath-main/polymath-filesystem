@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="16dp"
+    app:cardBackgroundColor="#131B2E"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="12dp"
+    app:strokeColor="#24304A"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/tv_dialog_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Cognitive Clip"
+            android:textColor="#F8FAFC"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Title Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Clip Title (optional)"
+            app:boxBackgroundColor="#1E293B"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            app:boxStrokeColor="#7C3AED"
+            app:hintTextColor="#A78BFA">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_clip_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#F8FAFC"
+                android:textColorHint="#64748B"
+                android:textSize="14sp"
+                android:inputType="textCapSentences"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Content Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:hint="Content / Research Text"
+            app:boxBackgroundColor="#1E293B"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            app:boxStrokeColor="#7C3AED"
+            app:hintTextColor="#A78BFA">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_clip_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#F8FAFC"
+                android:textColorHint="#64748B"
+                android:textSize="14sp"
+                android:gravity="top|start"
+                android:inputType="textMultiLine"
+                android:minLines="5"
+                android:maxLines="12"
+                android:scrollbars="vertical" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Tags Input -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:hint="Tags (optional, comma-separated)"
+            app:boxBackgroundColor="#1E293B"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            app:boxStrokeColor="#7C3AED"
+            app:hintTextColor="#A78BFA">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_clip_tags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#F8FAFC"
+                android:textColorHint="#64748B"
+                android:textSize="14sp"
+                android:inputType="text"
+                android:maxLines="1" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Buttons Row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_clip_cancel"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel"
+                android:textColor="#94A3B8"
+                app:strokeColor="#334155"
+                android:layout_marginEnd="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_clip_save"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Save"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#7C3AED"
+                app:cornerRadius="8dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
