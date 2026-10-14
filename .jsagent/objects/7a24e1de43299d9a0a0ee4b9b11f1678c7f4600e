@@ -1,3 +1,0 @@
-function startSmbManager() {
-    PolymathOS.prompt("Enter SMB Host", "smbOnHostEntered");
-}

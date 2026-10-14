@@ -36,8 +36,9 @@ class DropletService : Service() {
         super.onCreate()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
-        // Inflate the Droplet UI
-        dropletView = LayoutInflater.from(this).inflate(R.layout.layout_droplet, null)
+        // Inflate the Droplet UI with themed context to prevent MaterialCardView crash in Service
+        val themedContext = android.view.ContextThemeWrapper(this, com.polymath.fs.R.style.Theme_PolymathFileSystem)
+        dropletView = LayoutInflater.from(themedContext).inflate(R.layout.layout_droplet, null)
         
         val windowType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -58,7 +59,13 @@ class DropletService : Service() {
         layoutParams.x = 0
         layoutParams.y = 300 // Initial vertical position
 
-        windowManager.addView(dropletView, layoutParams)
+        try {
+            windowManager.addView(dropletView, layoutParams)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            stopSelf()
+            return
+        }
         
         setupDropletInteractions()
     }
@@ -106,19 +113,23 @@ class DropletService : Service() {
     }
 
     private fun handleDropletClick() {
-        // Capture clipboard and save it into a new file in a special Droplet Inbox folder
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clipData: ClipData? = clipboard.primaryClip
-        
-        if (clipData != null && clipData.itemCount > 0) {
-            val text = clipData.getItemAt(0).text
-            if (!text.isNullOrEmpty()) {
-                saveToDropletInbox(text.toString())
+        try {
+            // Capture clipboard and save it into a new file in a special Droplet Inbox folder
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clipData: ClipData? = clipboard.primaryClip
+            
+            if (clipData != null && clipData.itemCount > 0) {
+                val text = clipData.getItemAt(0).text
+                if (!text.isNullOrEmpty()) {
+                    saveToDropletInbox(text.toString())
+                } else {
+                    Toast.makeText(this, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                }
             } else {
-                Toast.makeText(this, "Clipboard is empty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "No clipboard data to capture", Toast.LENGTH_SHORT).show()
             }
-        } else {
-            Toast.makeText(this, "No clipboard data to capture", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Cannot read clipboard: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -148,8 +159,8 @@ class DropletService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::dropletView.isInitialized) {
-            windowManager.removeView(dropletView)
+        if (::dropletView.isInitialized && dropletView.isAttachedToWindow) {
+            runCatching { windowManager.removeView(dropletView) }
         }
     }
 }

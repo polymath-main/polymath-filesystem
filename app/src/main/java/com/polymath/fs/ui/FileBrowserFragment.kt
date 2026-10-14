@@ -246,13 +246,23 @@ class FileBrowserFragment : Fragment() {
         
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (cabMode != null) {
+                    cabMode?.finish()
+                    return
+                }
                 val activeTab = viewModel.uiState.value.activeTab
-                if (activeTab != null && activeTab.currentPath != "/storage/emulated/0" && 
-                    activeTab.currentPath != "/") {
+                val currentPath = activeTab?.currentPath ?: ""
+                val isAtRoot = currentPath == "/storage/emulated/0" || currentPath == "/" || currentPath.isEmpty()
+                if (activeTab != null && !isAtRoot) {
                     viewModel.navigateUp()
                 } else {
                     isEnabled = false
-                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    val mainActivity = activity as? MainActivity
+                    if (mainActivity != null) {
+                        mainActivity.showDashboard()
+                    } else {
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                    }
                 }
             }
         })
@@ -597,6 +607,26 @@ class FileBrowserFragment : Fragment() {
         
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
+
+        val gestureDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: android.view.MotionEvent?, e2: android.view.MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (e1 != null && e2.x - e1.x > 180 && Math.abs(velocityX) > 200 && Math.abs(e2.y - e1.y) < 160) {
+                    val activeTab = viewModel.uiState.value.activeTab
+                    val currentPath = activeTab?.currentPath ?: ""
+                    if (currentPath != "/storage/emulated/0" && currentPath != "/" && currentPath.isNotEmpty()) {
+                        viewModel.navigateUp()
+                        return true
+                    }
+                }
+                return false
+            }
+        })
+        binding.recyclerView.addOnItemTouchListener(object : androidx.recyclerview.widget.RecyclerView.SimpleOnItemTouchListener() {
+            override fun onInterceptTouchEvent(rv: androidx.recyclerview.widget.RecyclerView, e: android.view.MotionEvent): Boolean {
+                gestureDetector.onTouchEvent(e)
+                return false
+            }
+        })
         
         recentAdapter = FileListAdapter(
             onItemClick = onItemClick,

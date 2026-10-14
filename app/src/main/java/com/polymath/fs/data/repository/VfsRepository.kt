@@ -3,6 +3,7 @@ package com.polymath.fs.data.repository
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
+import com.polymath.fs.domain.vfs.TransferEngine
 import com.polymath.fs.domain.vfs.VfsCapabilities
 import com.polymath.fs.domain.vfs.VfsRegistry
 import com.polymath.fs.domain.vfs.VfsStat
@@ -23,7 +24,8 @@ import javax.inject.Singleton
 @Singleton
 class VfsRepository @Inject constructor(
     private val registry: VfsRegistry,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val transferEngine: TransferEngine = TransferEngine(registry)
 ) : IFileSystemRepository {
 
     override suspend fun listDir(path: String): List<FileNode> = withContext(Dispatchers.IO) {
@@ -32,94 +34,56 @@ class VfsRepository @Inject constructor(
         provider.list(uri).map(::toFileNode)
     }
 
-    override fun copy(src: List<String>, dest: String): Flow<Progress> = flow {
-        val total = src.size.toLong()
-        emit(Progress(0L, total, isComplete = false))
-        val destUri = VfsUri.parse(dest)
-        val destProvider = registry.providerFor(destUri)
-        val destStat = destProvider.stat(destUri)
-        if (destStat == null || !destStat.isDirectory) {
-            destProvider.mkdir(destUri)
-        }
-
-        for ((index, s) in src.withIndex()) {
-            val srcUri = VfsUri.parse(s)
-            val srcProvider = registry.providerFor(srcUri)
-            val fileName = srcUri.path.substringAfterLast('/')
-            val destPath = if (dest.endsWith("/")) "$dest$fileName" else "$dest/$fileName"
-            val targetUri = VfsUri.parse(destPath)
-            var copied = false
-
-            if (srcProvider is LocalVfsProvider && destProvider is LocalVfsProvider) {
-                val srcFile = File(srcUri.path)
-                val targetFile = File(targetUri.path)
-                copied = srcProvider.copyLocal(srcFile, targetFile)
-            } else {
-                try {
-                    srcProvider.openRead(srcUri).use { input ->
-                        destProvider.openWrite(targetUri, append = false).use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                    copied = true
-                } catch (_: Exception) {
-                    copied = false
-                }
-            }
-
-            if (!copied) {
-                throw IOException("Failed to copy '$s' to '$dest'")
-            }
-            val isLast = (index + 1 == src.size)
-            emit(Progress((index + 1).toLong(), total, isComplete = isLast, currentFile = fileName))
-        }
+    override fun copy(src: List<String>, dest: String): Flow<Progress> {
+        return transferEngine.copy(src, dest)
     }
 
     override fun move(src: List<String>, dest: String): Flow<Progress> = flow {
-        val total = src.size.toLong()
-        emit(Progress(0L, total, isComplete = false))
-        val destUri = VfsUri.parse(dest)
-        val destProvider = registry.providerFor(destUri)
-        val destStat = destProvider.stat(destUri)
-        if (destStat == null || !destStat.isDirectory) {
-            destProvider.mkdir(destUri)
+        if (src.isEmpty()) {
+            emit(Progress(0L, 0L, isComplete = true))
+            return@flow
         }
 
-        for ((index, s) in src.withIndex()) {
-            val srcUri = VfsUri.parse(s)
-            val srcProvider = registry.providerFor(srcUri)
-            val fileName = srcUri.path.substringAfterLast('/')
-            val destPath = if (dest.endsWith("/")) "$dest$fileName" else "$dest/$fileName"
-            val targetUri = VfsUri.parse(destPath)
-            var moved = false
+        val destUri = VfsUri.parse(dest)
+        val destProvider = registry.providerFor(destUri)
 
-            if (srcProvider is LocalVfsProvider && destProvider is LocalVfsProvider) {
-                val srcFile = File(srcUri.path)
-                val targetFile = File(targetUri.path)
-                moved = srcProvider.moveLocal(srcFile, targetFile)
-            } else {
-                try {
-                    if (srcProvider === destProvider) {
-                        moved = srcProvider.rename(srcUri, fileName)
-                    }
-                    if (!moved) {
-                        srcProvider.openRead(srcUri).use { input ->
-                            destProvider.openWrite(targetUri, append = false).use { output ->
-                                input.copyTo(output)
-                            }
-                        }
-                        moved = srcProvider.delete(srcUri, recursive = true)
-                    }
-                } catch (_: Exception) {
-                    moved = false
+        if (destProvider is LocalVfsProvider) {
+            val total = src.size.toLong()
+            emit(Progress(0L, total, isComplete = false))
+
+            val destStat = destProvider.stat(destUri)
+            if (destStat == null || !destStat.isDirectory) {
+                destProvider.mkdir(destUri)
+            }
+
+            for ((index, s) in src.withIndex()) {
+                val srcUri = VfsUri.parse(s)
+                val srcProvider = registry.providerFor(srcUri)
+                val fileName = srcUri.path.substringAfterLast('/')
+                val destPath = if (dest.endsWith("/")) "$dest$fileName" else "$dest/$fileName"
+                val targetUri = VfsUri.parse(destPath)
+                var moved = false
+
+                if (srcProvider is LocalVfsProvider) {
+                    val srcFile = File(srcUri.path)
+                    val targetFile = File(targetUri.path)
+                    moved = srcProvider.moveLocal(srcFile, targetFile)
                 }
-            }
 
-            if (!moved) {
-                throw IOException("Failed to move '$s' to '$dest'")
+                if (!moved) {
+                    // Cross-provider move or fallback if moveLocal was unsupported/failed
+                    transferEngine.move(listOf(s), dest).collect { /* wait for completion */ }
+                    moved = true
+                }
+
+                val isLast = (index + 1 == src.size)
+                emit(Progress((index + 1).toLong(), total, isComplete = isLast, currentFile = fileName))
             }
-            val isLast = (index + 1 == src.size)
-            emit(Progress((index + 1).toLong(), total, isComplete = isLast, currentFile = fileName))
+        } else {
+            // Destination is cross-provider (SAF, SFTP, etc.) -> delegate directly to TransferEngine
+            transferEngine.move(src, dest).collect { progress ->
+                emit(progress)
+            }
         }
     }
 

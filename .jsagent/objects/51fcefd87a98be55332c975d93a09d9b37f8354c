@@ -1,4 +1,0 @@
-function ftpOnPortEntered(port) {
-    ftpConfig.port = parseInt(port) || 21;
-    PolymathOS.prompt("Enter FTP Username", "ftpOnUserEntered");
-}

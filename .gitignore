@@ -44,3 +44,13 @@ captures/
 .docgen_cache.json
 docs_manifest.json
 
+# Local agent caches & state
+.jsagent/
+.hyperteam_context.json
+.hyperteam_dispatch/
+HYPERTEAM_CONTEXT.md
+agy_nodeos.db
+workflow.json
+th_ui_prompt.txt
+
+

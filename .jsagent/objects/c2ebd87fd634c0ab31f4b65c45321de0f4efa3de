@@ -1,4 +1,0 @@
-function smbOnUserEntered(user) {
-    smbConfig.user = user || "guest";
-    PolymathOS.prompt("Enter SMB Password", "smbOnPassEntered");
-}

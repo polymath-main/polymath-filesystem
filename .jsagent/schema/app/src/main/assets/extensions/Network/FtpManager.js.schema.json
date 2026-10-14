@@ -1,9 +1,0 @@
-{
-  "file": "FtpManager.js",
-  "extension": ".js",
-  "pointers": {
-    "js_block_startFtpManager": "84028868536b5f335bd7e8f7b9fe86817ec678c3",
-    "js_block_ftpOnHostEntered": "2485c8cd0566a1a4734278358c750ce51dfdfd16",
-    "__skeleton__": "fd570ee5cbd90318cb566f1e11381c876a04a452"
-  }
-}

@@ -931,6 +931,82 @@
                                     android:textColor="#94a3b8"
                                     android:textSize="10sp"/>
                             </LinearLayout>
+                        <!-- 💾 Storage Volumes -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/btn_feature_volumes"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            app:cardBackgroundColor="#1e293b"
+                            app:cardCornerRadius="12dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="12dp"
+                                android:orientation="vertical"
+                                android:gravity="center">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="💾"
+                                    android:textSize="24sp"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Storage Volumes"
+                                    android:textColor="#f8fafc"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginTop="4dp"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="SAF &amp; SFTP"
+                                    android:textColor="#94a3b8"
+                                    android:textSize="10sp"/>
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- 🎨 Theme Studio -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/btn_feature_settings"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_columnWeight="1"
+                            app:cardBackgroundColor="#1e293b"
+                            app:cardCornerRadius="12dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:padding="12dp"
+                                android:orientation="vertical"
+                                android:gravity="center">
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="🎨"
+                                    android:textSize="24sp"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Theme Studio"
+                                    android:textColor="#f8fafc"
+                                    android:textSize="12sp"
+                                    android:textStyle="bold"
+                                    android:layout_marginTop="4dp"/>
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="10 Themes &amp; Icons"
+                                    android:textColor="#94a3b8"
+                                    android:textSize="10sp"/>
+                            </LinearLayout>
                         </com.google.android.material.card.MaterialCardView>
 
                     </GridLayout>

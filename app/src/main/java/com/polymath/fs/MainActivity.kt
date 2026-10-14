@@ -17,20 +17,46 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.snackbar.Snackbar
 import com.polymath.fs.core.BaseDynamicActivity
 import com.polymath.fs.databinding.ActivityMainBinding
 import com.polymath.fs.ui.FileBrowserFragment
 import com.polymath.fs.ui.HomeDashboardFragment
 import com.polymath.fs.ui.ScriptManagerActivity
+import com.polymath.fs.ui.volumes.AddRemoteProfileBottomSheet
+import com.polymath.fs.ui.volumes.VolumesAdapter
+import com.polymath.fs.ui.volumes.toVfsUri
+import com.polymath.fs.ui.volumes.treeUriString
 import com.polymath.fs.viewers.EditorActivity
 import com.polymath.fs.viewmodels.FileSystemViewModel
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 
 class MainActivity : BaseDynamicActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    private lateinit var volumesAdapter: VolumesAdapter
     private val viewModel: FileSystemViewModel by viewModels {
         FileSystemViewModel.provideFactory(application as PolymathApp)
+    }
+
+    private val openDocumentTreeLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val label = try {
+                androidx.documentfile.provider.DocumentFile.fromTreeUri(this, uri)?.name
+            } catch (_: Exception) {
+                null
+            }
+            viewModel.addSafGrant(uri, label)
+        }
     }
 
     private val storagePermissionLauncher = registerForActivityResult(
@@ -101,20 +127,61 @@ class MainActivity : BaseDynamicActivity() {
     }
 
     private fun setupZoneANavigator() {
-        binding.zoneANavigator.setNavigationItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_workspace_root -> {
-                    navigateToDirectory("/")
-                }
-                R.id.nav_workspace_sdcard -> {
-                    navigateToDirectory("/sdcard")
-                }
-                R.id.nav_smart_recent -> {
-                    Toast.makeText(this, "Loading Recent JS Scripts...", Toast.LENGTH_SHORT).show()
+        binding.zoneANavigator.removeAllViews()
+        val volumesView = layoutInflater.inflate(R.layout.view_zone_a_volumes, binding.zoneANavigator, false)
+        binding.zoneANavigator.addView(volumesView)
+
+        val rvVolumes = volumesView.findViewById<RecyclerView>(R.id.rvVolumes)
+        val btnHeaderAddSaf = volumesView.findViewById<MaterialButton>(R.id.btnHeaderAddSaf)
+        val btnHeaderAddSftp = volumesView.findViewById<MaterialButton>(R.id.btnHeaderAddSftp)
+
+        volumesAdapter = VolumesAdapter(
+            onNavigate = { targetPath ->
+                navigateToDirectory(targetPath)
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+            },
+            onDeleteSaf = { treeUriString ->
+                viewModel.removeSafGrant(treeUriString)
+                Toast.makeText(this, "SAF grant removed", Toast.LENGTH_SHORT).show()
+            },
+            onDeleteRemote = { profileId ->
+                viewModel.removeRemoteProfile(profileId)
+                Toast.makeText(this, "Remote SFTP profile removed", Toast.LENGTH_SHORT).show()
+            },
+            onAddSafClick = {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+                openDocumentTreeLauncher.launch(null)
+            },
+            onAddSftpClick = {
+                binding.drawerLayout.closeDrawer(GravityCompat.START)
+                AddRemoteProfileBottomSheet.newInstance().show(supportFragmentManager, AddRemoteProfileBottomSheet.TAG)
+            }
+        )
+
+        rvVolumes.layoutManager = LinearLayoutManager(this)
+        rvVolumes.adapter = volumesAdapter
+
+        btnHeaderAddSaf?.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            openDocumentTreeLauncher.launch(null)
+        }
+
+        btnHeaderAddSftp?.setOnClickListener {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            AddRemoteProfileBottomSheet.newInstance().show(supportFragmentManager, AddRemoteProfileBottomSheet.TAG)
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    viewModel.safGrants,
+                    viewModel.remoteProfiles
+                ) { grants, profiles ->
+                    Pair(grants, profiles)
+                }.collect { (grants, profiles) ->
+                    volumesAdapter.updateData(grants, profiles)
                 }
             }
-            binding.drawerLayout.closeDrawer(GravityCompat.START)
-            true
         }
     }
     
@@ -173,6 +240,10 @@ class MainActivity : BaseDynamicActivity() {
     fun navigateToDirectory(path: String) {
         binding.bottomNavigation.selectedItemId = R.id.nav_files
         viewModel.navigateTo(path)
+    }
+
+    fun openVolumesDrawer() {
+        binding.drawerLayout.openDrawer(GravityCompat.START)
     }
 
     private fun hasStoragePermission(): Boolean {

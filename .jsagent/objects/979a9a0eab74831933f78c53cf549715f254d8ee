@@ -1,4 +1,0 @@
-function smbOnPortEntered(port) {
-    smbConfig.port = parseInt(port) || 445;
-    PolymathOS.prompt("Enter SMB Username", "smbOnUserEntered");
-}

@@ -6,8 +6,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
+/**
+ * Legacy FTP client implementation.
+ *
+ * @deprecated Legacy FTP access is deprecated. Modern file access uses
+ *             SftpVfsProvider and the Unified VFS Provider architecture.
+ */
+@Deprecated
 public class FtpClient {
 
+    @Deprecated
     public static String execute(String host, int port, String user, String pass, String command, String path) {
         StringBuilder result = new StringBuilder();
         try (Socket socket = new Socket(host, port);

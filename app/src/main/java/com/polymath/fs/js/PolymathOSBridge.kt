@@ -229,19 +229,54 @@ class PolymathOSNativeImpl(
     }
 
     override fun readFile(path: String): String {
+        val isVfsUri = path.startsWith("content://") || path.startsWith("sftp://") ||
+                       path.startsWith("synapse://") || path.startsWith("saf://") ||
+                       path.startsWith("ftp://") || path.startsWith("smb://")
+        if (isVfsUri) {
+            return try {
+                repository.openRead(path).bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                ""
+            }
+        }
         return try {
-            File(path).readText()
+            repository.openRead(path).bufferedReader().use { it.readText() }
         } catch (e: Exception) {
-            ""
+            try {
+                File(path).readText()
+            } catch (fe: Exception) {
+                ""
+            }
         }
     }
 
     override fun writeFile(path: String, content: String): Boolean {
+        val isVfsUri = path.startsWith("content://") || path.startsWith("sftp://") ||
+                       path.startsWith("synapse://") || path.startsWith("saf://") ||
+                       path.startsWith("ftp://") || path.startsWith("smb://")
+        if (isVfsUri) {
+            return try {
+                repository.openWrite(path, append = false).bufferedWriter().use { it.write(content) }
+                true
+            } catch (e: Exception) {
+                try {
+                    File(path).writeText(content)
+                    true
+                } catch (fe: Exception) {
+                    false
+                }
+            }
+        }
         return try {
-            File(path).writeText(content)
+            repository.openWrite(path, append = false).bufferedWriter().use { it.write(content) }
             true
         } catch (e: Exception) {
-            false
+            try {
+                File(path).writeText(content)
+                true
+            } catch (fe: Exception) {
+                false
+            }
         }
     }
 
@@ -252,13 +287,17 @@ class PolymathOSNativeImpl(
             socket.close()
             val res = JSONObject().apply {
                 put("success", true)
-                put("status", "FTP server TCP connection established at $host:$port. Protocol authentication not performed.")
+                put("reachability", "connected")
+                put("status", "FTP TCP socket reachable at $host:$port. Legacy FTP protocol is deprecated; use SftpVfsProvider via 'sftp://' or the Unified VFS Provider architecture for modern remote storage.")
+                put("vfsAlternative", "sftp://$host")
             }
             res.toString()
         } catch (e: Exception) {
             val res = JSONObject().apply {
                 put("success", false)
-                put("status", "FTP connection to $host:$port unreachable: ${e.message}")
+                put("reachability", "unreachable")
+                put("status", "FTP host $host:$port unreachable: ${e.message}. Note: Legacy FTP is deprecated; configure remote connections via SftpVfsProvider ('sftp://') in the Unified VFS.")
+                put("vfsAlternative", "sftp://$host")
             }
             res.toString()
         }
@@ -271,13 +310,17 @@ class PolymathOSNativeImpl(
             socket.close()
             val res = JSONObject().apply {
                 put("success", true)
-                put("status", "SMB server TCP connection established at $host:$port. Protocol authentication not performed.")
+                put("reachability", "connected")
+                put("status", "SMB TCP socket reachable at $host:$port. Legacy SMB client is deprecated; use SftpVfsProvider via 'sftp://' or the Unified VFS Provider architecture for remote file operations.")
+                put("vfsAlternative", "sftp://$host")
             }
             res.toString()
         } catch (e: Exception) {
             val res = JSONObject().apply {
                 put("success", false)
-                put("status", "SMB connection to $host:$port unreachable: ${e.message}")
+                put("reachability", "unreachable")
+                put("status", "SMB host $host:$port unreachable: ${e.message}. Note: Legacy SMB client is deprecated; please use modern VFS remote providers (such as SftpVfsProvider).")
+                put("vfsAlternative", "sftp://$host")
             }
             res.toString()
         }
@@ -396,9 +439,13 @@ class PolymathOSNativeImpl(
 
     override fun exists(path: String): Boolean {
         return try {
-            File(path).exists()
+            runBlocking { repository.exists(path) }
         } catch (e: Exception) {
-            false
+            try {
+                File(path).exists()
+            } catch (fe: Exception) {
+                false
+            }
         }
     }
 }

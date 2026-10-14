@@ -1,4 +1,0 @@
-function ftpOnUserEntered(user) {
-    ftpConfig.user = user || "anonymous";
-    PolymathOS.prompt("Enter FTP Password", "ftpOnPassEntered");
-}

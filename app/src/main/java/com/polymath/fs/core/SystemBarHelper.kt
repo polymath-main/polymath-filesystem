@@ -41,10 +41,14 @@ object SystemBarHelper {
         val insetsController = WindowInsetsControllerCompat(window, window.decorView)
 
         val themeColors = ThemeManager.getThemeColors(activity)
-        val isLightHeader = ColorUtils.calculateLuminance(themeColors.surface) > 0.5
+        val headerColor = when (val bg = headerView.background) {
+            is android.graphics.drawable.ColorDrawable -> bg.color
+            else -> themeColors.surface
+        }
+        val isLightHeader = ColorUtils.calculateLuminance(headerColor) > 0.5
 
         insetsController.isAppearanceLightStatusBars = isLightHeader
-        insetsController.isAppearanceLightNavigationBars = isLightHeader
+        insetsController.isAppearanceLightNavigationBars = ColorUtils.calculateLuminance(themeColors.background) > 0.5
 
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT

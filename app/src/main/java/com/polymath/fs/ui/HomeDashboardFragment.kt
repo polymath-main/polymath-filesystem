@@ -446,6 +446,12 @@ class HomeDashboardFragment : Fragment() {
             }
             startActivity(intent)
         }
+        view.findViewById<View>(R.id.btn_feature_volumes)?.setOnClickListener {
+            (activity as? MainActivity)?.openVolumesDrawer()
+        }
+        view.findViewById<View>(R.id.btn_feature_settings)?.setOnClickListener {
+            startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        }
     }
 
     private class DashboardScriptsAdapter(
