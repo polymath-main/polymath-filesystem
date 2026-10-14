@@ -19,6 +19,9 @@ import com.polymath.fs.models.Clipboard
 import com.polymath.fs.models.FileBrowserUiState
 import android.net.Uri
 import com.polymath.fs.data.db.entities.SafGrantEntity
+import com.polymath.fs.data.remote.RemoteProfileDao
+import com.polymath.fs.data.remote.RemoteProfileEntity
+import com.polymath.fs.data.remote.SecretStore
 import com.polymath.fs.data.saf.SafPermissionManager
 import com.polymath.fs.models.TabState
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +47,9 @@ class FileSystemViewModel @Inject constructor(
     private val intentEngine: com.polymath.fs.core.IntentEngine,
     val synapseEngine: com.polymath.fs.core.SynapseEngine,
     val fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository,
-    val safPermissionManager: SafPermissionManager = SafPermissionManager(context)
+    val safPermissionManager: SafPermissionManager = SafPermissionManager(context),
+    val remoteProfileDao: RemoteProfileDao = com.polymath.fs.data.db.AppDatabase.getDatabase(context).remoteProfileDao(),
+    val secretStore: SecretStore = SecretStore(context)
 ) : ViewModel() {
 
     constructor(
@@ -73,7 +78,41 @@ class FileSystemViewModel @Inject constructor(
         intentEngine,
         synapseEngine,
         fileSystemRepository,
-        SafPermissionManager(context)
+        SafPermissionManager(context),
+        com.polymath.fs.data.db.AppDatabase.getDatabase(context).remoteProfileDao(),
+        SecretStore(context)
+    )
+
+    constructor(
+        context: Context,
+        listDirUseCase: ListDirUseCase,
+        deleteFilesUseCase: DeleteFilesUseCase,
+        renameUseCase: RenameUseCase,
+        copyFilesUseCase: CopyFilesUseCase,
+        moveFilesUseCase: MoveFilesUseCase,
+        mkdirUseCase: MkdirUseCase,
+        flowStateManager: FlowStateManager,
+        smartFolderManager: SmartFolderManager,
+        intentEngine: com.polymath.fs.core.IntentEngine,
+        synapseEngine: com.polymath.fs.core.SynapseEngine,
+        fileSystemRepository: com.polymath.fs.data.repository.IFileSystemRepository,
+        safPermissionManager: SafPermissionManager
+    ) : this(
+        context,
+        listDirUseCase,
+        deleteFilesUseCase,
+        renameUseCase,
+        copyFilesUseCase,
+        moveFilesUseCase,
+        mkdirUseCase,
+        flowStateManager,
+        smartFolderManager,
+        intentEngine,
+        synapseEngine,
+        fileSystemRepository,
+        safPermissionManager,
+        com.polymath.fs.data.db.AppDatabase.getDatabase(context).remoteProfileDao(),
+        SecretStore(context)
     )
 
     private val _uiState = MutableStateFlow(FileBrowserUiState())
@@ -81,6 +120,14 @@ class FileSystemViewModel @Inject constructor(
 
     val safGrants: StateFlow<List<SafGrantEntity>> = safPermissionManager
         .getAllGrants()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
+    val remoteProfiles: StateFlow<List<RemoteProfileEntity>> = remoteProfileDao
+        .getAllProfiles()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -511,6 +558,40 @@ class FileSystemViewModel @Inject constructor(
         removeSafGrant(Uri.parse(treeUriString))
     }
 
+    fun addRemoteProfile(
+        profile: RemoteProfileEntity,
+        secret: String? = null
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val updatedProfile = if (!secret.isNullOrEmpty()) {
+                    val secretRef = profile.encryptedSecretRef ?: "remote_secret_${profile.id}"
+                    secretStore.storeSecret(secretRef, secret)
+                    profile.copy(encryptedSecretRef = secretRef)
+                } else {
+                    profile
+                }
+                remoteProfileDao.insertProfile(updatedProfile)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
+    fun removeRemoteProfile(profileId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val profile = remoteProfileDao.getProfile(profileId)
+                profile?.encryptedSecretRef?.let { secretRef ->
+                    secretStore.deleteSecret(secretRef)
+                }
+                remoteProfileDao.deleteProfile(profileId)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         prefs.unregisterOnSharedPreferenceChangeListener(prefListener)
@@ -534,10 +615,13 @@ class FileSystemViewModel @Inject constructor(
                         app.intentEngine,
                         app.synapseEngine,
                         app.fileSystemRepository,
-                        app.safPermissionManager
+                        app.safPermissionManager,
+                        app.remoteProfileDao,
+                        app.secretStore
                     ) as T
                 }
             }
         }
     }
 }
+

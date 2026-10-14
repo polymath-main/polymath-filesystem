@@ -23,3 +23,12 @@
 
 # Keep QuickJS
 -keep class app.cash.quickjs.** { *; }
+
+# Keep SSHJ, BouncyCastle, SLF4J
+-keep class net.schmizz.** { *; }
+-keep class com.hierynomus.** { *; }
+-keep class org.bouncycastle.** { *; }
+-keep class org.slf4j.** { *; }
+-dontwarn org.bouncycastle.**
+-dontwarn net.schmizz.**
+-dontwarn org.slf4j.**

@@ -10,6 +10,9 @@ import com.polymath.fs.data.db.AppDatabase
 import com.polymath.fs.data.repository.IFileSystemRepository
 import com.polymath.fs.data.repository.VfsRepository
 import com.polymath.fs.data.saf.SafPermissionManager
+import com.polymath.fs.data.remote.KnownHostsStore
+import com.polymath.fs.data.remote.SecretStore
+import com.polymath.fs.data.remote.SshConnectionPool
 import com.polymath.fs.domain.usecase.CopyFilesUseCase
 import com.polymath.fs.domain.usecase.DeleteFilesUseCase
 import com.polymath.fs.domain.usecase.ListDirUseCase
@@ -19,15 +22,23 @@ import com.polymath.fs.domain.usecase.RenameUseCase
 import com.polymath.fs.domain.vfs.VfsRegistry
 import com.polymath.fs.domain.vfs.provider.LocalVfsProvider
 import com.polymath.fs.domain.vfs.provider.SafVfsProvider
+import com.polymath.fs.domain.vfs.provider.SftpVfsProvider
 import com.polymath.fs.js.PolymathJSBridge
 import com.topjohnwu.superuser.Shell
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 
 class PolymathApp : Application() {
 
     val shellHolder by lazy { RootShellHolder() }
     val localVfsProvider by lazy { LocalVfsProvider(shellHolder) }
     val safVfsProvider by lazy { SafVfsProvider(this) }
-    val vfsRegistry by lazy { VfsRegistry(listOf(localVfsProvider, safVfsProvider)) }
+    val remoteProfileDao by lazy { AppDatabase.getDatabase(this).remoteProfileDao() }
+    val secretStore by lazy { SecretStore(this) }
+    val knownHostsStore by lazy { KnownHostsStore(this) }
+    val sshConnectionPool by lazy { SshConnectionPool(remoteProfileDao, secretStore, knownHostsStore) }
+    val sftpVfsProvider by lazy { SftpVfsProvider(this, sshConnectionPool, knownHostsStore) }
+    val vfsRegistry by lazy { VfsRegistry(listOf(localVfsProvider, safVfsProvider, sftpVfsProvider)) }
     val safPermissionManager by lazy { SafPermissionManager(this, AppDatabase.getDatabase(this).safGrantDao()) }
     val fileSystemRepository: IFileSystemRepository by lazy { VfsRepository(vfsRegistry, this) }
     val jsBridge by lazy { PolymathJSBridge(fileSystemRepository, this, shellHolder) }
@@ -48,6 +59,12 @@ class PolymathApp : Application() {
     override fun onCreate() {
         super.onCreate()
         
+        // Register BouncyCastle provider for SSHJ / SFTP cryptographic algorithms
+        try {
+            Security.removeProvider("BC")
+            Security.insertProviderAt(BouncyCastleProvider(), 1)
+        } catch (_: Throwable) {}
+
         // Configure libsu
         Shell.setDefaultBuilder(
             Shell.Builder.create()

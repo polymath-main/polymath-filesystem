@@ -21,6 +21,8 @@ import com.polymath.fs.data.db.entities.RecentFileEntity
 import com.polymath.fs.data.db.entities.SafGrantEntity
 import com.polymath.fs.data.db.entities.SearchIndexEntity
 import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
+import com.polymath.fs.data.remote.RemoteProfileDao
+import com.polymath.fs.data.remote.RemoteProfileEntity
 
 @Database(
     entities = [
@@ -32,9 +34,10 @@ import com.polymath.fs.data.db.entities.WorkspaceSnapshotEntity
         CanvasEdgeEntity::class,
         WorkspaceSnapshotEntity::class,
         CanvasPresetEntity::class,
-        SafGrantEntity::class
+        SafGrantEntity::class,
+        RemoteProfileEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -46,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workspaceSnapshotDao(): WorkspaceSnapshotDao
     abstract fun canvasPresetDao(): CanvasPresetDao
     abstract fun safGrantDao(): SafGrantDao
+    abstract fun remoteProfileDao(): RemoteProfileDao
 
     companion object {
         @Volatile

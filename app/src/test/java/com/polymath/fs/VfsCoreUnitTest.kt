@@ -8,6 +8,8 @@ import com.polymath.fs.domain.vfs.VfsStat
 import com.polymath.fs.domain.vfs.VfsUri
 import com.polymath.fs.domain.vfs.provider.LocalVfsProvider
 import com.polymath.fs.domain.vfs.provider.SafVfsProvider
+import com.polymath.fs.domain.vfs.provider.SftpVfsProvider
+import com.polymath.fs.data.remote.RemoteProfileEntity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -198,4 +200,80 @@ class VfsCoreUnitTest {
         assertEquals("/external/audio/12345", simpleContentUri.path)
         assertEquals("content://media/external/audio/12345", simpleContentUri.serialized())
     }
+
+    @Test
+    fun testSftpVfsProviderRegistrationInRegistry() {
+        val dummyContext = android.content.ContextWrapper(null)
+        val sftpProvider = SftpVfsProvider(dummyContext)
+        assertEquals(setOf("sftp"), sftpProvider.schemes)
+
+        val localProvider = object : VfsProvider {
+            override val schemes: Set<String> = setOf("file")
+            override fun capabilities(uri: VfsUri): VfsCapabilities = VfsCapabilities.FULL_LOCAL
+            override suspend fun list(uri: VfsUri): List<VfsStat> = emptyList()
+            override suspend fun stat(uri: VfsUri): VfsStat? = null
+            override fun openRead(uri: VfsUri) = throw UnsupportedOperationException()
+            override fun openWrite(uri: VfsUri, append: Boolean) = throw UnsupportedOperationException()
+            override suspend fun delete(uri: VfsUri, recursive: Boolean): Boolean = true
+            override suspend fun mkdir(uri: VfsUri): Boolean = true
+            override suspend fun rename(uri: VfsUri, newName: String): Boolean = true
+        }
+
+        val registry = VfsRegistry(listOf(localProvider, sftpProvider))
+
+        val sftpUriStr = "sftp://dev-box-uuid/var/www/html"
+        val resolved = registry.providerFor(sftpUriStr)
+        assertEquals(sftpProvider, resolved)
+
+        val parsedUri = VfsUri.parse(sftpUriStr)
+        assertEquals("sftp", parsedUri.scheme)
+        assertEquals("dev-box-uuid", parsedUri.authority)
+        assertEquals("/var/www/html", parsedUri.path)
+        assertEquals("sftp://dev-box-uuid/var/www/html", parsedUri.serialized())
+
+        val resolvedFromUri = registry.providerFor(parsedUri)
+        assertEquals(sftpProvider, resolvedFromUri)
+    }
+
+    @Test
+    fun testSftpVfsProviderCapabilities() {
+        val dummyContext = android.content.ContextWrapper(null)
+        val sftpProvider = SftpVfsProvider(dummyContext)
+        val uri = VfsUri.parse("sftp://remote-profile/etc/ssh/sshd_config")
+        val caps = sftpProvider.capabilities(uri)
+
+        assertTrue("Sftp should support reading", caps.canRead)
+        assertTrue("Sftp should support writing", caps.canWrite)
+        assertTrue("Sftp should support renaming", caps.canRename)
+        assertTrue("Sftp should support deletion", caps.canDelete)
+        assertTrue("Sftp should support mkdir", caps.canMkdir)
+        assertTrue("Sftp should support chmod", caps.canChmod)
+        assertTrue("Sftp should support chown", caps.canChown)
+        assertTrue("Sftp should support symlink", caps.canSymlink)
+        assertTrue("Sftp should support streaming", caps.canStream)
+        assertFalse("Sftp should not support seek by default", caps.canSeek)
+    }
+
+    @Test
+    fun testRemoteProfileEntityDefaults() {
+        val profile = RemoteProfileEntity(
+            id = "test-uuid-123",
+            label = "My Production Server",
+            host = "192.168.1.100",
+            username = "admin"
+        )
+
+        assertEquals("test-uuid-123", profile.id)
+        assertEquals("My Production Server", profile.label)
+        assertEquals("sftp", profile.scheme)
+        assertEquals("192.168.1.100", profile.host)
+        assertEquals(22, profile.port)
+        assertEquals("admin", profile.username)
+        assertEquals("password", profile.authType)
+        assertNull(profile.keyPath)
+        assertNull(profile.encryptedSecretRef)
+        assertNull(profile.hostKeyFingerprint)
+        assertEquals("", profile.defaultPath)
+    }
 }
+

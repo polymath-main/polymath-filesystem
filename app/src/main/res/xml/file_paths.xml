@@ -5,5 +5,4 @@
     <cache-path name="cache_files" path="." />
     <external-files-path name="external_files_dir" path="." />
     <external-cache-path name="external_cache_dir" path="." />
-    <root-path name="root_files" path="." />
 </paths>

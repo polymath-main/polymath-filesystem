@@ -217,7 +217,7 @@ class LocalVfsProvider @Inject constructor(
         result.isSuccess
     }
 
-    fun copyLocal(src: File, dest: File): Boolean {
+    suspend fun copyLocal(src: File, dest: File): Boolean {
         var copied = false
         try {
             if (src.isDirectory) {
@@ -241,7 +241,7 @@ class LocalVfsProvider @Inject constructor(
         return copied
     }
 
-    fun moveLocal(src: File, dest: File): Boolean {
+    suspend fun moveLocal(src: File, dest: File): Boolean {
         var moved = false
         try {
             if (src.renameTo(dest)) {
