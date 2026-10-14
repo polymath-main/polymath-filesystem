@@ -24,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.polymath.fs.MainActivity
 import com.polymath.fs.R
 import com.polymath.fs.core.RiftEngine
+import com.polymath.fs.core.StorageTelemetryManager
 import com.polymath.fs.databinding.FragmentFileBrowserBinding
 import com.polymath.fs.viewmodels.FileSystemViewModel
 import kotlinx.coroutines.launch
@@ -235,6 +236,21 @@ class FileBrowserFragment : Fragment() {
         setupIntelligentAutocomplete()
         applyLiquidHeaderAnimation()
         
+        binding.btnToggleLayout.setOnClickListener {
+            val currentLayout = viewModel.uiState.value.viewOptions.layout
+            val nextLayout = if (currentLayout == com.polymath.fs.models.ViewLayout.GRID) {
+                com.polymath.fs.models.ViewLayout.LIST
+            } else {
+                com.polymath.fs.models.ViewLayout.GRID
+            }
+            viewModel.setViewOptions(viewModel.uiState.value.viewOptions.copy(layout = nextLayout))
+        }
+
+        binding.btnCancelTransferDock.setOnClickListener {
+            viewModel.cancelActiveTransfer()
+            Toast.makeText(requireContext(), "Transfer cancelled", Toast.LENGTH_SHORT).show()
+        }
+
         binding.copyPathButton.setOnClickListener {
             val currentPath = viewModel.uiState.value.activeTab?.currentPath ?: ""
             if (currentPath.isNotEmpty()) {
@@ -611,12 +627,19 @@ class FileBrowserFragment : Fragment() {
 
         val gestureDetector = android.view.GestureDetector(requireContext(), object : android.view.GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: android.view.MotionEvent?, e2: android.view.MotionEvent, velocityX: Float, velocityY: Float): Boolean {
-                if (e1 != null && e2.x - e1.x > 180 && Math.abs(velocityX) > 200 && Math.abs(e2.y - e1.y) < 160) {
-                    val activeTab = viewModel.uiState.value.activeTab
-                    val currentPath = activeTab?.currentPath ?: ""
-                    if (currentPath != "/storage/emulated/0" && currentPath != "/" && currentPath.isNotEmpty()) {
-                        viewModel.navigateUp()
-                        return true
+                if (e1 != null) {
+                    val deltaX = e2.x - e1.x
+                    val deltaY = e2.y - e1.y
+                    // Smooth right swipe or upward swipe to navigate up
+                    if ((deltaX > 140 && Math.abs(velocityX) > 150 && Math.abs(deltaY) < 180) ||
+                        (deltaY < -200 && Math.abs(velocityY) > 300 && Math.abs(deltaX) < 120)) {
+                        val activeTab = viewModel.uiState.value.activeTab
+                        val currentPath = activeTab?.currentPath ?: ""
+                        if (currentPath != "/storage/emulated/0" && currentPath != "/" && currentPath.isNotEmpty()) {
+                            binding.recyclerView.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                            viewModel.navigateUp()
+                            return true
+                        }
                     }
                 }
                 return false
@@ -651,6 +674,14 @@ class FileBrowserFragment : Fragment() {
                     }
                     
                     binding.pathText.text = activeTab?.currentPath ?: ""
+                    updateBreadcrumbChips(activeTab?.currentPath ?: "")
+
+                    if (state.viewOptions.layout == com.polymath.fs.models.ViewLayout.GRID) {
+                        binding.btnToggleLayout.setImageResource(android.R.drawable.ic_menu_agenda)
+                    } else {
+                        binding.btnToggleLayout.setImageResource(R.drawable.ic_grid_on)
+                    }
+
                     binding.progressBar.visibility = if (activeTab?.isLoading == true) View.VISIBLE else View.GONE
                     
                     val pasteItem = binding.toolbar.menu.findItem(com.polymath.fs.R.id.action_paste)
@@ -787,6 +818,28 @@ class FileBrowserFragment : Fragment() {
                     val activeIndex = state.tabs.indexOfFirst { it.id == state.activeTabId }
                     if (activeIndex >= 0 && binding.tabLayout.selectedTabPosition != activeIndex) {
                         binding.tabLayout.getTabAt(activeIndex)?.select()
+                    }
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.activeTransfer.collect { transfer ->
+                    if (transfer != null && !transfer.isComplete) {
+                        binding.cardTransferDock.visibility = View.VISIBLE
+                        binding.tvTransferDockFileName.text = transfer.currentFile.ifEmpty { "Streaming 128 KiB chunks..." }
+                        binding.tvTransferDockPercentage.text = "${transfer.percentage}%"
+                        binding.progressTransferDock.isIndeterminate = transfer.totalBytes <= 0
+                        if (!binding.progressTransferDock.isIndeterminate) {
+                            binding.progressTransferDock.progress = transfer.percentage
+                        }
+                        val curFmt = StorageTelemetryManager.formatBytes(transfer.currentBytes)
+                        val totFmt = if (transfer.totalBytes > 0) StorageTelemetryManager.formatBytes(transfer.totalBytes) else "..."
+                        val modeStr = if (transfer.isMove) "Moving" else "Streaming"
+                        binding.tvTransferDockDetails.text = "$modeStr • $curFmt / $totFmt (128 KiB chunked)"
+                    } else {
+                        binding.cardTransferDock.visibility = View.GONE
                     }
                 }
             }
@@ -1104,6 +1157,112 @@ class FileBrowserFragment : Fragment() {
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
+    }
+
+    private fun updateBreadcrumbChips(path: String) {
+        val container = _binding?.breadcrumbContainer ?: return
+        container.removeAllViews()
+        if (path.isEmpty()) return
+
+        val segments = mutableListOf<Pair<String, String>>() // Pair<DisplayTitle, TargetPath>
+
+        when {
+            path.startsWith("sftp://") -> {
+                val raw = path.removePrefix("sftp://")
+                val parts = raw.split("/").filter { it.isNotEmpty() }
+                if (parts.isEmpty()) {
+                    segments.add(Pair("SFTP", "sftp://"))
+                } else {
+                    var accumulated = "sftp://"
+                    for (i in parts.indices) {
+                        val part = parts[i]
+                        accumulated += if (accumulated == "sftp://") part else "/$part"
+                        val display = if (i == 0) "sftp://$part" else part
+                        segments.add(Pair(display, accumulated))
+                    }
+                }
+            }
+            path.startsWith("content://") -> {
+                val name = try {
+                    android.net.Uri.parse(path).lastPathSegment ?: "SAF Tree"
+                } catch (e: Exception) {
+                    "SAF Tree"
+                }
+                segments.add(Pair("SAF: $name", path))
+            }
+            path.startsWith("/storage/emulated/0") -> {
+                segments.add(Pair("Internal Storage", "/storage/emulated/0"))
+                val rel = path.removePrefix("/storage/emulated/0").trimStart('/')
+                if (rel.isNotEmpty()) {
+                    val parts = rel.split("/").filter { it.isNotEmpty() }
+                    var acc = "/storage/emulated/0"
+                    for (part in parts) {
+                        acc += "/$part"
+                        segments.add(Pair(part, acc))
+                    }
+                }
+            }
+            else -> {
+                segments.add(Pair("Root", "/"))
+                val parts = path.split("/").filter { it.isNotEmpty() }
+                var acc = ""
+                for (part in parts) {
+                    acc += "/$part"
+                    segments.add(Pair(part, acc))
+                }
+            }
+        }
+
+        val typedValue = android.util.TypedValue()
+        requireContext().theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, typedValue, true)
+
+        for (i in segments.indices) {
+            val (name, targetPath) = segments[i]
+            val isLast = i == segments.lastIndex
+
+            val chip = android.widget.TextView(requireContext()).apply {
+                text = name
+                textSize = 12f
+                setPadding(16, 8, 16, 8)
+                if (isLast) {
+                    setTextColor(android.graphics.Color.parseColor("#38bdf8"))
+                    typeface = android.graphics.Typeface.DEFAULT_BOLD
+                    setBackgroundResource(R.drawable.bg_badge_active)
+                } else {
+                    setTextColor(android.graphics.Color.parseColor("#94a3b8"))
+                    typeface = android.graphics.Typeface.DEFAULT
+                    setBackgroundResource(typedValue.resourceId)
+                }
+                setOnClickListener {
+                    if (!isLast) {
+                        performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                        viewModel.navigateTo(targetPath)
+                    }
+                }
+                setOnLongClickListener {
+                    val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("Breadcrumb Path", targetPath)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(requireContext(), "Copied: $targetPath", Toast.LENGTH_SHORT).show()
+                    true
+                }
+            }
+            container.addView(chip)
+
+            if (!isLast) {
+                val separator = android.widget.TextView(requireContext()).apply {
+                    text = "›"
+                    textSize = 14f
+                    setTextColor(android.graphics.Color.parseColor("#64748b"))
+                    setPadding(4, 0, 4, 0)
+                }
+                container.addView(separator)
+            }
+        }
+
+        _binding?.breadcrumbScrollView?.post {
+            _binding?.breadcrumbScrollView?.fullScroll(android.widget.HorizontalScrollView.FOCUS_RIGHT)
+        }
     }
 
     override fun onDestroyView() {

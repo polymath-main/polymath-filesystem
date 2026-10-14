@@ -64,17 +64,35 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:layout_marginStart="8dp"
-                    android:layout_marginEnd="2dp"
+                    android:layout_marginEnd="4dp"
                     android:contentDescription="Folder Icon"
                     android:src="@drawable/ic_fluent_folder"
                     app:tint="?attr/colorPrimary" />
+
+                <!-- Interactive Clickable Breadcrumb Chips ScrollView -->
+                <HorizontalScrollView
+                    android:id="@+id/breadcrumbScrollView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:scrollbars="none"
+                    android:fillViewport="false"
+                    android:paddingHorizontal="4dp">
+
+                    <LinearLayout
+                        android:id="@+id/breadcrumbContainer"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical" />
+                </HorizontalScrollView>
 
                 <TextView
                     android:id="@+id/pathText"
                     style="@style/TextAppearance.Material3.BodyMedium"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
+                    android:visibility="gone"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="10dp"
                     android:textColor="?android:attr/textColorPrimary"
@@ -82,10 +100,20 @@
                     android:singleLine="true"
                     tools:text="/storage/emulated/0/Download/SomeFolder" />
 
+                <!-- Quick Dual List / Grid Layout Toggle -->
+                <ImageButton
+                    android:id="@+id/btnToggleLayout"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Toggle List / Grid Layout"
+                    android:src="@drawable/ic_grid_on"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+
                 <ImageButton
                     android:id="@+id/copyPathButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_marginEnd="4dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:contentDescription="Copy Path"
@@ -189,6 +217,100 @@
         android:textSize="16sp"
         android:layout_gravity="center"
         android:visibility="gone" />
+
+    <!-- Floating TransferEngine Status Dock -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardTransferDock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginBottom="76dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="#f20b0f19"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="10dp"
+        app:strokeColor="#38bdf8"
+        app:strokeWidth="1.5dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⇄"
+                    android:textColor="#38bdf8"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvTransferDockFileName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="middle"
+                    android:singleLine="true"
+                    android:textColor="#f8fafc"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    tools:text="transferring_file.zip" />
+
+                <TextView
+                    android:id="@+id/tvTransferDockPercentage"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/bg_badge_active"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="#34d399"
+                    android:textSize="10sp"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold"
+                    tools:text="45%" />
+
+                <ImageButton
+                    android:id="@+id/btnCancelTransferDock"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Cancel Transfer"
+                    android:src="@drawable/ic_close_white"
+                    app:tint="#f87171" />
+            </LinearLayout>
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/progressTransferDock"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="8dp"
+                app:indicatorColor="#38bdf8"
+                app:trackColor="#1e293b"
+                app:trackCornerRadius="3dp"
+                android:progress="0" />
+
+            <TextView
+                android:id="@+id/tvTransferDockDetails"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="monospace"
+                android:textColor="#94a3b8"
+                android:textSize="10sp"
+                tools:text="14.2 MB / 32.0 MB • 128 KiB chunk streaming" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Terminal Container aligned to bottom -->
     <com.google.android.material.card.MaterialCardView

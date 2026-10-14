@@ -6,13 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
-    android:layout_marginVertical="3dp"
+    android:layout_marginVertical="4dp"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="#1e293b"
-    app:strokeColor="#334155"
+    app:cardBackgroundColor="#0f172a"
+    app:strokeColor="#1e293b"
     app:strokeWidth="1dp"
-    app:cardCornerRadius="10dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="0dp">
 
     <LinearLayout
@@ -20,16 +20,23 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="10dp">
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp">
 
-        <ImageView
-            android:id="@+id/ivVolumeIcon"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_marginEnd="12dp"
-            app:tint="#38bdf8"
-            android:contentDescription="Volume Icon" />
+            android:background="@drawable/bg_badge_inactive">
+
+            <ImageView
+                android:id="@+id/ivVolumeIcon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                app:tint="#38bdf8"
+                android:contentDescription="Volume Icon" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -37,26 +44,49 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvVolumeTitle"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textStyle="bold"
-                android:textColor="#f8fafc"
-                android:singleLine="true"
-                android:ellipsize="middle"
-                tools:text="Primary Storage" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvVolumeTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#f8fafc"
+                    android:singleLine="true"
+                    android:ellipsize="middle"
+                    tools:text="Primary Storage" />
+
+                <TextView
+                    android:id="@+id/tvVolumeSecurityBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_badge_active"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:textColor="#34d399"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:fontFamily="monospace"
+                    tools:text="AES-256" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvVolumeSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="3dp"
                 android:textSize="11sp"
                 android:textColor="#94a3b8"
                 android:singleLine="true"
                 android:ellipsize="middle"
+                android:fontFamily="monospace"
                 tools:text="/storage/emulated/0" />
         </LinearLayout>
 
@@ -64,6 +94,7 @@
             android:id="@+id/btnDeleteVolume"
             android:layout_width="36dp"
             android:layout_height="36dp"
+            android:layout_marginStart="6dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="#f87171"
             android:src="@android:drawable/ic_menu_delete"

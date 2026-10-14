@@ -13,6 +13,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
 
+data class ActiveTransfer(
+    val currentFile: String = "",
+    val currentBytes: Long = 0L,
+    val totalBytes: Long = 0L,
+    val percentage: Int = 0,
+    val isMove: Boolean = false,
+    val isComplete: Boolean = false
+)
+
 @Singleton
 class TransferEngine @Inject constructor(
     private val registry: VfsRegistry,
@@ -24,6 +33,16 @@ class TransferEngine @Inject constructor(
     companion object {
         const val BUFFER_SIZE = 128 * 1024 // 128 KiB bounded chunk buffer
         const val PROGRESS_THROTTLE_MS = 200L // 200ms throttle interval
+
+        private val _activeTransfer = kotlinx.coroutines.flow.MutableStateFlow<ActiveTransfer?>(null)
+        val activeTransfer: kotlinx.coroutines.flow.StateFlow<ActiveTransfer?> = _activeTransfer
+
+        private var activeJob: kotlinx.coroutines.Job? = null
+
+        fun cancelCurrentTransfer() {
+            activeJob?.cancel()
+            _activeTransfer.value = null
+        }
     }
 
     /**
@@ -48,69 +67,90 @@ class TransferEngine @Inject constructor(
             return@flow
         }
 
-        val destUri = VfsUri.parse(dest)
-        val destProvider = registry.providerFor(destUri)
+        activeJob = coroutineContext[kotlinx.coroutines.Job]
 
-        // Ensure base target directory exists on destination provider
-        val destStat = destProvider.stat(destUri)
-        if (destStat == null || !destStat.isDirectory) {
-            destProvider.mkdir(destUri)
-        }
+        try {
+            val destUri = VfsUri.parse(dest)
+            val destProvider = registry.providerFor(destUri)
 
-        val srcUris = src.map { VfsUri.parse(it) }
-        val totalBytes = calculateTotalBytes(srcUris)
+            // Ensure base target directory exists on destination provider
+            val destStat = destProvider.stat(destUri)
+            if (destStat == null || !destStat.isDirectory) {
+                destProvider.mkdir(destUri)
+            }
 
-        val state = TransferProgressState(
-            bytesTransferred = 0L,
-            lastEmitTime = timeProvider(),
-            lastFileName = ""
-        )
+            val srcUris = src.map { VfsUri.parse(it) }
+            val totalBytes = calculateTotalBytes(srcUris)
 
-        // Initial 0% progress emission
-        emit(
-            Progress(
-                currentBytes = 0L,
-                totalBytes = totalBytes,
-                isComplete = false,
-                currentFile = ""
+            val state = TransferProgressState(
+                bytesTransferred = 0L,
+                lastEmitTime = timeProvider(),
+                lastFileName = ""
             )
-        )
 
-        for (srcUri in srcUris) {
-            coroutineContext.ensureActive()
-            val srcProvider = registry.providerFor(srcUri)
-            val srcStat = srcProvider.stat(srcUri)
-                ?: throw IOException("Source not found: ${srcUri.serialized()}")
-
-            val entryName = srcStat.name.ifEmpty {
-                srcUri.path.substringAfterLast('/').ifEmpty { "unnamed" }
-            }
-            val targetUri = resolveChildUri(destUri, entryName)
-
-            if (srcStat.isDirectory) {
-                copyDirectoryRecursive(srcUri, targetUri, totalBytes, state) { emit(it) }
-            } else {
-                copySingleFile(srcUri, targetUri, entryName, totalBytes, state) { emit(it) }
+            val emitAndPublish: suspend (Progress) -> Unit = { progress ->
+                _activeTransfer.value = ActiveTransfer(
+                    currentFile = progress.currentFile,
+                    currentBytes = progress.currentBytes,
+                    totalBytes = progress.totalBytes,
+                    percentage = progress.percentage,
+                    isMove = deleteSource,
+                    isComplete = progress.isComplete
+                )
+                emit(progress)
             }
 
-            if (deleteSource) {
-                val deleted = srcProvider.delete(srcUri, recursive = true)
-                if (!deleted) {
-                    throw IOException("Failed to delete source after transfer: ${srcUri.serialized()}")
+            // Initial 0% progress emission
+            emitAndPublish(
+                Progress(
+                    currentBytes = 0L,
+                    totalBytes = totalBytes,
+                    isComplete = false,
+                    currentFile = ""
+                )
+            )
+
+            for (srcUri in srcUris) {
+                coroutineContext.ensureActive()
+                val srcProvider = registry.providerFor(srcUri)
+                val srcStat = srcProvider.stat(srcUri)
+                    ?: throw IOException("Source not found: ${srcUri.serialized()}")
+
+                val entryName = srcStat.name.ifEmpty {
+                    srcUri.path.substringAfterLast('/').ifEmpty { "unnamed" }
+                }
+                val targetUri = resolveChildUri(destUri, entryName)
+
+                if (srcStat.isDirectory) {
+                    copyDirectoryRecursive(srcUri, targetUri, totalBytes, state) { emitAndPublish(it) }
+                } else {
+                    copySingleFile(srcUri, targetUri, entryName, totalBytes, state) { emitAndPublish(it) }
+                }
+
+                if (deleteSource) {
+                    val deleted = srcProvider.delete(srcUri, recursive = true)
+                    if (!deleted) {
+                        throw IOException("Failed to delete source after transfer: ${srcUri.serialized()}")
+                    }
                 }
             }
-        }
 
-        // Final 100% progress emission
-        val finalTotal = if (totalBytes > 0) totalBytes else state.bytesTransferred
-        emit(
-            Progress(
-                currentBytes = maxOf(finalTotal, state.bytesTransferred),
-                totalBytes = maxOf(finalTotal, state.bytesTransferred),
-                isComplete = true,
-                currentFile = state.lastFileName
+            // Final 100% progress emission
+            val finalTotal = if (totalBytes > 0) totalBytes else state.bytesTransferred
+            emitAndPublish(
+                Progress(
+                    currentBytes = maxOf(finalTotal, state.bytesTransferred),
+                    totalBytes = maxOf(finalTotal, state.bytesTransferred),
+                    isComplete = true,
+                    currentFile = state.lastFileName
+                )
             )
-        )
+        } catch (e: Exception) {
+            _activeTransfer.value = null
+            throw e
+        } finally {
+            activeJob = null
+        }
     }
 
     private suspend fun copyDirectoryRecursive(

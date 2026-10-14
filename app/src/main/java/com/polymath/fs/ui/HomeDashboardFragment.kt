@@ -62,6 +62,13 @@ class HomeDashboardFragment : Fragment() {
     private lateinit var tvKernelMem: TextView
     private lateinit var tvKernelState: TextView
 
+    private var tvDropletStatus: TextView? = null
+    private lateinit var tvTransferEngineStatus: TextView
+    private lateinit var progressTransferEngine: LinearProgressIndicator
+    private lateinit var tvTransferFileName: TextView
+    private lateinit var tvTransferDetails: TextView
+    private lateinit var btnTransferCancel: MaterialButton
+
     private val overlayPermissionLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) {
         if (android.provider.Settings.canDrawOverlays(requireContext())) {
             toggleDropletService()
@@ -108,6 +115,8 @@ class HomeDashboardFragment : Fragment() {
         setupDynamicStatusBar(view)
         initViews(view)
         setupCognitiveCanvasWidget(view)
+        setupTransferEngineObserver()
+        setupDropletObserver()
         loadStorageTelemetry()
         loadKernelTelemetry()
         setupDirectoryShortcuts(view)
@@ -223,6 +232,18 @@ class HomeDashboardFragment : Fragment() {
         tvKernelLoad = view.findViewById(R.id.tv_kernel_load)
         tvKernelMem = view.findViewById(R.id.tv_kernel_mem)
         tvKernelState = view.findViewById(R.id.tv_kernel_state)
+
+        tvDropletStatus = view.findViewById(R.id.tv_droplet_status)
+        tvTransferEngineStatus = view.findViewById(R.id.tv_transfer_engine_status)
+        progressTransferEngine = view.findViewById(R.id.progress_transfer_engine)
+        tvTransferFileName = view.findViewById(R.id.tv_transfer_file_name)
+        tvTransferDetails = view.findViewById(R.id.tv_transfer_details)
+        btnTransferCancel = view.findViewById(R.id.btn_transfer_cancel)
+
+        btnTransferCancel.setOnClickListener {
+            com.polymath.fs.domain.vfs.TransferEngine.cancelCurrentTransfer()
+            Toast.makeText(requireContext(), "Transfer cancelled", Toast.LENGTH_SHORT).show()
+        }
 
         btnBrowseAllScripts.setOnClickListener {
             startActivity(Intent(requireContext(), ScriptManagerActivity::class.java))
@@ -449,8 +470,62 @@ class HomeDashboardFragment : Fragment() {
         view.findViewById<View>(R.id.btn_feature_volumes)?.setOnClickListener {
             (activity as? MainActivity)?.openVolumesDrawer()
         }
-        view.findViewById<View>(R.id.btn_feature_settings)?.setOnClickListener {
+        val themeStudioBtn = view.findViewById<View>(R.id.btn_feature_theme_studio)
+            ?: view.findViewById<View>(R.id.btn_feature_settings)
+        themeStudioBtn?.setOnClickListener {
             startActivity(Intent(requireContext(), SettingsActivity::class.java))
+        }
+    }
+
+    private fun setupTransferEngineObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            com.polymath.fs.domain.vfs.TransferEngine.activeTransfer.collectLatest { transfer ->
+                if (transfer != null && !transfer.isComplete) {
+                    tvTransferEngineStatus.text = if (transfer.isMove) "MOVING" else "STREAMING"
+                    tvTransferEngineStatus.setTextColor(android.graphics.Color.parseColor("#38bdf8"))
+                    tvTransferEngineStatus.setBackgroundResource(R.drawable.bg_badge_active)
+
+                    progressTransferEngine.isIndeterminate = transfer.totalBytes <= 0
+                    if (!progressTransferEngine.isIndeterminate) {
+                        progressTransferEngine.progress = transfer.percentage
+                    }
+
+                    tvTransferFileName.text = transfer.currentFile.ifEmpty { "Streaming 128 KiB chunks..." }
+                    val curFmt = StorageTelemetryManager.formatBytes(transfer.currentBytes)
+                    val totFmt = if (transfer.totalBytes > 0) StorageTelemetryManager.formatBytes(transfer.totalBytes) else "..."
+                    tvTransferDetails.text = "$curFmt / $totFmt (${transfer.percentage}%)"
+                    btnTransferCancel.visibility = View.VISIBLE
+                } else {
+                    tvTransferEngineStatus.text = "IDLE"
+                    tvTransferEngineStatus.setTextColor(android.graphics.Color.parseColor("#94a3b8"))
+                    tvTransferEngineStatus.setBackgroundResource(R.drawable.bg_badge_inactive)
+
+                    progressTransferEngine.isIndeterminate = false
+                    progressTransferEngine.progress = 0
+                    tvTransferFileName.text = "Idle • 128 KiB chunk streaming ready"
+                    tvTransferDetails.text = "0 B / 0 B (0%)"
+                    btnTransferCancel.visibility = View.GONE
+                }
+            }
+        }
+    }
+
+    private fun setupDropletObserver() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            com.polymath.fs.core.DropletService.isRunning.collectLatest { isRunning ->
+                isDropletRunning = isRunning
+                tvDropletStatus?.let { badge ->
+                    if (isRunning) {
+                        badge.text = "ACTIVE"
+                        badge.setTextColor(android.graphics.Color.parseColor("#34d399"))
+                        badge.setBackgroundResource(R.drawable.bg_badge_active)
+                    } else {
+                        badge.text = "INACTIVE"
+                        badge.setTextColor(android.graphics.Color.parseColor("#94a3b8"))
+                        badge.setBackgroundResource(R.drawable.bg_badge_inactive)
+                    }
+                }
+            }
         }
     }
 

@@ -177,10 +177,22 @@ class VolumesAdapter(
         private val ivIcon: ImageView = itemView.findViewById(R.id.ivVolumeIcon)
         private val tvTitle: TextView = itemView.findViewById(R.id.tvVolumeTitle)
         private val tvSubtitle: TextView = itemView.findViewById(R.id.tvVolumeSubtitle)
+        private val tvSecurityBadge: TextView? = itemView.findViewById(R.id.tvVolumeSecurityBadge)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDeleteVolume)
 
         fun bindLocal(item: VolumeItem.LocalStorage) {
             ivIcon.setImageResource(item.iconRes)
+            if (item.path == "/") {
+                ivIcon.setColorFilter(android.graphics.Color.parseColor("#f59e0b"))
+                tvSecurityBadge?.text = "ROOT FS"
+                tvSecurityBadge?.setTextColor(android.graphics.Color.parseColor("#f59e0b"))
+            } else {
+                ivIcon.setColorFilter(android.graphics.Color.parseColor("#38bdf8"))
+                tvSecurityBadge?.text = "FLASH"
+                tvSecurityBadge?.setTextColor(android.graphics.Color.parseColor("#38bdf8"))
+            }
+            tvSecurityBadge?.setBackgroundResource(R.drawable.bg_badge_inactive)
+            tvSecurityBadge?.visibility = View.VISIBLE
             tvTitle.text = item.title
             tvSubtitle.text = item.path
             btnDelete.visibility = View.GONE
@@ -191,8 +203,13 @@ class VolumesAdapter(
 
         fun bindSaf(grant: SafGrantEntity) {
             ivIcon.setImageResource(R.drawable.ic_fluent_folder)
+            ivIcon.setColorFilter(android.graphics.Color.parseColor("#34d399"))
             tvTitle.text = grant.label.ifBlank { "SAF Volume" }
             tvSubtitle.text = grant.treeDocId.ifBlank { grant.treeUriString }
+            tvSecurityBadge?.text = "SAF TREE"
+            tvSecurityBadge?.setTextColor(android.graphics.Color.parseColor("#34d399"))
+            tvSecurityBadge?.setBackgroundResource(R.drawable.bg_badge_inactive)
+            tvSecurityBadge?.visibility = View.VISIBLE
             btnDelete.visibility = View.VISIBLE
             cardVolume.setOnClickListener {
                 onNavigate(grant.treeUriString)
@@ -204,10 +221,15 @@ class VolumesAdapter(
 
         fun bindRemote(profile: RemoteProfileEntity) {
             ivIcon.setImageResource(R.drawable.ic_workspace_snapshot)
+            ivIcon.setColorFilter(android.graphics.Color.parseColor("#a78bfa"))
             val displayTitle = if (profile.label.isNotBlank()) profile.label else "${profile.username}@${profile.host}"
             val displaySubtitle = "${profile.username}@${profile.host}:${profile.port}${if (profile.defaultPath.startsWith("/")) profile.defaultPath else "/${profile.defaultPath}"}"
             tvTitle.text = displayTitle
             tvSubtitle.text = displaySubtitle
+            tvSecurityBadge?.text = if (profile.authType == "key") "AES-256 • KEY" else "AES-256 • PWD"
+            tvSecurityBadge?.setTextColor(android.graphics.Color.parseColor("#a78bfa"))
+            tvSecurityBadge?.setBackgroundResource(R.drawable.bg_badge_inactive)
+            tvSecurityBadge?.visibility = View.VISIBLE
             btnDelete.visibility = View.VISIBLE
             cardVolume.setOnClickListener {
                 onNavigate(profile.toVfsUri().serialized())

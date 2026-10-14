@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardBackgroundColor="#1e293b"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="1dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#2538bdf8">
+
+    <LinearLayout
+        android:id="@+id/itemContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp"
+        android:gravity="center_horizontal"
+        android:background="?android:attr/selectableItemBackground">
+
+        <!-- Top Row: POSIX Badge & Menu -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/tvPermissionsBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:background="@drawable/bg_chip_meta"
+                android:paddingHorizontal="4dp"
+                android:paddingVertical="1dp"
+                android:textColor="#38bdf8"
+                android:textSize="8sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold"
+                tools:text="-rw-r--" />
+
+            <TextView
+                android:id="@+id/btnMenu"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:text="⋮"
+                android:textColor="#94a3b8"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:background="?android:attr/selectableItemBackgroundBorderless" />
+        </RelativeLayout>
+
+        <!-- Centered File Type Icon / Image Container -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/fileIconContainer"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="8dp"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="#0f172a"
+            app:strokeWidth="1dp"
+            app:strokeColor="#2538bdf8">
+
+            <ImageView
+                android:id="@+id/fileIcon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                android:scaleType="centerInside"
+                android:contentDescription="File Icon"
+                app:tint="#38bdf8" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- File Name (2-line max) -->
+        <TextView
+            android:id="@+id/fileName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#f8fafc"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:ellipsize="middle"
+            tools:text="controller_script.js" />
+
+        <!-- File Details -->
+        <TextView
+            android:id="@+id/fileDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="center"
+            android:textColor="#94a3b8"
+            android:textSize="10sp"
+            android:singleLine="true"
+            tools:text="42.5 KB" />
+
+        <LinearLayout
+            android:id="@+id/badgeContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

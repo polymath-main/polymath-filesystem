@@ -26,6 +26,11 @@ import java.util.Locale
 
 class DropletService : Service() {
 
+    companion object {
+        private val _isRunning = kotlinx.coroutines.flow.MutableStateFlow(false)
+        val isRunning: kotlinx.coroutines.flow.StateFlow<Boolean> = _isRunning
+    }
+
     private lateinit var windowManager: WindowManager
     private lateinit var dropletView: View
     private lateinit var layoutParams: WindowManager.LayoutParams
@@ -34,6 +39,7 @@ class DropletService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        _isRunning.value = true
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         
         // Inflate the Droplet UI with themed context to prevent MaterialCardView crash in Service
@@ -159,6 +165,7 @@ class DropletService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        _isRunning.value = false
         if (::dropletView.isInitialized && dropletView.isAttachedToWindow) {
             runCatching { windowManager.removeView(dropletView) }
         }

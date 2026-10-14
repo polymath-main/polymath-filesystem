@@ -143,6 +143,7 @@ class FileListAdapter(
                 val finalIconType = if (file.name.startsWith(".")) "hidden" else if (file.name == "sys" || file.name == "system") "system" else "folder"
                 val resId = itemView.context.resources.getIdentifier("${iconPackPrefix}_$finalIconType", "drawable", itemView.context.packageName)
                 binding.fileIcon.setImageResource(if (resId != 0) resId else R.drawable.ic_folder)
+                binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#38bdf8"))
                 binding.fileDetails.text = dateFormat.format(Date(file.lastModified))
             } else {
                 val ext = file.name.substringAfterLast('.', "").lowercase()
@@ -157,6 +158,16 @@ class FileListAdapter(
                     ext == "pdf" -> "pdf"
                     else -> "default"
                 }
+
+                val iconColor = when (iconType) {
+                    "code" -> "#38bdf8"
+                    "audio" -> "#34d399"
+                    "video" -> "#a855f7"
+                    "archive" -> "#f59e0b"
+                    "apk" -> "#fb7185"
+                    "pdf" -> "#f97316"
+                    else -> "#94a3b8"
+                }
                 
                 if (file.name.startsWith(".")) iconType = "hidden"
                 else if (file.name == "sys" || file.name == "system") iconType = "system"
@@ -168,6 +179,7 @@ class FileListAdapter(
                 if (isImage) {
                     val localFile = File(file.path)
                     if (localFile.exists() && localFile.canRead()) {
+                        binding.fileIcon.imageTintList = null
                         binding.fileIcon.setPadding(0, 0, 0, 0)
                         binding.fileIcon.load(localFile) {
                             crossfade(true)
@@ -175,15 +187,20 @@ class FileListAdapter(
                             placeholder(fallbackResId)
                             error(fallbackResId)
                             listener(
-                                onError = { _, _ -> binding.fileIcon.setPadding(8, 8, 8, 8) },
+                                onError = { _, _ -> 
+                                    binding.fileIcon.setPadding(8, 8, 8, 8)
+                                    binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
+                                },
                                 onSuccess = { _, _ -> binding.fileIcon.setPadding(0, 0, 0, 0) }
                             )
                         }
                     } else {
+                        binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
                         binding.fileIcon.setPadding(8, 8, 8, 8)
                         binding.fileIcon.setImageResource(fallbackResId)
                     }
                 } else {
+                    binding.fileIcon.imageTintList = android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor(iconColor))
                     binding.fileIcon.setPadding(8, 8, 8, 8)
                     binding.fileIcon.setImageResource(fallbackResId)
                 }
@@ -193,12 +210,24 @@ class FileListAdapter(
                 binding.fileDetails.text = "$sizeStr • $dateStr"
             }
             
-            when (file) {
-                is FileNode.RootFile -> {
-                    binding.fileDetails.text = "${binding.fileDetails.text} • ${file.permissions}"
+            // POSIX Permission Badge
+            val posixPermissions = when (file) {
+                is FileNode.RootFile -> file.permissions
+                else -> {
+                    val f = File(file.path)
+                    if (f.exists()) {
+                        val typeChar = if (file.isDirectory) "d" else "-"
+                        val r = if (f.canRead()) "r" else "-"
+                        val w = if (f.canWrite()) "w" else "-"
+                        val x = if (f.canExecute()) "x" else "-"
+                        "$typeChar$r$w${x}r-xr-x"
+                    } else {
+                        if (file.isDirectory) "drwxr-xr-x" else "-rw-r--r--"
+                    }
                 }
-                else -> {}
             }
+            binding.tvPermissionsBadge.text = posixPermissions
+            binding.tvPermissionsBadge.visibility = View.VISIBLE
             
             // Apply ViewOptions
             if (viewOptions.layout == com.polymath.fs.models.ViewLayout.SPATIAL) {

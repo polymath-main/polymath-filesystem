@@ -133,6 +133,16 @@ class FileSystemViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val activeTransfer: StateFlow<com.polymath.fs.domain.vfs.ActiveTransfer?> =
+        com.polymath.fs.domain.vfs.TransferEngine.activeTransfer
+
+    private var activeTransferJob: kotlinx.coroutines.Job? = null
+
+    fun cancelActiveTransfer() {
+        activeTransferJob?.cancel()
+        com.polymath.fs.domain.vfs.TransferEngine.cancelCurrentTransfer()
+    }
     
     // In-memory zero-storage Rift tracking
     private val activeRiftPaths = mutableSetOf<String>()
@@ -400,21 +410,24 @@ class FileSystemViewModel @Inject constructor(
         val clipboard = _uiState.value.clipboard ?: return
         val activeTab = _uiState.value.activeTab ?: return
         val currentPath = activeTab.currentPath
-        viewModelScope.launch {
+        activeTransferJob?.cancel()
+        activeTransferJob = viewModelScope.launch {
             try {
                 if (clipboard.isCut) {
                     moveFilesUseCase(clipboard.files, currentPath).collect { progress ->
-                        // Optional: handle progress
+                        // Handled via TransferEngine.activeTransfer
                     }
                     _uiState.update { it.copy(clipboard = null) }
                 } else {
                     copyFilesUseCase(clipboard.files, currentPath).collect { progress ->
-                        // Optional: handle progress
+                        // Handled via TransferEngine.activeTransfer
                     }
                 }
                 navigateTo(currentPath)
             } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
+                if (e !is kotlinx.coroutines.CancellationException) {
+                    _uiState.update { it.copy(error = e.message) }
+                }
             }
         }
     }

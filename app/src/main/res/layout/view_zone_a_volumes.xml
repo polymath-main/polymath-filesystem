@@ -4,31 +4,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0b0f17">
+    android:background="#0b0f19">
 
     <!-- Header layout -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#1e293b"
+        android:background="#0f172a"
         android:orientation="vertical"
-        android:paddingTop="40dp"
+        android:paddingTop="36dp"
         android:paddingBottom="16dp"
         android:paddingHorizontal="16dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Storage Volumes"
-            android:textColor="#ffffff"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Storage Volumes"
+                android:textColor="#f8fafc"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_active"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="VFS CORE"
+                android:textColor="#38bdf8"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Local, SAF Trees &amp; Remote SFTP"
+            android:layout_marginTop="4dp"
+            android:text="POSIX Root, SAF Trees &amp; SSHJ Remote SFTP"
             android:textColor="#94a3b8"
             android:textSize="12sp" />
 
@@ -36,38 +57,51 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:orientation="horizontal">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnHeaderAddSaf"
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_marginEnd="4dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:paddingHorizontal="4dp"
+                android:backgroundTint="#1e293b"
+                app:strokeColor="#334155"
+                app:strokeWidth="1dp"
+                android:paddingHorizontal="8dp"
                 android:text="+ Add SAF"
-                android:textSize="11sp"
-                app:cornerRadius="6dp" />
+                android:textColor="#34d399"
+                android:textSize="12sp"
+                app:cornerRadius="8dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnHeaderAddSftp"
                 style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_marginStart="4dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:paddingHorizontal="4dp"
+                android:backgroundTint="#1e293b"
+                app:strokeColor="#334155"
+                app:strokeWidth="1dp"
+                android:paddingHorizontal="8dp"
                 android:text="+ Add SFTP"
-                android:textSize="11sp"
-                app:cornerRadius="6dp" />
+                android:textColor="#a78bfa"
+                android:textSize="12sp"
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1e293b" />
 
     <!-- Volumes List -->
     <androidx.recyclerview.widget.RecyclerView
@@ -76,6 +110,6 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:paddingVertical="4dp" />
+        android:paddingVertical="8dp" />
 
 </LinearLayout>

@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:fillViewport="true"
-    android:background="#111827">
+    android:background="#0b0f19">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,22 +12,101 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Top Drag Handle -->
+        <View
+            android:layout_width="36dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/bg_badge_inactive" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Add Remote SFTP Profile"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#f8fafc" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Add Remote SFTP Profile"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#f8fafc" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge_active"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:text="SSHJ POOL"
+                android:textColor="#34d399"
+                android:textSize="10sp"
+                android:fontFamily="monospace"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="18dp"
+            android:layout_marginBottom="16dp"
             android:text="Configure remote SSH/SFTP server endpoint and credentials"
             android:textSize="13sp"
             android:textColor="#94a3b8" />
+
+        <!-- Security Callout Banner -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="18dp"
+            app:cardBackgroundColor="#0f172a"
+            app:strokeColor="#1e293b"
+            app:strokeWidth="1dp"
+            app:cardCornerRadius="10dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🛡️"
+                    android:textSize="22sp"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="HARDWARE-BACKED AES-256 &amp; TOFU"
+                        android:textSize="11sp"
+                        android:textStyle="bold"
+                        android:textColor="#38bdf8"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="Credentials and keys are encrypted in Android Keystore. Host fingerprints are verified on first use (TOFU) to eliminate MITM vectors."
+                        android:textSize="11sp"
+                        android:textColor="#94a3b8" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <!-- Profile Label (Optional) -->
         <com.google.android.material.textfield.TextInputLayout
@@ -36,7 +115,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:hint="Profile Label (Optional)">
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            android:hint="Profile Label (Optional, e.g. Production Cluster)">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etProfileLabel"
@@ -61,6 +145,11 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
                 android:layout_marginEnd="8dp"
+                app:boxStrokeColor="#38bdf8"
+                app:boxCornerRadiusTopStart="10dp"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusBottomEnd="10dp"
                 android:hint="Host / IP *">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -78,6 +167,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                app:boxStrokeColor="#38bdf8"
+                app:boxCornerRadiusTopStart="10dp"
+                app:boxCornerRadiusTopEnd="10dp"
+                app:boxCornerRadiusBottomStart="10dp"
+                app:boxCornerRadiusBottomEnd="10dp"
                 android:hint="Port">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -98,6 +192,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
             android:hint="Username *">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -113,8 +212,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
-            android:text="Authentication Mode"
+            android:layout_marginBottom="8dp"
+            android:text="Authentication Method"
             android:textSize="13sp"
             android:textStyle="bold"
             android:textColor="#e2e8f0" />
@@ -123,7 +222,7 @@
             android:id="@+id/rgAuthMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
+            android:layout_marginBottom="14dp"
             android:orientation="horizontal">
 
             <RadioButton
@@ -152,6 +251,11 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             app:passwordToggleEnabled="true"
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
             android:hint="Password">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -171,7 +275,12 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:visibility="gone"
-            android:hint="Private Key File Path">
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
+            android:hint="Private Key File Path (e.g. /data/.../id_ed25519)">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etKeyPath"
@@ -191,6 +300,11 @@
             android:layout_marginBottom="12dp"
             android:visibility="gone"
             app:passwordToggleEnabled="true"
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
             android:hint="Key Passphrase (Optional)">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -209,6 +323,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="24dp"
+            app:boxStrokeColor="#38bdf8"
+            app:boxCornerRadiusTopStart="10dp"
+            app:boxCornerRadiusTopEnd="10dp"
+            app:boxCornerRadiusBottomStart="10dp"
+            app:boxCornerRadiusBottomEnd="10dp"
             android:hint="Default Remote Path (default /)">
 
             <com.google.android.material.textfield.TextInputEditText
@@ -232,7 +351,7 @@
                 android:id="@+id/btnCancel"
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:layout_marginEnd="8dp"
                 android:text="Cancel"
                 android:textColor="#94a3b8" />
@@ -241,9 +360,12 @@
                 android:id="@+id/btnSave"
                 style="@style/Widget.Material3.Button"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:text="Save Profile"
-                app:cornerRadius="8dp" />
+                android:backgroundTint="#38bdf8"
+                android:textColor="#0b0f19"
+                android:textStyle="bold"
+                app:cornerRadius="10dp" />
         </LinearLayout>
 
     </LinearLayout>
