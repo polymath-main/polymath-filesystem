@@ -90,8 +90,14 @@ class KnownHostsStore @Inject constructor(
     }
 
     fun createVerifier(expectedFingerprint: String? = null): HostKeyVerifier {
-        return HostKeyVerifier { hostname, port, key ->
-            verify(hostname, port, key, expectedFingerprint)
+        return object : HostKeyVerifier {
+            override fun verify(hostname: String, port: Int, key: PublicKey): Boolean {
+                return this@KnownHostsStore.verify(hostname, port, key, expectedFingerprint)
+            }
+
+            override fun findExistingAlgorithms(hostname: String, port: Int): List<String> {
+                return emptyList()
+            }
         }
     }
 

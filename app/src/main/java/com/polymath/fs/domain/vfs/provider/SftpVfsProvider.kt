@@ -146,7 +146,7 @@ class SftpVfsProvider(
         val holder = requirePool().getOrCreateHolder(profileId)
         val remotePath = resolvePath(holder.homePath, uri.path)
         val remoteFile = holder.sftpClient.open(remotePath, EnumSet.of(OpenMode.READ))
-        return remoteFile.remoteInputStream
+        return remoteFile.RemoteFileInputStream()
     }
 
     override fun openWrite(uri: VfsUri, append: Boolean): OutputStream {
@@ -160,7 +160,7 @@ class SftpVfsProvider(
             EnumSet.of(OpenMode.WRITE, OpenMode.CREAT, OpenMode.TRUNC)
         }
         val remoteFile = holder.sftpClient.open(remotePath, modes)
-        return remoteFile.remoteOutputStream
+        return remoteFile.RemoteFileOutputStream()
     }
 
     override suspend fun delete(uri: VfsUri, recursive: Boolean): Boolean = withContext(Dispatchers.IO) {
@@ -240,10 +240,7 @@ class SftpVfsProvider(
             if (uid != null) {
                 requirePool().withSftp(profileId) { sftp, home ->
                     val remotePath = resolvePath(home, uri.path)
-                    val builder = net.schmizz.sshj.sftp.FileAttributes.Builder().withUID(uid)
-                    if (gid != null) {
-                        builder.withGID(gid)
-                    }
+                    val builder = net.schmizz.sshj.sftp.FileAttributes.Builder().withUIDGID(uid, gid ?: 0)
                     sftp.setattr(remotePath, builder.build())
                     true
                 }
@@ -252,7 +249,9 @@ class SftpVfsProvider(
                 val remotePath = resolvePath(holder.homePath, uri.path)
                 val session = holder.sshClient.startSession()
                 session.use { s ->
-                    val cmd = s.exec("chown $owner \"$remotePath\"")
+                    val safeOwner = owner.replace("'", "'\\''")
+                    val safePath = remotePath.replace("'", "'\\''")
+                    val cmd = s.exec("chown '$safeOwner' '$safePath'")
                     cmd.join(10, TimeUnit.SECONDS)
                     cmd.exitStatus == 0
                 }
