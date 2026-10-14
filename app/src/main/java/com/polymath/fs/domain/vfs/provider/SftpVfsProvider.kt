@@ -21,20 +21,11 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SftpVfsProvider(
+class SftpVfsProvider @Inject constructor(
     private val context: Context,
-    private val pool: SshConnectionPool?,
-    private val knownHosts: KnownHostsStore?
+    private val pool: SshConnectionPool? = null,
+    private val knownHosts: KnownHostsStore? = null
 ) : VfsProvider {
-
-    @Inject
-    constructor(
-        context: Context,
-        pool: SshConnectionPool,
-        knownHosts: KnownHostsStore
-    ) : this(context, pool as SshConnectionPool?, knownHosts as KnownHostsStore?)
-
-    constructor(context: Context) : this(context, null, null)
 
     private fun requirePool(): SshConnectionPool =
         pool ?: throw IllegalStateException("SshConnectionPool not initialized")
