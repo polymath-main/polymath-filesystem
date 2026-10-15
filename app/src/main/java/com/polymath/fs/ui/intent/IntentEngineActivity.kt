@@ -323,13 +323,13 @@ class IntentEngineActivity : BaseDynamicActivity() {
                 val isDir = child.isDirectory
 
                 // Temporal checks
-                if (isTodayQuery && child.lastModified >= startOfToday) {
+                if (isTodayQuery && child.lastModified() >= startOfToday) {
                     score += 60
                     reasons.add("Modified Today")
-                } else if (isYesterdayQuery && child.lastModified in startOfYesterday..endOfYesterday) {
+                } else if (isYesterdayQuery && child.lastModified() in startOfYesterday..endOfYesterday) {
                     score += 60
                     reasons.add("Downloaded Yesterday")
-                } else if (isRecentQuery && child.lastModified >= last7Days) {
+                } else if (isRecentQuery && child.lastModified() >= last7Days) {
                     score += 35
                     reasons.add("Recent Activity")
                 }

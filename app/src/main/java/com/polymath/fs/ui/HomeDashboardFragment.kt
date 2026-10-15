@@ -490,7 +490,6 @@ class HomeDashboardFragment : Fragment() {
             }
         }
         val themeStudioBtn = view.findViewById<View>(R.id.btn_feature_theme_studio)
-            ?: view.findViewById<View>(R.id.btn_feature_settings)
         themeStudioBtn?.setOnClickListener {
             startActivity(Intent(requireContext(), SettingsActivity::class.java))
         }
